@@ -365,7 +365,9 @@ const socialLogin = async (appId: string, deviceToken: string):Promise<IAuthResp
       appId,
       deviceToken,
       status: USER_STATUS.ACTIVE,
+      password: crypto.randomUUID(),
     })
+    console.log({createdUser})
     if (!createdUser)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user.')
     const tokens = AuthHelper.createToken(createdUser._id, createdUser.role, createdUser.name, createdUser.email)
@@ -581,6 +583,9 @@ const changePassword = async (
 
   return { message: 'Password changed successfully' }
 }
+
+
+
 
 export const CustomAuthServices = {
   adminLogin,

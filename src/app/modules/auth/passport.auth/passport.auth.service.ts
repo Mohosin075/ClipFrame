@@ -14,11 +14,12 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }): Promise<IAu
   const email = emails[0].value.toLowerCase().trim()
   const isUserExist = await User.findOne({
     email,
-    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
+    status: { $in: [USER_STATUS.ACTIVE] },
   })
   if (isUserExist) {
     //return only the token
     const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
+    console.log('Google login tokens:', tokens)
     return authResponse(StatusCodes.OK, `Welcome ${isUserExist.name} to our platform.`, isUserExist.role, tokens.accessToken, tokens.refreshToken)
   }
 

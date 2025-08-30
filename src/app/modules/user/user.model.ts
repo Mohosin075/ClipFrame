@@ -39,7 +39,7 @@ const userSchema = new Schema<IUser, UserModel>(
       default: USER_ROLES.STUDENT,
     },
     address: {
-      city : {
+      city: {
         type: String,
       },
       permanentAddress: {
@@ -54,7 +54,6 @@ const userSchema = new Schema<IUser, UserModel>(
       postalCode: {
         type: String,
       },
-
     },
     location: {
       type: {

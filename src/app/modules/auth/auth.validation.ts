@@ -24,7 +24,7 @@ const forgetPasswordZodSchema = z.object({
     email: z
       .string()
       .optional()
-      
+
       .refine(value => !value || /^\S+@\S+\.\S+$/.test(value), {
         message: 'Invalid email format',
       }),
@@ -67,11 +67,9 @@ const loginZodSchema = z.object({
 
 const verifyAccountZodSchema = z.object({
   body: z.object({
-    email: z
-      .string()
-      .refine(value => !value || /^\S+@\S+\.\S+$/.test(value), {
-        message: 'Invalid email format',
-      }),
+    email: z.string().refine(value => !value || /^\S+@\S+\.\S+$/.test(value), {
+      message: 'Invalid email format',
+    }),
     phone: z
       .string()
       .optional()
@@ -96,7 +94,7 @@ const resendOtpZodSchema = z.object({
       .refine(value => !value || /^\+?[1-9]\d{1,14}$/.test(value), {
         message: 'Invalid phone number format',
       }),
-      authType:z.string(z.enum(['resetPassword','createAccount']).optional())
+    authType: z.string(z.enum(['resetPassword', 'createAccount']).optional()),
   }),
 })
 
@@ -122,15 +120,12 @@ const changePasswordZodSchema = z.object({
 })
 
 const deleteAccount = z.object({
-  body: z
-    .object({
+  body: z.object({
     password: z.string({
       required_error: 'Password is required',
-    })
-   })
-    
+    }),
+  }),
 })
-
 
 const addressSchema = z.object({
   city: z.string().optional(),
@@ -138,7 +133,7 @@ const addressSchema = z.object({
   presentAddress: z.string().optional(),
   country: z.string().optional(),
   postalCode: z.string().optional(),
-});
+})
 
 const createUserZodSchema = z.object({
   body: z.object({
@@ -178,5 +173,5 @@ export const AuthValidations = {
   changePasswordZodSchema,
   createUserZodSchema,
   deleteAccount,
-  socialLoginZodSchema
+  socialLoginZodSchema,
 }

@@ -6,6 +6,7 @@ import validateRequest from '../../middleware/validateRequest'
 import { AuthValidations } from './auth.validation'
 import { USER_ROLES } from '../../../enum/user'
 import auth, { tempAuth } from '../../middleware/auth'
+import { AuthHelper } from './auth.helper'
 
 const router = express.Router()
 
@@ -87,6 +88,42 @@ router.delete(
 )
 router.post('/refresh-token', CustomAuthController.getRefreshToken)
 
-router.post('/social-login', validateRequest(AuthValidations.socialLoginZodSchema), CustomAuthController.socialLogin)
+router.post(
+  '/social-login',
+  validateRequest(AuthValidations.socialLoginZodSchema),
+  CustomAuthController.socialLogin,
+)
+
+// Initiate Facebook authentication
+router.get(
+  '/facebook',
+  passport.authenticate('facebook', {
+    scope: ['email', 'public_profile'],
+  }),
+)
+
+// Facebook callback handler
+router.get(
+  '/facebook/callback',
+  passport.authenticate('facebook', { session: false }),
+  (req, res) => {
+    console.log('hit')
+    // Successful authentication
+    const user = req.user as any
+    const token = AuthHelper.createToken(user.authId, user.role)
+
+    console.log({token})
+
+    res.status(200).json({
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    })
+  },
+)
 
 export const AuthRoutes = router

@@ -21,7 +21,7 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: IUser):Promise
 
   if (!verified) {
     //send otp to user
-    
+
     const otp = generateOtp()
     const otpExpiresIn = new Date(Date.now() + 5 * 60 * 1000)
 
@@ -45,7 +45,7 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: IUser):Promise
       otp,
     })
 
-    // await emailHelper.sendEmail(otpTemplate)
+    await emailHelper.sendEmail(otpTemplate)
 
     // emailQueue.add('emails', otpTemplate)
 

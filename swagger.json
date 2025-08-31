@@ -1,0 +1,457 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Documentation",
+    "version": "1.0.0",
+    "description": "Generated API documentation"
+  },
+  "paths": {
+    "/useronboarding": {
+      "post": {
+        "tags": [
+          "Useronboarding"
+        ],
+        "summary": "Create a new Useronboarding",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseronboardingCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Useronboarding created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Useronboarding"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Useronboarding"
+        ],
+        "summary": "Get all Useronboardings",
+        "responses": {
+          "200": {
+            "description": "List of Useronboardings retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Useronboarding"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/useronboarding/{id}": {
+      "get": {
+        "tags": [
+          "Useronboarding"
+        ],
+        "summary": "Get Useronboarding by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Useronboarding ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Useronboarding retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Useronboarding"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Useronboarding not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Useronboarding"
+        ],
+        "summary": "Update Useronboarding",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Useronboarding ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UseronboardingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Useronboarding updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Useronboarding"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Useronboarding not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Useronboarding"
+        ],
+        "summary": "Delete Useronboarding",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Useronboarding ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Useronboarding deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Useronboarding"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Useronboarding not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SocialHandlesItem": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "platform": {
+            "type": "string",
+            "description": "platform field"
+          },
+          "username": {
+            "type": "string",
+            "description": "username field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id"
+        ]
+      },
+      "Useronboarding": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "userId": {
+            "type": "string",
+            "description": "userId reference ID"
+          },
+          "businessType": {
+            "type": "string",
+            "description": "businessType field"
+          },
+          "customBusinessType": {
+            "type": "string",
+            "description": "customBusinessType field"
+          },
+          "businessDescription": {
+            "type": "string",
+            "description": "businessDescription field"
+          },
+          "targetAudience": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of targetAudience items"
+          },
+          "contentLanguages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of contentLanguages items"
+          },
+          "autoTranslateCaptions": {
+            "type": "boolean",
+            "description": "autoTranslateCaptions field"
+          },
+          "socialHandles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SocialHandlesItem"
+            },
+            "description": "Array of socialHandles objects"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "deletedAt field"
+          }
+        },
+        "required": [
+          "_id",
+          "businessType",
+          "autoTranslateCaptions"
+        ]
+      },
+      "UseronboardingCreate": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "userId reference ID"
+          },
+          "businessType": {
+            "type": "string",
+            "description": "businessType field"
+          },
+          "customBusinessType": {
+            "type": "string",
+            "description": "customBusinessType field"
+          },
+          "businessDescription": {
+            "type": "string",
+            "description": "businessDescription field"
+          },
+          "targetAudience": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of targetAudience items"
+          },
+          "contentLanguages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of contentLanguages items"
+          },
+          "autoTranslateCaptions": {
+            "type": "boolean",
+            "description": "autoTranslateCaptions field"
+          },
+          "socialHandles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SocialHandlesItem"
+            },
+            "description": "Array of socialHandles objects"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "createdAt field"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "updatedAt field"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "deletedAt field"
+          }
+        },
+        "required": [
+          "businessType",
+          "autoTranslateCaptions"
+        ]
+      },
+      "UseronboardingUpdate": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "userId reference ID"
+          },
+          "businessType": {
+            "type": "string",
+            "description": "businessType field"
+          },
+          "customBusinessType": {
+            "type": "string",
+            "description": "customBusinessType field"
+          },
+          "businessDescription": {
+            "type": "string",
+            "description": "businessDescription field"
+          },
+          "targetAudience": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of targetAudience items"
+          },
+          "contentLanguages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of contentLanguages items"
+          },
+          "autoTranslateCaptions": {
+            "type": "boolean",
+            "description": "autoTranslateCaptions field"
+          },
+          "socialHandles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SocialHandlesItem"
+            },
+            "description": "Array of socialHandles objects"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "createdAt field"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "updatedAt field"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "deletedAt field"
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,9 +4,9 @@ import express, { Router } from 'express'
 import { NotificationRoutes } from '../app/modules/notifications/notifications.route'
 import { PublicRoutes } from '../app/modules/public/public.route'
 import { SupportRoutes } from '../app/modules/support/support.route'
-import { OnboardingscreenRoutes } from '../app/modules/onboardingscreen/onboardingscreen.route'
 import { ReviewRoutes } from '../app/modules/review/review.route'
 import { CategoryRoutes } from '../app/modules/category/category.route'
+import { UseronboardingRoutes } from '../app/modules/useronboarding/useronboarding.route'
 
 const router = express.Router()
 
@@ -19,10 +19,11 @@ const apiRoutes: { path: string; route: Router }[] = [
   { path: '/public', route: PublicRoutes },
 
   { path: '/support', route: SupportRoutes },
-  { path: '/onboardingscreen', route: OnboardingscreenRoutes },
   { path: '/review', route: ReviewRoutes },
 
   { path: '/category', route: CategoryRoutes },
+
+  { path: '/useronboarding', route: UseronboardingRoutes },
 ]
 
 apiRoutes.forEach(route => {

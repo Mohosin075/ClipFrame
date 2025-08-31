@@ -107,8 +107,6 @@ router.get(
   '/facebook/callback',
   passport.authenticate('facebook', { session: false }),
   (req, res) => {
-    console.log('hit')
-    // Successful authentication
     const user = req.user as any
     const token = AuthHelper.createToken(user.authId, user.role)
 

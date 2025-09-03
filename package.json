@@ -11,7 +11,9 @@
   "type": "commonjs",
   "main": "src/server.ts",
   "scripts": {
+    "build": "tsc",
     "start": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "start:prod": "node dist/server.js",
     "lint:check": "eslint --ignore-path .eslintignore --ext .js,.ts .",
     "lint:fix": "eslint . --fix",
     "prettier:check": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
@@ -45,6 +47,7 @@
     "sharp": "^0.34.1",
     "socket.io": "^4.8.1",
     "twilio": "^5.4.2",
+    "vercel": "^47.0.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^3.24.1"

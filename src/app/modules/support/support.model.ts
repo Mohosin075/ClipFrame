@@ -1,12 +1,12 @@
 import { Schema, model } from 'mongoose';
-import { ISupport, SupportModel } from './support.interface'; 
+import { ISupport, SupportModel } from './support.interface';
 import { SUPPORT_STATUS } from '../../../enum/support';
 
 const supportSchema = new Schema<ISupport, SupportModel>({
   userId: { type: Schema.Types.ObjectId, ref: 'User' },
   subject: { type: String },
   message: { type: String },
-  status: { type: String, enum: Object.values(SUPPORT_STATUS), default: SUPPORT_STATUS.PROGRESS },
+  status: { type: String, enum: Object.values(SUPPORT_STATUS), default: SUPPORT_STATUS.IN_PROGRESS },
   attachments: { type: [String] },
 }, {
   timestamps: true

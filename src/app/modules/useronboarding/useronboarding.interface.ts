@@ -45,7 +45,7 @@ export interface IUseronboarding {
   customBusinessType?: string
   businessDescription?: string
   targetAudience: TargetAudience[]
-  contentLanguages: ContentLanguage
+  preferredLanguages?: ContentLanguage[]
   autoTranslateCaptions: boolean
   socialHandles: SocialHandlesItem[]
   logo: string

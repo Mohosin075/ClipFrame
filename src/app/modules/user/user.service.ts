@@ -10,6 +10,7 @@ import { logger } from '../../../shared/logger'
 import { paginationHelper } from '../../../helpers/paginationHelper'
 import { IPaginationOptions } from '../../../interfaces/pagination'
 import { S3Helper } from '../../../helpers/image/s3helper'
+import { Useronboarding } from '../useronboarding/useronboarding.model'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({
@@ -170,10 +171,7 @@ const getUserById = async (userId: string): Promise<IUser | null> => {
   return user
 }
 
-const updateUserStatus = async (
-  userId: string,
-  status: USER_STATUS,
-): Promise<string> => {
+const updateUserStatus = async (userId: string, status: USER_STATUS) => {
   const isUserExist = await User.findOne({
     _id: userId,
     status: { $nin: [USER_STATUS.DELETED] },
@@ -195,17 +193,34 @@ const updateUserStatus = async (
   return 'User status updated successfully.'
 }
 
-const getProfile = async (user: JwtPayload): Promise<IUser | null> => {
-  const userProfile = await User.findOne({
+export const getProfile = async (user: JwtPayload) => {
+  const isUserExist = await User.findOne({
     _id: user.authId,
     status: { $nin: [USER_STATUS.DELETED] },
-  })
-  if (!userProfile) {
+  }).select('-authentication -password -location -__v')
+
+  if (!isUserExist) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found.')
   }
-  return userProfile
-}
 
+  const isOnboarded = await Useronboarding.findOne({ userId: user.authId })
+
+  if (!isOnboarded) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'User not onboarded.')
+  }
+
+  const social = isOnboarded.socialHandles.map(social => social?.platform) || []
+
+  const profileData = {
+    ...isUserExist.toObject(),
+    platforms: social,
+    preferredLanguages: isOnboarded.preferredLanguages || [],
+    businessType: isOnboarded.businessType || 'General',
+    customBusinessType: isOnboarded.customBusinessType || '',
+  }
+
+  return profileData
+}
 export const UserServices = {
   updateProfile,
   createAdmin,

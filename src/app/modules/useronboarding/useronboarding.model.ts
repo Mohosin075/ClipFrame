@@ -31,10 +31,10 @@ const UserOnboardingSchema = new Schema<IUseronboarding>({
     enum: Object.values(TargetAudience),
     default: [],
   },
-  contentLanguages: {
-    type: String,
+  preferredLanguages: {
+    type: [String],
     enum: Object.values(ContentLanguage),
-    default: ContentLanguage.EN,
+    default: [ContentLanguage.EN],
   },
   logo: { type: String },
   brandColors: { type: [BrandColorSchema], default: [] },

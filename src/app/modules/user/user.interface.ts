@@ -1,13 +1,6 @@
 import { Model, Types } from 'mongoose'
 import { USER_ROLES, USER_STATUS } from '../../../enum/user'
 
-// ------------------ ENUMS ------------------
-export enum Membership {
-  BASIC = 'BASIC',
-  PREMIUM = 'PREMIUM',
-  GOLD = 'GOLD',
-}
-
 // ------------------ SUB-TYPES ------------------
 export type IAuthentication = {
   restrictionLeftAt: Date | null
@@ -41,12 +34,7 @@ export interface IUser {
   email?: string
   profile?: string
   businessName?: string
-  businessCategory?: string
-  platforms?: string[] // camelCase for consistency
-  preferredLanguages?: string[]
-  timezone?: string
   phone?: string
-  membership?: Membership
 
   status: USER_STATUS // standardize statuses
   verified: boolean
@@ -56,6 +44,8 @@ export interface IUser {
   role: USER_ROLES
   appId?: string
   deviceToken?: string
+  timezone: string
+  // membership: Membership
 
   authentication: IAuthentication
   createdAt: Date
@@ -66,6 +56,6 @@ export interface IUser {
 export type UserModel = Model<IUser> & {
   isPasswordMatched(
     givenPassword: string,
-    savedPassword: string
+    savedPassword: string,
   ): Promise<boolean>
 }

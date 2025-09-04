@@ -31,7 +31,7 @@ export const UserOnboardingSchema = z.object({
   customBusinessType: z.string().default(''),
   businessDescription: z.string().default(''),
   targetAudience: z.array(z.nativeEnum(TargetAudience)).default([]),
-  contentLanguages: z
+  preferredLanguages: z
     .array(z.nativeEnum(ContentLanguage))
     .default([ContentLanguage.EN]),
   autoTranslateCaptions: z.boolean().default(false),

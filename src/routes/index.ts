@@ -7,6 +7,7 @@ import { SupportRoutes } from '../app/modules/support/support.route'
 import { ReviewRoutes } from '../app/modules/review/review.route'
 import { CategoryRoutes } from '../app/modules/category/category.route'
 import { UseronboardingRoutes } from '../app/modules/useronboarding/useronboarding.route'
+import { ContentRoutes } from '../app/modules/content/content.route'
 
 const router = express.Router()
 
@@ -24,7 +25,8 @@ const apiRoutes: { path: string; route: Router }[] = [
   { path: '/category', route: CategoryRoutes },
 
   { path: '/useronboarding', route: UseronboardingRoutes },
-]
+,
+  { path: '/content', route: ContentRoutes }]
 
 apiRoutes.forEach(route => {
   router.use(route.path, route.route)

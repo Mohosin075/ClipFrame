@@ -439,6 +439,223 @@
           }
         }
       }
+    },
+    "/socialintegration": {
+      "post": {
+        "tags": [
+          "Socialintegration"
+        ],
+        "summary": "Create a new Socialintegration",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialintegrationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Socialintegration created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Socialintegration"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Socialintegration"
+        ],
+        "summary": "Get all Socialintegrations",
+        "responses": {
+          "200": {
+            "description": "List of Socialintegrations retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Socialintegration"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socialintegration/{id}": {
+      "get": {
+        "tags": [
+          "Socialintegration"
+        ],
+        "summary": "Get Socialintegration by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Socialintegration ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Socialintegration retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Socialintegration"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Socialintegration not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Socialintegration"
+        ],
+        "summary": "Update Socialintegration",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Socialintegration ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialintegrationUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Socialintegration updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Socialintegration"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Socialintegration not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Socialintegration"
+        ],
+        "summary": "Delete Socialintegration",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Socialintegration ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Socialintegration deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Socialintegration"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Socialintegration not found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -839,6 +1056,107 @@
             "type": "string",
             "format": "date-time",
             "description": "updatedAt field"
+          }
+        }
+      },
+      "Socialintegration": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId"
+          },
+          "platform": {
+            "type": "string",
+            "description": "platform field"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "accountId field"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "accessToken field"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "refreshToken field"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "expiresAt field"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": [
+          "_id",
+          "accountId",
+          "accessToken"
+        ]
+      },
+      "SocialintegrationCreate": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "platform field"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "accountId field"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "accessToken field"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "refreshToken field"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "expiresAt field"
+          }
+        },
+        "required": [
+          "accountId",
+          "accessToken"
+        ]
+      },
+      "SocialintegrationUpdate": {
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string",
+            "description": "platform field"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "accountId field"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "accessToken field"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "refreshToken field"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "expiresAt field"
           }
         }
       }

@@ -1,36 +1,25 @@
 import express from 'express'
 import { UserController } from './user.controller'
-import { UserValidations } from './user.validation'
 import validateRequest from '../../middleware/validateRequest'
 import auth from '../../middleware/auth'
 import { USER_ROLES } from '../../../enum/user'
-import { fileAndBodyProcessorUsingDiskStorage } from '../../middleware/processReqBody'
 import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { S3Helper } from '../../../helpers/image/s3helper'
 import fileUploadHandler from '../../middleware/fileUploadHandler'
+import { updateUserSchema } from './user.validation'
 
 const router = express.Router()
 
 router.get(
   '/profile',
-  auth(
-    USER_ROLES.ADMIN,
-    USER_ROLES.TEACHER,
-    USER_ROLES.STUDENT,
-    USER_ROLES.GUEST,
-  ),
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
   UserController.getProfile,
 )
 
 router.patch(
   '/profile',
-  auth(
-    USER_ROLES.ADMIN,
-    USER_ROLES.TEACHER,
-    USER_ROLES.STUDENT,
-    USER_ROLES.GUEST,
-  ),
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
 
   fileUploadHandler(),
 
@@ -66,18 +55,13 @@ router.patch(
     }
   },
 
-  validateRequest(UserValidations.updateUserZodSchema),
+  validateRequest(updateUserSchema),
   UserController.updateProfile,
 )
 
 router.delete(
   '/profile',
-  auth(
-    USER_ROLES.ADMIN,
-    USER_ROLES.TEACHER,
-    USER_ROLES.STUDENT,
-    USER_ROLES.GUEST,
-  ),
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
   UserController.deleteProfile,
 )
 
@@ -89,7 +73,7 @@ router
   .delete(auth(USER_ROLES.ADMIN), UserController.deleteUser)
   .patch(
     auth(USER_ROLES.ADMIN),
-    validateRequest(UserValidations.updateUserStatusZodSchema),
+    validateRequest(updateUserSchema),
     UserController.updateUserStatus,
   )
 

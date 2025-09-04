@@ -36,7 +36,7 @@ const UserOnboardingSchema = new Schema<IUseronboarding>({
     enum: Object.values(ContentLanguage),
     default: ContentLanguage.EN,
   },
-  logo: { type: String, default: '' },
+  logo: { type: String },
   brandColors: { type: [BrandColorSchema], default: [] },
   autoTranslateCaptions: { type: Boolean, default: false },
   socialHandles: { type: [SocialHandlesSchema], default: [] },

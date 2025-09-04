@@ -6,12 +6,12 @@ import { TransformableInfo } from 'logform'
 
 // Function to create the necessary directories if they don't exist
 const createLogDirs = () => {
-  // const dirs = ['logs/winston/successes', 'logs/winston/errors']
-  // dirs.forEach(dir => {
-  //   if (!fs.existsSync(path.join(process.cwd(), dir))) {
-  //     fs.mkdirSync(path.join(process.cwd(), dir), { recursive: true })
-  //   }
-  // })
+  const dirs = ['logs/winston/successes', 'logs/winston/errors']
+  dirs.forEach(dir => {
+    if (!fs.existsSync(path.join(process.cwd(), dir))) {
+      fs.mkdirSync(path.join(process.cwd(), dir), { recursive: true })
+    }
+  })
 }
 
 // Custom log format

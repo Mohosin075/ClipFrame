@@ -1,6 +1,15 @@
 import { Model, Types } from 'mongoose'
+import { USER_ROLES, USER_STATUS } from '../../../enum/user'
 
-type IAuthentication = {
+// ------------------ ENUMS ------------------
+export enum Membership {
+  BASIC = 'BASIC',
+  PREMIUM = 'PREMIUM',
+  GOLD = 'GOLD',
+}
+
+// ------------------ SUB-TYPES ------------------
+export type IAuthentication = {
   restrictionLeftAt: Date | null
   resetPassword: boolean
   wrongLoginAttempts: number
@@ -12,7 +21,7 @@ type IAuthentication = {
   authType?: 'createAccount' | 'resetPassword'
 }
 
-type IAddress = {
+export type IAddress = {
   city?: string
   postalCode?: string
   country?: string
@@ -20,24 +29,31 @@ type IAddress = {
   presentAddress?: string
 }
 
-
 export type Point = {
   type: 'Point'
   coordinates: [number, number] // [longitude, latitude]
 }
 
-export type IUser = {
+// ------------------ USER TYPE ------------------
+export interface IUser {
   _id: Types.ObjectId
   name?: string
   email?: string
   profile?: string
+  businessName?: string
+  businessCategory?: string
+  platforms?: string[] // camelCase for consistency
+  preferredLanguages?: string[]
+  timezone?: string
   phone?: string
-  status: string
+  membership?: Membership
+
+  status: USER_STATUS // standardize statuses
   verified: boolean
   address?: IAddress
   location: Point
   password: string
-  role: string
+  role: USER_ROLES
   appId?: string
   deviceToken?: string
 
@@ -46,9 +62,10 @@ export type IUser = {
   updatedAt: Date
 }
 
-export type UserModel = {
-  isPasswordMatched: (
+// ------------------ MODEL ------------------
+export type UserModel = Model<IUser> & {
+  isPasswordMatched(
     givenPassword: string,
-    savedPassword: string,
-  ) => Promise<boolean>
-} & Model<IUser>
+    savedPassword: string
+  ): Promise<boolean>
+}

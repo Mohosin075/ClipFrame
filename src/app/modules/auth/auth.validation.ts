@@ -135,26 +135,6 @@ const addressSchema = z.object({
   postalCode: z.string().optional(),
 })
 
-const createUserZodSchema = z.object({
-  body: z.object({
-    email: z.string({ required_error: 'Email is required' }).email(),
-    password: z.string({ required_error: 'Password is required' }).min(6),
-    name: z.string({ required_error: 'Name is required' }).optional(),
-    phone: z.string({ required_error: 'Phone is required' }).optional(),
-    address: addressSchema.optional(),
-    role: z.enum(
-      [
-        USER_ROLES.ADMIN,
-        USER_ROLES.STUDENT,
-        USER_ROLES.GUEST,
-        USER_ROLES.TEACHER,
-      ],
-      {
-        message: 'Role must be one of admin, student, guest, teacher',
-      },
-    ),
-  }),
-})
 
 const socialLoginZodSchema = z.object({
   body: z.object({
@@ -171,7 +151,6 @@ export const AuthValidations = {
   verifyAccountZodSchema,
   resendOtpZodSchema,
   changePasswordZodSchema,
-  createUserZodSchema,
   deleteAccount,
   socialLoginZodSchema,
 }

@@ -33,6 +33,11 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 //router
 app.use('/api/v1', router)
 
+// Serve the privacy policy HTML
+app.get('/privacy-policy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'privacy-policy.html'));
+});
+
 //live response
 app.get('/', (req: Request, res: Response) => {
   res.send(`

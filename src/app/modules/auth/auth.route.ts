@@ -7,12 +7,13 @@ import { AuthValidations } from './auth.validation'
 import { USER_ROLES } from '../../../enum/user'
 import auth, { tempAuth } from '../../middleware/auth'
 import { AuthHelper } from './auth.helper'
+import { createUserSchema } from '../user/user.validation'
 
 const router = express.Router()
 
 router.post(
   '/signup',
-  validateRequest(AuthValidations.createUserZodSchema),
+  validateRequest(createUserSchema),
   CustomAuthController.createUser,
 )
 router.post(
@@ -63,26 +64,21 @@ router.post(
 
 router.post(
   '/resend-otp',
-  tempAuth(
-    USER_ROLES.ADMIN,
-    USER_ROLES.STUDENT,
-    USER_ROLES.GUEST,
-    USER_ROLES.TEACHER,
-  ),
+  tempAuth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
   validateRequest(AuthValidations.resendOtpZodSchema),
   CustomAuthController.resendOtp,
 )
 
 router.post(
   '/change-password',
-  auth(USER_ROLES.ADMIN, USER_ROLES.STUDENT, USER_ROLES.GUEST),
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
   validateRequest(AuthValidations.changePasswordZodSchema),
   CustomAuthController.changePassword,
 )
 
 router.delete(
   '/delete-account',
-  auth(USER_ROLES.ADMIN, USER_ROLES.STUDENT, USER_ROLES.GUEST),
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
   validateRequest(AuthValidations.deleteAccount),
   CustomAuthController.deleteAccount,
 )
@@ -107,11 +103,11 @@ router.get(
   '/facebook/callback',
   passport.authenticate('facebook', { session: false }),
   (req, res, next) => {
-    console.log("hit")
+    console.log('hit')
     const user = req.user as any
     const token = AuthHelper.createToken(user.authId, user.role)
 
-    console.log({token})
+    console.log({ token })
 
     res.status(200).json({
       token,

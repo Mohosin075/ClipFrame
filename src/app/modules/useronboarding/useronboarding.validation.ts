@@ -36,7 +36,7 @@ export const UserOnboardingSchema = z.object({
     .default([ContentLanguage.EN]),
   autoTranslateCaptions: z.boolean().default(false),
   socialHandles: z.array(SocialHandlesItemSchema).default([]),
-  logo: z.string().url().default(''), // logo URL
+  logo: z.string().url().optional(), // logo URL
   brandColors: z.array(BrandColorSchema).default([]), // array of {name, value}
   deletedAt: z.date().nullable().optional(),
   createdAt: z.date().optional(),

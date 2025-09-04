@@ -1,12 +1,11 @@
 export enum USER_ROLES {
   ADMIN = 'admin',
-  TEACHER = 'teacher',
-  STUDENT = 'student',
-  GUEST = 'guest',
+  CREATOR = 'creator',
+  USER = 'user'
 }
 
 export enum USER_STATUS {
-    ACTIVE = 'active',
-    INACTIVE = 'inactive',
-    DELETED = 'deleted',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  DELETED = 'deleted',
 }

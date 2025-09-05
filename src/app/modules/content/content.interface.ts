@@ -1,23 +1,40 @@
-import { Model, Types } from 'mongoose';
+import { Model, Schema } from 'mongoose'
 
-export interface IContentFilterables {
-  searchTerm?: string;
-  title?: string;
-  description?: string;
+interface ScheduledAtAny {
+  type: 'any' // any time
 }
+
+interface ScheduledAtSingle {
+  type: 'single' // specific date + time
+  Date: string // "YYYY-MM-DD"
+  Time: string // "HH:mm"
+}
+
+interface ScheduledAtRange {
+  type: 'range' // range
+  startDate: string // "YYYY-MM-DD"
+  startTime: string // "HH:mm"
+  endDate: string // "YYYY-MM-DD"
+  endTime: string // "HH:mm"
+}
+
+type ScheduledAt = ScheduledAtAny | ScheduledAtSingle | ScheduledAtRange
 
 export interface IContent {
-  _id: Types.ObjectId;
-  title: string;
-  description?: string;
-  mediaUrls: string[];
-  type: string;
-  scheduledAt?: Date;
-  status: string;
-  user: Types.ObjectId;
-  socialAccounts?: Types.ObjectId[];
-  createdAt?: Date;
-  updatedAt?: Date;
+  title?: string
+  description?: string
+  mediaUrls?: string[]
+  type?: string
+  scheduledAt?: ScheduledAt
+  remindMe?: boolean
+  status?: string
+  user?: Schema.Types.ObjectId
+  socialAccounts?: {
+    platform: string
+    accountId: Schema.Types.ObjectId
+  }[]
+  createdAt?: Date
+  updatedAt?: Date
 }
 
-export type ContentModel = Model<IContent, {}, {}>;
+export type ContentModel = Model<IContent, {}, {}>

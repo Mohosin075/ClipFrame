@@ -1,5 +1,7 @@
 import { Model, Schema } from 'mongoose'
 
+export type ContentType = 'post' | 'reels' | 'story' | 'carousel'
+
 interface ScheduledAtAny {
   type: 'any' // any time
 }
@@ -24,7 +26,7 @@ export interface IContent {
   title?: string
   description?: string
   mediaUrls?: string[]
-  type?: string
+  contentType?: ContentType
   scheduledAt?: ScheduledAt
   remindMe?: boolean
   status?: string
@@ -33,6 +35,16 @@ export interface IContent {
     platform: string
     accountId: Schema.Types.ObjectId
   }[]
+  reelsInfo?: {
+    duration?: number // seconds
+    resolution?: string
+  }
+  storyInfo?: {
+    expiryTime?: Date
+  }
+  carouselInfo?: {
+    slidesCount?: number
+  }
   createdAt?: Date
   updatedAt?: Date
 }

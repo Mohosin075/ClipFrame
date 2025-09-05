@@ -1,12 +1,12 @@
-import { Schema } from 'mongoose'
-import { IContent } from './content.interface'
+import { model, Schema } from 'mongoose'
+import { ContentModel, IContent } from './content.interface'
 
 const contentSchema = new Schema<IContent>(
   {
     title: { type: String },
     description: { type: String },
     mediaUrls: { type: [String] },
-    type: { type: String },
+    contentType: { type: String, enum: ['post', 'reels', 'story', 'carousel'] },
     scheduledAt: {
       type: {
         type: String,
@@ -28,11 +28,15 @@ const contentSchema = new Schema<IContent>(
         platform: { type: String, required: true }, // e.g., "Facebook", "Instagram"
         accountId: {
           type: Schema.Types.ObjectId,
-          ref: 'SocialIntegration',
+          ref: 'Content',
           required: true,
         },
       },
     ],
+
   },
+
   { timestamps: true },
 )
+
+export const Content = model<IContent, ContentModel>('Content', contentSchema)

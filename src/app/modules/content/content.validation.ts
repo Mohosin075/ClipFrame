@@ -1,59 +1,59 @@
 import { z } from 'zod'
 
+const ScheduledAtAny = z.object({
+  type: z.literal('any'),
+})
+
+const ScheduledAtSingle = z.object({
+  type: z.literal('single'),
+  Date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  Time: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Time must be in HH:mm format'),
+})
+
+const ScheduledAtRange = z.object({
+  type: z.literal('range'),
+  startTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      'StartTime must be in HH:mm format',
+    ),
+  endTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      'EndTime must be in HH:mm format',
+    ),
+})
+
+const ScheduledAtSchema = z.union([
+  ScheduledAtAny,
+  ScheduledAtSingle,
+  ScheduledAtRange,
+])
+
 export const ContentValidations = {
   create: z.object({
-    title: z.string(),
-    description: z.string().optional(),
-    mediaUrls: z.array(z.string()),
-    type: z.string(),
-    scheduledAt: z
-      .object({
-        Date: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
-          .optional(),
-        Time: z
-          .string()
-          .regex(
-            /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
-            'Time must be in HH:mm format',
-          )
-          .optional(),
-        // meridiem: z.enum(["AM", "PM"]).optional(), // uncomment if using AM/PM
-      })
-      .optional(),
-    status: z.string(),
-    user: z.string(),
-    socialAccounts: z.array(z.string()).optional(),
-    createdAt: z.string().datetime().optional(),
-    updatedAt: z.string().datetime().optional(),
+    body: z.object({
+      title: z.string(),
+      description: z.string().optional(),
+      mediaUrls: z.array(z.string()),
+      contentType: z.enum(['post', 'reels', 'story', 'carousel']),
+      scheduledAt: ScheduledAtSchema.optional(),
+      remindMe: z.boolean().optional(),
+      platform: z.array(z.enum(['facebook', 'instagram', 'tiktok'])).optional(),
+    }),
   }),
 
   update: z.object({
-    title: z.string().optional(),
-    description: z.string().optional(),
-    mediaUrls: z.array(z.string()).optional(),
-    type: z.string().optional(),
-    scheduledAt: z
-      .object({
-        Date: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
-          .optional(),
-        Time: z
-          .string()
-          .regex(
-            /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
-            'Time must be in HH:mm format',
-          )
-          .optional(),
-        // meridiem: z.enum(["AM", "PM"]).optional(), // uncomment if using AM/PM
-      })
-      .optional(),
-    status: z.string().optional(),
-    user: z.string().optional(),
-    socialAccounts: z.array(z.string()).optional(),
-    createdAt: z.string().datetime().optional(),
-    updatedAt: z.string().datetime().optional(),
+    body: z.object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      scheduledAt: ScheduledAtSchema.optional(),
+    }),
   }),
 }

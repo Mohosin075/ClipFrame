@@ -51,7 +51,7 @@ export const deleteFromS3 = async (fileKey: string): Promise<void> => {
   try {
     const command = new DeleteObjectCommand(params)
     await s3Client.send(command)
-    console.log("deleted")
+    console.log('deleted')
   } catch (error) {
     logger.error('Error deleting from S3:', error)
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to delete file to S3')
@@ -68,8 +68,12 @@ const uploadMultipleFilesToS3 = async (
 
   const uploadPromises = files.map(async file => {
     // Validate file type
-    if (!file.mimetype.startsWith('image/')) {
-      throw new Error('Invalid file type. Only image uploads are allowed.')
+    if (file.mimetype.startsWith('image/')) {
+      // process with sharp (resize/compress)
+    } else if (file.mimetype.startsWith('video/')) {
+      // upload as-is, no sharp
+    } else {
+      throw new Error('Unsupported file type')
     }
 
     // Generate unique file name
@@ -106,8 +110,49 @@ const uploadMultipleFilesToS3 = async (
     .map(result => (result as PromiseFulfilledResult<string>).value)
 }
 
+
+const uploadMultipleVideosToS3 = async (
+  files: Express.Multer.File[],
+  folder: string
+): Promise<string[]> => {
+  if (!files || files.length === 0) {
+    throw new Error("No video files provided for upload");
+  }
+
+  const uploadPromises = files.map(async (file) => {
+    const fileExtension = file.originalname.split(".").pop();
+    const fileKey = `${folder}/${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2)}.${fileExtension}`;
+
+    try {
+      const params = {
+        Bucket: process.env.AWS_BUCKET_NAME!,
+        Key: fileKey,
+        Body: file.buffer, // Upload raw video
+        ContentType: file.mimetype,
+      };
+
+      const command = new PutObjectCommand(params);
+      await s3Client.send(command);
+
+      return getPublicUri(fileKey);
+    } catch (error) {
+      console.error("Error uploading video to S3:", error);
+      return null;
+    }
+  });
+
+  const results = await Promise.allSettled(uploadPromises);
+  return results
+    .filter((r) => r.status === "fulfilled" && r.value)
+    .map((r) => (r as PromiseFulfilledResult<string>).value);
+};
+
+
 export const S3Helper = {
   uploadToS3,
   uploadMultipleFilesToS3,
+  uploadMultipleVideosToS3,
   deleteFromS3,
 }

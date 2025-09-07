@@ -15,25 +15,17 @@ const contentSchema = new Schema<IContent>(
       },
       Date: { type: String }, // for "single"
       Time: { type: String }, // for "single"
-      startDate: { type: String }, // for "range"
       startTime: { type: String }, // for "range"
-      endDate: { type: String }, // for "range"
       endTime: { type: String }, // for "range"
     },
     remindMe: { type: Boolean, default: false },
-    status: { type: String },
+    status: {
+      type: String,
+      enum: ['draft', 'scheduled', 'published', 'failed', 'deleted'],
+      default: 'scheduled',
+    },
     user: { type: Schema.Types.ObjectId, ref: 'User' },
-    socialAccounts: [
-      {
-        platform: { type: String, required: true }, // e.g., "Facebook", "Instagram"
-        accountId: {
-          type: Schema.Types.ObjectId,
-          ref: 'Content',
-          required: true,
-        },
-      },
-    ],
-
+    platform: { type: [String], enum: ['facebook', 'instagram', 'tiktok'], default: [] },
   },
 
   { timestamps: true },

@@ -6,9 +6,14 @@ import { StatusCodes } from 'http-status-codes'
 import pick from '../../../shared/pick'
 import { contentFilterables } from './content.constants'
 import { paginationFields } from '../../../interfaces/pagination'
+import { JwtPayload } from 'jsonwebtoken'
 
 const createContent = catchAsync(async (req: Request, res: Response) => {
-  const contentData = req.body
+  const userId = req.user as JwtPayload
+
+  const contentData = { ...req.body, user: userId.authId }
+
+  console.log('Content Data:', contentData)
 
   const result = await ContentServices.createContent(req.user!, contentData)
 

@@ -14,13 +14,19 @@ interface ScheduledAtSingle {
 
 interface ScheduledAtRange {
   type: 'range' // range
-  startDate: string // "YYYY-MM-DD"
+  Date: string // "YYYY-MM-DD"
   startTime: string // "HH:mm"
-  endDate: string // "YYYY-MM-DD"
   endTime: string // "HH:mm"
 }
 
 type ScheduledAt = ScheduledAtAny | ScheduledAtSingle | ScheduledAtRange
+
+export type ContentStatus =
+  | 'draft'
+  | 'scheduled'
+  | 'published'
+  | 'failed'
+  | 'deleted'
 
 export interface IContent {
   title?: string
@@ -29,12 +35,9 @@ export interface IContent {
   contentType?: ContentType
   scheduledAt?: ScheduledAt
   remindMe?: boolean
-  status?: string
+  status?: ContentStatus
   user?: Schema.Types.ObjectId
-  socialAccounts?: {
-    platform: string
-    accountId: Schema.Types.ObjectId
-  }[]
+  platform: string[]
   reelsInfo?: {
     duration?: number // seconds
     resolution?: string

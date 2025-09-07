@@ -6,10 +6,10 @@ const ScheduledAtAny = z.object({
 
 const ScheduledAtSingle = z.object({
   type: z.literal('single'),
-  Date: z
+  date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
-  Time: z
+  time: z
     .string()
     .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Time must be in HH:mm format'),
 })

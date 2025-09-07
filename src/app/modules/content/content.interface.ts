@@ -1,5 +1,14 @@
 import { Model, Schema } from 'mongoose'
 
+export interface IContentFilterables {
+  searchTerm?: string
+  title?: string
+  description?: string
+  contentType?: ContentType
+  status?: ContentStatus
+  date?: Date
+}
+
 export type ContentType = 'post' | 'reels' | 'story' | 'carousel'
 
 interface ScheduledAtAny {
@@ -8,13 +17,13 @@ interface ScheduledAtAny {
 
 interface ScheduledAtSingle {
   type: 'single' // specific date + time
-  Date: string // "YYYY-MM-DD"
-  Time: string // "HH:mm"
+  date: Date // "YYYY-MM-DD"
+  time: string // "HH:mm"
 }
 
 interface ScheduledAtRange {
   type: 'range' // range
-  Date: string // "YYYY-MM-DD"
+  date: Date // "YYYY-MM-DD"
   startTime: string // "HH:mm"
   endTime: string // "HH:mm"
 }

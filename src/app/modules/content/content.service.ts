@@ -1,79 +1,88 @@
-import { StatusCodes } from 'http-status-codes';
-import ApiError from '../../../errors/ApiError';
-import { IContentFilterables, IContent } from './content.interface';
-import { Content } from './content.model';
-import { JwtPayload } from 'jsonwebtoken';
-import { IPaginationOptions } from '../../../interfaces/pagination';
-import { paginationHelper } from '../../../helpers/paginationHelper';
-import { contentSearchableFields } from './content.constants';
-import { Types } from 'mongoose';
-
+import { StatusCodes } from 'http-status-codes'
+import ApiError from '../../../errors/ApiError'
+import { Content } from './content.model'
+import { JwtPayload } from 'jsonwebtoken'
+import { IPaginationOptions } from '../../../interfaces/pagination'
+import { paginationHelper } from '../../../helpers/paginationHelper'
+import { contentSearchableFields } from './content.constants'
+import { Types } from 'mongoose'
+import { IContent, IContentFilterables } from './content.interface'
 
 const createContent = async (
   user: JwtPayload,
-  payload: IContent
+  payload: IContent,
 ): Promise<IContent> => {
   try {
-    const result = await Content.create(payload);
+    const result = await Content.create(payload)
     if (!result) {
-      
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
-        'Failed to create Content, please try again with valid data.'
-      );
+        'Failed to create Content, please try again with valid data.',
+      )
     }
 
-    return result;
+    return result
   } catch (error: any) {
-    
     if (error.code === 11000) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found');
+      throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found')
     }
-    throw error;
+    throw error
   }
-};
+}
 
 const getAllContents = async (
   user: JwtPayload,
   filterables: IContentFilterables,
-  pagination: IPaginationOptions
+  pagination: IPaginationOptions,
 ) => {
-  const { searchTerm, ...filterData } = filterables;
-  const { page, skip, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(pagination);
+  const { searchTerm, date, ...otherFilters } = filterables
+  const { page, skip, limit, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(pagination)
 
-  const andConditions = [];
+  const andConditions: any[] = []
 
-  // Search functionality
+  // 🔍 Search functionality
   if (searchTerm) {
     andConditions.push({
-      $or: contentSearchableFields.map((field) => ({
-        [field]: {
-          $regex: searchTerm,
-          $options: 'i',
-        },
+      $or: contentSearchableFields.map(field => ({
+        [field]: { $regex: searchTerm, $options: 'i' },
       })),
-    });
+    })
   }
 
-  // Filter functionality
-  if (Object.keys(filterData).length) {
+  // 🎯 Single date filtering
+  if (date) {
+    console.log('Filtering by date:', date)
+    const target = new Date(date)
+    const startOfDay = new Date(target.setHours(0, 0, 0, 0))
+    const endOfDay = new Date(target.setHours(23, 59, 59, 999))
+
     andConditions.push({
-      $and: Object.entries(filterData).map(([key, value]) => ({
-        [key]: value,
-      })),
-    });
+      'scheduledAt.date': { $gte: startOfDay, $lte: endOfDay },
+    })
   }
 
-  const whereConditions = andConditions.length ? { $and: andConditions } : {};
+  // 🎯 Other filters (status, contentType, etc.)
+  if (Object.keys(otherFilters).length) {
+    for (const [key, value] of Object.entries(otherFilters)) {
+      andConditions.push({ [key]: value })
+    }
+  }
+
+  const whereConditions = andConditions.length ? { $and: andConditions } : {}
 
   const [result, total] = await Promise.all([
-    Content
-      .find(whereConditions)
+    Content.find(whereConditions)
       .skip(skip)
       .limit(limit)
-      .sort({ [sortBy]: sortOrder }).populate('user').populate('socialAccounts'),
+      .sort({ [sortBy]: sortOrder })
+      .populate({
+        path: 'user',
+        select: 'name email verified',
+      }),
+
     Content.countDocuments(whereConditions),
-  ]);
+  ])
 
   return {
     meta: {
@@ -83,31 +92,33 @@ const getAllContents = async (
       totalPages: Math.ceil(total / limit),
     },
     data: result,
-  };
-};
+  }
+}
 
 const getSingleContent = async (id: string): Promise<IContent> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID')
   }
 
-  const result = await Content.findById(id).populate('user').populate('socialAccounts');
+  const result = await Content.findById(id)
+    .populate('user')
+    .populate('socialAccounts')
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Requested content not found, please try again with valid id'
-    );
+      'Requested content not found, please try again with valid id',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
 const updateContent = async (
   id: string,
-  payload: Partial<IContent>
+  payload: Partial<IContent>,
 ): Promise<IContent | null> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID')
   }
 
   const result = await Content.findByIdAndUpdate(
@@ -116,34 +127,36 @@ const updateContent = async (
     {
       new: true,
       runValidators: true,
-    }
-  ).populate('user').populate('socialAccounts');
+    },
+  )
+    .populate('user')
+    .populate('socialAccounts')
 
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Requested content not found, please try again with valid id'
-    );
+      'Requested content not found, please try again with valid id',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
 const deleteContent = async (id: string): Promise<IContent> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID')
   }
 
-  const result = await Content.findByIdAndDelete(id);
+  const result = await Content.findByIdAndDelete(id)
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Something went wrong while deleting content, please try again with valid id.'
-    );
+      'Something went wrong while deleting content, please try again with valid id.',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
 export const ContentServices = {
   createContent,
@@ -151,4 +164,4 @@ export const ContentServices = {
   getSingleContent,
   updateContent,
   deleteContent,
-};
+}

@@ -13,8 +13,8 @@ const contentSchema = new Schema<IContent>(
         enum: ['any', 'single', 'range'],
         default: 'any',
       },
-      Date: { type: String }, // for "single"
-      Time: { type: String }, // for "single"
+      date: { type: Date }, // for "single"
+      time: { type: String }, // for "single"
       startTime: { type: String }, // for "range"
       endTime: { type: String }, // for "range"
     },

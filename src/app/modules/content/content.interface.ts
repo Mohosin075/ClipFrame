@@ -47,6 +47,7 @@ export interface IContent {
   status?: ContentStatus
   user?: Schema.Types.ObjectId
   platform: string[]
+  tags?: string[]
   reelsInfo?: {
     duration?: number // seconds
     resolution?: string
@@ -56,6 +57,12 @@ export interface IContent {
   }
   carouselInfo?: {
     slidesCount?: number
+  }
+  stats?: {
+    likes?: number
+    comments?: number
+    shares?: number
+    views?: number
   }
   createdAt?: Date
   updatedAt?: Date

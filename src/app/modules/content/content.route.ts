@@ -54,9 +54,17 @@ const handleMediaUpload = async (req: any, res: any, next: any) => {
 
 const router = express.Router()
 
-router.get('/', auth(USER_ROLES.ADMIN), ContentController.getAllContents)
+router.get(
+  '/',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+  ContentController.getAllContents,
+)
 
-router.get('/:id', auth(USER_ROLES.ADMIN), ContentController.getSingleContent)
+router.get(
+  '/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+  ContentController.getSingleContent,
+)
 
 router.post(
   '/',
@@ -72,12 +80,16 @@ router.post(
 
 router.patch(
   '/:id',
-  auth(USER_ROLES.ADMIN),
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
 
   validateRequest(ContentValidations.update),
   ContentController.updateContent,
 )
 
-router.delete('/:id', auth(USER_ROLES.ADMIN), ContentController.deleteContent)
+router.delete(
+  '/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+  ContentController.deleteContent,
+)
 
 export const ContentRoutes = router

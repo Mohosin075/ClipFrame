@@ -1,5 +1,6 @@
 import { model, Schema } from 'mongoose'
 import { ContentModel, IContent } from './content.interface'
+import { CONTENT_STATUS } from './content.constants'
 
 const contentSchema = new Schema<IContent>(
   {
@@ -21,14 +22,37 @@ const contentSchema = new Schema<IContent>(
     remindMe: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ['draft', 'scheduled', 'published', 'failed', 'deleted'],
-      default: 'scheduled',
+      enum: Object.values(CONTENT_STATUS),
+      default: CONTENT_STATUS.SCHEDULED,
     },
     user: { type: Schema.Types.ObjectId, ref: 'User' },
-    platform: { type: [String], enum: ['facebook', 'instagram', 'tiktok'], default: [] },
+    platform: {
+      type: [String],
+      enum: ['facebook', 'instagram', 'tiktok'],
+      default: [],
+    },
+    tags: { type: [String], default: [] },
+    reelsInfo: {
+      duration: { type: Number }, // seconds
+      resolution: { type: String },
+    },
+    storyInfo: {
+      expiryTime: { type: Date },
+    },
+    carouselInfo: {
+      slidesCount: { type: Number },
+    },
+    stats: {
+      likes: { type: Number, default: 0 },
+      comments: { type: Number, default: 0 },
+      shares: { type: Number, default: 0 },
+      views: { type: Number, default: 0 },
+    },
   },
 
   { timestamps: true },
 )
+contentSchema.index({ 'scheduledAt.date': 1, status: 1 });
 
 export const Content = model<IContent, ContentModel>('Content', contentSchema)
+

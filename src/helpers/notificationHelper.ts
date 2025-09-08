@@ -11,6 +11,7 @@ export const sendNotification = async (
   deviceToken?: string,
 ) => {
   try {
+    console.log({ from, to })
     const result = await Notification.create({
       from,
       to,
@@ -18,6 +19,8 @@ export const sendNotification = async (
       body,
       isRead: false,
     })
+
+    console.log({ result })
 
     if (!result) logger.warn('Notification not sent')
 
@@ -27,8 +30,8 @@ export const sendNotification = async (
 
     socket.emit('notification', populatedResult)
 
-    if(deviceToken){
-     await sendPushNotification(deviceToken, title, body, { from, to })
+    if (deviceToken) {
+      await sendPushNotification(deviceToken, title, body, { from, to })
     }
   } catch (err) {
     //@ts-ignore

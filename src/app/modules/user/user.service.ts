@@ -11,6 +11,7 @@ import { paginationHelper } from '../../../helpers/paginationHelper'
 import { IPaginationOptions } from '../../../interfaces/pagination'
 import { S3Helper } from '../../../helpers/image/s3helper'
 import { Useronboarding } from '../useronboarding/useronboarding.model'
+import config from '../../../config'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({
@@ -45,9 +46,9 @@ const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
 
 const createAdmin = async (): Promise<Partial<IUser> | null> => {
   const admin = {
-    email: 'web.mohosin@gmail.com',
-    name: 'Md Mohosin',
-    password: '12345678',
+    email: config.super_admin.email,
+    name: config.super_admin.name,
+    password: config.super_admin.password,
     role: USER_ROLES.ADMIN,
     status: USER_STATUS.ACTIVE,
     verified: true,

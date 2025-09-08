@@ -23,7 +23,7 @@
 //   {
 //     connection:redisClient,
 //     autorun: true,
-    
+
 //   }
 // );
 
@@ -42,7 +42,7 @@
 //   {
 //     connection:redisClient,
 //     autorun: true,
-    
+
 //   }
 // );
 
@@ -51,24 +51,23 @@
 // notificationWorker.on('active', (job) => {
 //     console.log(`Job ${job.id} is now active`);
 //   });
-  
+
 //   notificationWorker.on('completed', (job) => {
 //     console.log(`Job ${job.id} has been completed`);
 //   });
-  
+
 //   notificationWorker.on('failed', (job, err) => {
 //     console.error(`Job ${job?.id} failed`, err);
 //   });
-  
+
 //   emailWorker.on('active', (job) => {
 //     console.log(`Job ${job.id} is now active`);
 //   });
-  
+
 //   emailWorker.on('completed', (job) => {
 //     console.log(`Job ${job.id} has been completed`);
 //   });
-  
+
 //   emailWorker.on('failed', (job, err) => {
 //     console.error(`Job ${job?.id} failed`, err);
 //   });
-  

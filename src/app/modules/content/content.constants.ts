@@ -7,6 +7,14 @@ export const contentFilterables = [
   'date', // <-- now your code will pick up date
 ]
 
+export const CONTENT_STATUS = {
+  DRAFT: 'draft',
+  SCHEDULED: 'scheduled',
+  PUBLISHED: 'published',
+  FAILED: 'failed',
+  DELETED: 'deleted',
+} as const
+
 // Searchable fields for Content
 export const contentSearchableFields = ['title', 'description']
 

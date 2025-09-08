@@ -100,9 +100,11 @@ const getSingleContent = async (id: string): Promise<IContent> => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID')
   }
 
-  const result = await Content.findById(id)
-    .populate('user')
-    .populate('socialAccounts')
+  const result = await Content.findById(id).populate({
+    path: 'user',
+    select: 'name email verified',
+  })
+  // .populate('socialAccounts')
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,

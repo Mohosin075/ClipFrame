@@ -4,7 +4,7 @@ import { Content } from './content.model'
 import { JwtPayload } from 'jsonwebtoken'
 import { IPaginationOptions } from '../../../interfaces/pagination'
 import { paginationHelper } from '../../../helpers/paginationHelper'
-import { contentSearchableFields } from './content.constants'
+import { CONTENT_STATUS, contentSearchableFields } from './content.constants'
 import { Types } from 'mongoose'
 import { IContent, IContentFilterables } from './content.interface'
 
@@ -52,7 +52,6 @@ const getAllContents = async (
 
   // 🎯 Single date filtering
   if (date) {
-    console.log('Filtering by date:', date)
     const target = new Date(date)
     const startOfDay = new Date(target.setHours(0, 0, 0, 0))
     const endOfDay = new Date(target.setHours(23, 59, 59, 999))
@@ -61,6 +60,11 @@ const getAllContents = async (
       'scheduledAt.date': { $gte: startOfDay, $lte: endOfDay },
     })
   }
+
+  // 🛑 Always exclude deleted
+  andConditions.push({
+    status: { $nin: [CONTENT_STATUS.DELETED, null] },
+  })
 
   // 🎯 Other filters (status, contentType, etc.)
   if (Object.keys(otherFilters).length) {
@@ -100,10 +104,14 @@ const getSingleContent = async (id: string): Promise<IContent> => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID')
   }
 
-  const result = await Content.findById(id).populate({
+  const result = await Content.findOne({
+    _id: new Types.ObjectId(id),
+    status: { $ne: CONTENT_STATUS.DELETED },
+  }).populate({
     path: 'user',
     select: 'name email verified',
   })
+
   // .populate('socialAccounts')
   if (!result) {
     throw new ApiError(
@@ -130,9 +138,10 @@ const updateContent = async (
       new: true,
       runValidators: true,
     },
-  )
-    .populate('user')
-    .populate('socialAccounts')
+  ).populate({
+    path: 'user',
+    select: 'name email verified',
+  })
 
   if (!result) {
     throw new ApiError(
@@ -144,12 +153,38 @@ const updateContent = async (
   return result
 }
 
-const deleteContent = async (id: string): Promise<IContent> => {
+const deleteContent = async (
+  id: string,
+  user: JwtPayload,
+): Promise<IContent> => {
   if (!Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID')
   }
 
-  const result = await Content.findByIdAndDelete(id)
+  const isContentExists = await Content.findById(id)
+  if (!isContentExists) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      'Content not found, please try again with valid id.',
+    )
+  }
+
+  const contentUser = isContentExists?.user?.toString()
+
+  const isUserMatched = contentUser === user.authId
+
+  if (!isUserMatched) {
+    throw new ApiError(
+      StatusCodes.UNAUTHORIZED,
+      'You are not authorized to delete this content.',
+    )
+  }
+
+  const result = await Content.findByIdAndUpdate(
+    new Types.ObjectId(id),
+    { status: 'deleted', user: new Types.ObjectId(user.authId) },
+    { new: true },
+  )
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,

@@ -52,7 +52,6 @@ const contentSchema = new Schema<IContent>(
 
   { timestamps: true },
 )
-contentSchema.index({ 'scheduledAt.date': 1, status: 1 });
+contentSchema.index({ 'scheduledAt.date': 1, status: 1 })
 
 export const Content = model<IContent, ContentModel>('Content', contentSchema)
-

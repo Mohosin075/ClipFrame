@@ -20,7 +20,9 @@ const handleMediaUpload = async (req: any, res: any, next: any) => {
     payload.data = JSON.parse(payload.data)
 
     const videoFiles = (req.files as any)?.media as Express.Multer.File[]
+    const imageFiles = (req.files as any)?.image as Express.Multer.File[]
 
+    let uploadedImageUrls: string[] = []
     let uploadedVideoUrls: string[] = []
 
     // Upload videos (use new video helper)
@@ -29,6 +31,7 @@ const handleMediaUpload = async (req: any, res: any, next: any) => {
         videoFiles,
         'videos',
       )
+      // req.body = { ...payload.data, mediaUrls: uploadedVideoUrls }
     }
 
     if (videoFiles?.length > 0 && uploadedVideoUrls.length === 0) {
@@ -40,8 +43,31 @@ const handleMediaUpload = async (req: any, res: any, next: any) => {
       )
     }
 
-    // Merge stems with uploaded media (index based)
-    req.body = { ...payload.data, mediaUrls: uploadedVideoUrls }
+    if (imageFiles?.length > 0) {
+      uploadedImageUrls = await S3Helper.uploadMultipleFilesToS3(
+        imageFiles,
+        'image',
+      )
+    }
+
+    if (imageFiles?.length > 0 && uploadedImageUrls.length === 0) {
+      return next(
+        new ApiError(
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          'Failed to upload media',
+        ),
+      )
+    }
+
+    const mediaUrls = [] as string[]
+    if (uploadedVideoUrls.length > 0) {
+      mediaUrls.push(...uploadedVideoUrls)
+    }
+    if (uploadedImageUrls.length > 0) {
+      mediaUrls.push(...uploadedImageUrls)
+    }
+
+    req.body = { ...payload.data, mediaUrls }
 
     next()
   } catch (error) {

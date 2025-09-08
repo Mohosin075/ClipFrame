@@ -39,12 +39,14 @@ const auth =
           next()
         } catch (error) {
           console.log({ error })
+
           if (error instanceof Error && error.name === 'TokenExpiredError') {
             throw new ApiError(
               StatusCodes.UNAUTHORIZED,
               'Access Token has expired',
             )
           }
+          next(error)
           throw new ApiError(StatusCodes.FORBIDDEN, 'Invalid Access Token')
         }
       }
@@ -101,6 +103,7 @@ export const tempAuth =
               'Access Token has expired',
             )
           }
+          next(error)
           throw new ApiError(StatusCodes.FORBIDDEN, 'Invalid Access Token')
         }
       }

@@ -5,7 +5,7 @@ const ScheduledAtAny = z.object({
 })
 
 const ScheduledAtSingle = z.object({
-  type: z.literal('single'),
+  type: z.literal('single').optional(),
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),

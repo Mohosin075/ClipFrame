@@ -13,8 +13,6 @@ const createContent = catchAsync(async (req: Request, res: Response) => {
 
   const contentData = { ...req.body, user: userId.authId }
 
-  console.log('Content Data:', contentData)
-
   const result = await ContentServices.createContent(req.user!, contentData)
 
   sendResponse(res, {
@@ -71,7 +69,9 @@ const getAllContents = catchAsync(async (req: Request, res: Response) => {
 
 const deleteContent = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params
-  const result = await ContentServices.deleteContent(id)
+  const userId = req.user as JwtPayload
+
+  const result = await ContentServices.deleteContent(id, userId)
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

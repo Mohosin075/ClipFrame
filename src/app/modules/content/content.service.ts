@@ -195,10 +195,45 @@ const deleteContent = async (
   return result
 }
 
+const duplicateContent = async (
+  id: string,
+  user: JwtPayload,
+): Promise<IContent> => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Content ID')
+  }
+
+  // 1️⃣ Fetch the original content
+  const originalContent = await Content.findOne({
+    _id: new Types.ObjectId(id),
+    status: { $ne: CONTENT_STATUS.DELETED },
+  })
+
+  if (!originalContent) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Content not found or deleted')
+  }
+
+  // 2️⃣ Prepare duplicate data
+  const duplicatedData = {
+    ...originalContent.toObject(),
+    _id: undefined, // Remove _id so MongoDB generates a new one
+    createdAt: undefined,
+    updatedAt: undefined,
+    user: new Types.ObjectId(user.authId), // assign new user if needed
+    status: CONTENT_STATUS.SCHEDULED, // reset status
+    title: `${originalContent.title} (Duplicate)`, // add "Duplicate" to title
+  }
+
+  // 3️⃣ Create new content
+  const duplicatedContent = await Content.create(duplicatedData)
+  return duplicatedContent
+}
+
 export const ContentServices = {
   createContent,
   getAllContents,
   getSingleContent,
   updateContent,
   deleteContent,
+  duplicateContent,
 }

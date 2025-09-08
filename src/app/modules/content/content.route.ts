@@ -118,4 +118,10 @@ router.delete(
   ContentController.deleteContent,
 )
 
+router.post(
+  '/duplicate/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+  ContentController.duplicateContent,
+)
+
 export const ContentRoutes = router

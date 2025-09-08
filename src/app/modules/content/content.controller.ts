@@ -81,10 +81,25 @@ const deleteContent = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const duplicateContent = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params
+  const userId = req.user as JwtPayload
+
+  const result = await ContentServices.duplicateContent(id, userId)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: 'Content duplicated successfully',
+    data: result,
+  })
+})
+
 export const ContentController = {
   createContent,
   updateContent,
   getSingleContent,
   getAllContents,
   deleteContent,
+  duplicateContent,
 }

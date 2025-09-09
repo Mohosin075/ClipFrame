@@ -95,6 +95,27 @@ const duplicateContent = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const getAllScheduledAndHistory = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user as JwtPayload
+    const filterables = pick(req.query, contentFilterables)
+    const pagination = pick(req.query, paginationFields)
+
+    const result = await ContentServices.getAllScheduledAndHistory(
+      userId,
+      filterables,
+      pagination,
+    )
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Contents retrieved successfully',
+      data: result,
+    })
+  },
+)
+
 export const ContentController = {
   createContent,
   updateContent,
@@ -102,4 +123,5 @@ export const ContentController = {
   getAllContents,
   deleteContent,
   duplicateContent,
+  getAllScheduledAndHistory,
 }

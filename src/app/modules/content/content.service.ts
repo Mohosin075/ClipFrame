@@ -229,6 +229,67 @@ const duplicateContent = async (
   return duplicatedContent
 }
 
+const getAllScheduledAndHistory = async (
+  user: JwtPayload,
+  filterables: IContentFilterables,
+  pagination: IPaginationOptions,
+) => {
+  const { searchTerm, date, ...otherFilters } = filterables
+  const { page, skip, limit, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(pagination)
+
+  const andConditions: any[] = []
+
+  // 🔍 Search functionality
+  if (searchTerm) {
+    andConditions.push({
+      $or: contentSearchableFields.map(field => ({
+        [field]: { $regex: searchTerm, $options: 'i' },
+      })),
+    })
+  }
+
+  // 🛑 Always exclude deleted
+  andConditions.push({
+    status: { $nin: [CONTENT_STATUS.DELETED, null] },
+  })
+
+  // ✅ Only current user
+  andConditions.push({ user: new Types.ObjectId(user.authId) })
+
+  // 🎯 Other filters (status, contentType, etc.)
+  if (Object.keys(otherFilters).length) {
+    for (const [key, value] of Object.entries(otherFilters)) {
+      andConditions.push({ [key]: value })
+    }
+  }
+
+  const whereConditions = andConditions.length ? { $and: andConditions } : {}
+
+  const [result, total] = await Promise.all([
+    Content.find(whereConditions)
+      .skip(skip)
+      .limit(limit)
+      .sort({ [sortBy]: sortOrder })
+      .populate({
+        path: 'user',
+        select: 'name email verified',
+      }),
+
+    Content.countDocuments(whereConditions),
+  ])
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: result,
+  }
+}
+
 export const ContentServices = {
   createContent,
   getAllContents,
@@ -236,4 +297,5 @@ export const ContentServices = {
   updateContent,
   deleteContent,
   duplicateContent,
+  getAllScheduledAndHistory,
 }

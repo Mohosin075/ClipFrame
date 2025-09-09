@@ -37,6 +37,14 @@ export type ContentStatus =
   | 'failed'
   | 'deleted'
 
+export interface IClips {
+  step: number
+  url: string
+  duration: number
+  type: 'image' | 'video'
+  size?: number
+}
+
 export interface IContent {
   title?: string
   description?: string
@@ -47,6 +55,7 @@ export interface IContent {
   status?: ContentStatus
   user?: Schema.Types.ObjectId
   platform: string[]
+  clips?: IClips[]
   tags?: string[]
   reelsInfo?: {
     duration?: number // seconds

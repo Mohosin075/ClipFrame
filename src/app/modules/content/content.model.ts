@@ -36,6 +36,14 @@ const contentSchema = new Schema<IContent>(
       duration: { type: Number }, // seconds
       resolution: { type: String },
     },
+    clips: [
+      {
+        step: { type: Number },
+        url: { type: String },
+        duration: { type: Number },
+        type: { type: String, enum: ['image', 'video'] },
+      },
+    ],
     storyInfo: {
       expiryTime: { type: Date },
     },
@@ -52,6 +60,6 @@ const contentSchema = new Schema<IContent>(
 
   { timestamps: true },
 )
-contentSchema.index({ 'scheduledAt.date': 1, status: 1 })
+contentSchema.index({ contentType: 1, 'scheduledAt.date': 1, status: 1 })
 
 export const Content = model<IContent, ContentModel>('Content', contentSchema)

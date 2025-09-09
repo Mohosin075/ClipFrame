@@ -45,6 +45,17 @@ const fileUploadHandler = () => {
             ),
           )
         }
+      } else if (file.fieldname === 'clips') {
+        if (allowedMediaTypes.includes(file.mimetype)) {
+          cb(null, true)
+        } else {
+          cb(
+            new ApiError(
+              StatusCodes.BAD_REQUEST,
+              'Only .mp4, .mp3 file supported',
+            ),
+          )
+        }
       } else if (file.fieldname === 'doc') {
         if (allowedDocTypes.includes(file.mimetype)) {
           cb(null, true)
@@ -76,6 +87,7 @@ const fileUploadHandler = () => {
     { name: 'image', maxCount: 5 },
     { name: 'media', maxCount: 3 },
     { name: 'doc', maxCount: 3 },
+    { name: 'clips', maxCount: 3 },
   ])
 
   // Process uploaded images with Sharp

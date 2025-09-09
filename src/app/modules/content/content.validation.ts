@@ -36,6 +36,15 @@ const ScheduledAtSchema = z.union([
   ScheduledAtRange,
 ])
 
+export const clipSchema = z.object({
+  step: z.number().int().nonnegative().optional(),
+  url: z.string().url({ message: 'Invalid media URL' }),
+  duration: z.number().positive().optional(),
+  type: z.enum(['image', 'video'], {
+    required_error: 'Clip type is required',
+  }),
+})
+
 export const ContentValidations = {
   create: z.object({
     body: z.object({
@@ -46,6 +55,8 @@ export const ContentValidations = {
       scheduledAt: ScheduledAtSchema.optional(),
       remindMe: z.boolean().optional(),
       platform: z.array(z.enum(['facebook', 'instagram', 'tiktok'])).optional(),
+      clips: z.array(clipSchema).optional(),
+      tags: z.array(z.string()).optional(),
     }),
   }),
 

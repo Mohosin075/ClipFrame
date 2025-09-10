@@ -1,11 +1,11 @@
 import { StatusCodes } from "http-status-codes";
 import stripe from "../config/stripe";
-import ApiError from "../errors/ApiErrors";
 import config from "../config";
+import ApiError from "../errors/ApiError";
 
 export const updateStripeProductCatalog = async ( productId: string, payload:any ): Promise<string> => {
-    
-    let interval: 'month' | 'year' = 'month'; 
+
+    let interval: 'month' | 'year' = 'month';
     let intervalCount = 1;
 
     // map duration to interval_count

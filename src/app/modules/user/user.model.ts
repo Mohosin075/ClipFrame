@@ -39,6 +39,7 @@ const UserSchema = new Schema<IUser, UserModel>(
         default: [0, 0], // [longitude, latitude]
       },
     },
+    subscribe: { type: Boolean, default: false },
 
     password: { type: String, required: true, minlength: 6 },
     role: {

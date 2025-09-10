@@ -4,7 +4,7 @@ export type ISubscription = {
     _id?:string;
     customerId: string;
     price: number;
-    vendor: Types.ObjectId;
+    user: Types.ObjectId;
     plan: Types.ObjectId;
     trxId: string;
     subscriptionId: string;

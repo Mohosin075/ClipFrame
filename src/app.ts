@@ -8,9 +8,17 @@ import { Morgan } from './shared/morgan'
 import cookieParser from 'cookie-parser'
 import globalErrorHandler from './app/middleware/globalErrorHandler'
 import passport from './app/modules/auth/passport.auth/config/passport'
-import './task/scheduler';
+import './task/scheduler'
+import handleStripeWebhook from './stripe/handleStripeWebhook'
 
 const app = express()
+
+// Stripe webhook route
+app.use(
+  '/webhook',
+  express.raw({ type: 'application/json' }),
+  handleStripeWebhook,
+)
 
 //morgan
 app.use(Morgan.successHandler)

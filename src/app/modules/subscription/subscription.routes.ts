@@ -1,17 +1,25 @@
-import express from "express";
-import auth from "../../middlewares/auth";
-import { USER_ROLES } from "../../../enums/user";
-import { SubscriptionController } from "./subscription.controller";
-const router = express.Router();
+import express from 'express'
+import { SubscriptionController } from './subscription.controller'
+import auth from '../../middleware/auth'
+import { USER_ROLES } from '../../../enum/user'
+const router = express.Router()
 
-router.get("/", 
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), 
-    SubscriptionController.subscriptions
-);
+// router.post(
+//   '/create-checkout-session',
+//   auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+//   SubscriptionController.createSubscription,
+// )
 
-router.get("/my-plan", 
-    auth(USER_ROLES.VENDOR), 
-    SubscriptionController.subscriptionDetails
-);
+router.get(
+  '/',
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+  SubscriptionController.subscriptions,
+)
 
-export const SubscriptionRoutes = router;
+router.get(
+  '/my-plan',
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+  SubscriptionController.subscriptionDetails,
+)
+
+export const SubscriptionRoutes = router

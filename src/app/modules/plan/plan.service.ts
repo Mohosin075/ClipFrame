@@ -1,103 +1,104 @@
-import { StatusCodes } from "http-status-codes";
-import ApiError from "../../../errors/ApiErrors";
-import { IPlan } from "./plan.interface";
-import { Plan } from "./plan.model";
-import mongoose from "mongoose";
-import stripe from "../../../config/stripe";
-import { createStripeProductCatalog } from "../../../stripe/createStripeProductCatalog";
+import { StatusCodes } from 'http-status-codes'
+import { IPlan } from './plan.interface'
+import { Plan } from './plan.model'
+import mongoose from 'mongoose'
+import stripe from '../../../config/stripe'
+import { createStripeProductCatalog } from '../../../stripe/createStripeProductCatalog'
+import ApiError from '../../../errors/ApiError'
 
-const createPlanToDB = async(payload: IPlan): Promise<IPlan | null>=>{
+const createPlanToDB = async (payload: IPlan): Promise<IPlan | null> => {
+  const productPayload = {
+    title: payload.title,
+    description: payload.description,
+    duration: payload.duration,
+    price: Number(payload.price),
+  }
 
-    const productPayload = {
-        title: payload.title,
-        description: payload.description,
-        duration: payload.duration,
-        price: Number(payload.price),
-    }
+  const product = await createStripeProductCatalog(productPayload)
 
-    const product = await createStripeProductCatalog(productPayload);
-    
+  if (!product) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to create subscription product',
+    )
+  }
 
-    if(!product){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription product")
-    }
+  if (product) {
+    payload.paymentLink = product.paymentLink
+    payload.productId = product.productId
+    payload.priceId = product.priceId
+  }
 
-    if(product){
-        payload.paymentLink = product.paymentLink
-        payload.productId = product.productId
-    }
+  const result = await Plan.create(payload)
+  if (!result) {
+    await stripe.products.del(product.productId)
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to created Package')
+  }
 
-    const result = await Plan.create(payload);
-    if(!result){
-        await stripe.products.del(product.productId);
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to created Package")
-    }
-
-    return result;
+  return result
 }
 
-const updatePlanToDB = async(id: string, payload: IPlan): Promise<IPlan | null>=>{
+const updatePlanToDB = async (
+  id: string,
+  payload: IPlan,
+): Promise<IPlan | null> => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID')
+  }
 
-    if(!mongoose.Types.ObjectId.isValid(id)){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID")
-    }
+  const result = await Plan.findByIdAndUpdate({ _id: id }, payload, {
+    new: true,
+  })
 
-    const result = await Plan.findByIdAndUpdate(
-        {_id: id},
-        payload,
-        { new: true } 
-    );
+  if (!result) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to Update Package')
+  }
 
-    if(!result){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to Update Package")
-    }
-
-    return result;
+  return result
 }
 
+const getPlanFromDB = async (paymentType: string): Promise<IPlan[]> => {
+  const query: any = {
+    status: 'Active',
+  }
+  if (paymentType) {
+    query.paymentType = paymentType
+  }
 
-const getPlanFromDB = async(paymentType: string): Promise<IPlan[]>=>{
-    const query:any = {
-        status: "Active"
-    }
-    if(paymentType){
-        query.paymentType = paymentType
-    }
-
-    const result = await Plan.find(query);
-    return result;
+  const result = await Plan.find(query)
+  return result
 }
 
-const getPlanDetailsFromDB = async(id: string): Promise<IPlan | null>=>{
-    if(!mongoose.Types.ObjectId.isValid(id)){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID")
-    }
-    const result = await Plan.findById(id);
-    return result;
+const getPlanDetailsFromDB = async (id: string): Promise<IPlan | null> => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID')
+  }
+  const result = await Plan.findById(id)
+  return result
 }
 
-const deletePlanToDB = async(id: string): Promise<IPlan | null>=>{
-    if(!mongoose.Types.ObjectId.isValid(id)){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID")
-    }
+const deletePlanToDB = async (id: string): Promise<IPlan | null> => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID')
+  }
 
-    const result = await Plan.findByIdAndUpdate(
-        {_id: id},
-        {status: "Delete"},
-        {new: true}
-    );
+  const result = await Plan.findByIdAndUpdate(
+    { _id: id },
+    { status: 'Delete' },
+    { new: true },
+  )
 
-    if(!result){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to deleted Package")
-    }
+  if (!result) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to deleted Package')
+  }
 
-    return result;
+  return result
 }
 
 export const PackageService = {
-    createPlanToDB,
-    updatePlanToDB,
-    getPlanFromDB,
-    getPlanDetailsFromDB,
-    deletePlanToDB
+  createPlanToDB,
+  updatePlanToDB,
+  getPlanFromDB,
+  getPlanDetailsFromDB,
+  deletePlanToDB,
 }

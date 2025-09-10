@@ -1,12 +1,14 @@
 /* eslint-disable no-undef */
 import dotenv from 'dotenv'
 import path from 'path'
+import { cli } from 'winston/lib/winston/config'
 dotenv.config({ path: path.join(process.cwd(), '.env') })
 
 export default {
   ip_address: process.env.IP_ADDRESS,
   database_url: process.env.DATABASE_URL,
   node_env: process.env.NODE_ENV,
+  clientUrl: process.env.clientUrl,
   port: process.env.PORT,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
   firebase_service_account_base64: process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
@@ -25,6 +27,11 @@ export default {
     secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION,
     bucket_name: process.env.AWS_BUCKET_NAME,
+  },
+  stripe: {
+    stripeSecretKey: process.env.STRIPE_API_SECRET,
+    webhookSecret: process.env.WEBHOOK_SECRET,
+    paymentSuccess: process.env.SUCCESS_URL,
   },
   jwt: {
     jwt_secret: process.env.JWT_SECRET,

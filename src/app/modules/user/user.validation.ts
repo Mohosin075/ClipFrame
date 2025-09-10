@@ -35,6 +35,7 @@ export const updateUserSchema = z.object({
     profile: z.string().url().optional(),
     businessName: z.string().optional(),
     phone: z.string().optional(),
+    description: z.string().optional(),
 
     status: z.nativeEnum(USER_STATUS).optional(),
     verified: z.boolean().optional(),

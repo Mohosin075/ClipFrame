@@ -1,3 +1,21 @@
-import { TokenModel } from './token.interface';
+import { Types } from 'mongoose'
+import { Token } from './token.model'
+const logout = async (userId: string) => {
+  console.log('Logging out user with ID:', userId)
+  const res = await Token.updateOne(
+    {
+      user: new Types.ObjectId(userId),
+    },
+    {
+      expireAt: new Date(Date.now()),
+      token: '',
+    },
+  )
 
-export const TokenServices = { };
+  console.log({ res })
+
+  return res
+}
+export const TokenServices = {
+  logout,
+}

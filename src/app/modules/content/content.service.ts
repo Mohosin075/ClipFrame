@@ -229,7 +229,7 @@ const duplicateContent = async (
   return duplicatedContent
 }
 
-const getAllScheduledAndHistory = async (
+const getAllMyContents = async (
   user: JwtPayload,
   filterables: IContentFilterables,
   pagination: IPaginationOptions,
@@ -297,5 +297,5 @@ export const ContentServices = {
   updateContent,
   deleteContent,
   duplicateContent,
-  getAllScheduledAndHistory,
+  getAllMyContents,
 }

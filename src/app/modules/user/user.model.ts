@@ -11,6 +11,7 @@ const UserSchema = new Schema<IUser, UserModel>(
     profile: { type: String },
     businessName: { type: String },
     phone: { type: String },
+    description: { type: String },
 
     status: {
       type: String,
@@ -47,7 +48,7 @@ const UserSchema = new Schema<IUser, UserModel>(
     },
     appId: { type: String },
     deviceToken: { type: String },
-    timezone: { type: String  , default: 'UTC'},
+    timezone: { type: String, default: 'UTC' },
 
     authentication: {
       restrictionLeftAt: { type: Date, default: null },

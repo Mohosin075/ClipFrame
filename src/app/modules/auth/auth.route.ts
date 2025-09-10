@@ -89,6 +89,12 @@ router.post(
   CustomAuthController.socialLogin,
 )
 
+router.post(
+  '/logout',
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+  CustomAuthController.logout,
+)
+
 // Initiate Facebook authentication
 router.get(
   '/facebook',

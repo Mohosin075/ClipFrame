@@ -3,6 +3,8 @@ import catchAsync from '../../../../shared/catchAsync'
 import { CustomAuthServices } from './custom.auth.service'
 import sendResponse from '../../../../shared/sendResponse'
 import { StatusCodes } from 'http-status-codes'
+import { TokenServices } from '../../token/token.service'
+import { JwtPayload } from 'jsonwebtoken'
 
 const customLogin = catchAsync(async (req: Request, res: Response) => {
   const { ...loginData } = req.body
@@ -140,6 +142,18 @@ const socialLogin = catchAsync(async (req: Request, res: Response) => {
     data: { accessToken, refreshToken, role },
   })
 })
+
+const logout = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as JwtPayload).authId
+  const result = await TokenServices.logout(userId)
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Logged out successfully',
+    data: result,
+  })
+})
+
 export const CustomAuthController = {
   forgetPassword,
   resetPassword,
@@ -152,4 +166,5 @@ export const CustomAuthController = {
   deleteAccount,
   adminLogin,
   socialLogin,
+  logout
 }

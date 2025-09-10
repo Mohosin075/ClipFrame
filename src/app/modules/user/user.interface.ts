@@ -35,6 +35,7 @@ export interface IUser {
   profile?: string
   businessName?: string
   phone?: string
+  description?: string
 
   status: USER_STATUS // standardize statuses
   verified: boolean

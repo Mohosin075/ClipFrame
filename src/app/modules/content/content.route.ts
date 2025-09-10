@@ -24,12 +24,12 @@ router
     ContentController.createContent,
   )
 
-// /api/v1/content/my-scheduled-history
+// /api/v1/content/my-contents
 router
-  .route('/my-scheduled-history')
+  .route('/my-contents')
   .get(
     auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
-    ContentController.getAllScheduledAndHistory,
+    ContentController.getAllMyContents,
   )
 
 // /api/v1/content/:id

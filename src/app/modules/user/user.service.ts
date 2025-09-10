@@ -12,6 +12,7 @@ import { IPaginationOptions } from '../../../interfaces/pagination'
 import { S3Helper } from '../../../helpers/image/s3helper'
 import { Useronboarding } from '../useronboarding/useronboarding.model'
 import config from '../../../config'
+import { IUseronboarding } from '../useronboarding/useronboarding.interface'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({
@@ -204,20 +205,21 @@ export const getProfile = async (user: JwtPayload) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found.')
   }
 
-  const isOnboarded = await Useronboarding.findOne({ userId: user.authId })
+  const isOnboarded: any = await Useronboarding.findOne({ userId: user.authId })
 
-  if (!isOnboarded) {
-    throw new ApiError(StatusCodes.FORBIDDEN, 'User not onboarded.')
-  }
+ // if (!isOnboarded) {
+  //   throw new ApiError(StatusCodes.FORBIDDEN, 'User not onboarded.')
+  // }
 
-  const social = isOnboarded.socialHandles.map(social => social?.platform) || []
+  const social =
+    isOnboarded?.socialHandles.map((social: any) => social?.platform) || []
 
   const profileData = {
     ...isUserExist.toObject(),
     platforms: social,
-    preferredLanguages: isOnboarded.preferredLanguages || [],
-    businessType: isOnboarded.businessType || 'General',
-    customBusinessType: isOnboarded.customBusinessType || '',
+    preferredLanguages: isOnboarded?.preferredLanguages || [],
+    businessType: isOnboarded?.businessType || 'General',
+    customBusinessType: isOnboarded?.customBusinessType || '',
   }
 
   return profileData

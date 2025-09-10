@@ -1,55 +1,32 @@
-import express from 'express';
-import { SupportController } from './support.controller';
-import validateRequest from '../../middleware/validateRequest';
-import auth from '../../middleware/auth';
-import { USER_ROLES } from '../../../enum/user';
-import { createSupportSchema, updateSupportSchema } from './support.validation';
+import express from 'express'
+import { SupportController } from './support.controller'
+import validateRequest from '../../middleware/validateRequest'
+import auth from '../../middleware/auth'
+import { USER_ROLES } from '../../../enum/user'
+import { createSupportSchema, updateSupportSchema } from './support.validation'
 
+const router = express.Router()
 
-const router = express.Router();
+router.get('/', auth(USER_ROLES.ADMIN), SupportController.getAllSupports)
 
-router.get(
-  '/',
-  auth(
-    USER_ROLES.ADMIN
-  ),
-  SupportController.getAllSupports
-);
-
-router.get(
-  '/:id',
-  auth(
-    USER_ROLES.ADMIN
-  ),
-  SupportController.getSingleSupport
-);
+router.get('/:id', auth(USER_ROLES.ADMIN), SupportController.getSingleSupport)
 
 router.post(
   '/',
-  auth(
-    USER_ROLES.ADMIN, USER_ROLES.STUDENT, USER_ROLES.TEACHER, USER_ROLES.GUEST
-  ),
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
 
   validateRequest(createSupportSchema),
-  SupportController.createSupport
-);
+  SupportController.createSupport,
+)
 
 router.patch(
   '/:id',
-  auth(
-    USER_ROLES.ADMIN
-  ),
+  auth(USER_ROLES.ADMIN),
 
   validateRequest(updateSupportSchema),
-  SupportController.updateSupport
-);
+  SupportController.updateSupport,
+)
 
-router.delete(
-  '/:id',
-  auth(
-    USER_ROLES.ADMIN
-  ),
-  SupportController.deleteSupport
-);
+router.delete('/:id', auth(USER_ROLES.ADMIN), SupportController.deleteSupport)
 
-export const SupportRoutes = router;
+export const SupportRoutes = router

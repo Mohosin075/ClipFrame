@@ -5,13 +5,8 @@ import { Faq, Public } from './public.model'
 
 import { User } from '../user/user.model'
 import { emailHelper } from '../../../helpers/emailHelper'
-// import { redisClient } from '../../../helpers/redis'
-// import { RedisKeys } from '../../../enum/redis.keys'
-// import { emailQueue } from '../../../helpers/bull-mq-producer'
-
 
 const createPublic = async (payload: IPublic) => {
-
   const isExist = await Public.findOne({
     type: payload.type,
   })
@@ -27,17 +22,11 @@ const createPublic = async (payload: IPublic) => {
         new: true,
       },
     )
-    //store the result in redis
-    // redisClient.del(payload.type === 'privacy-policy' ? `public:${RedisKeys.PRIVACY_POLICY}` : `public:${RedisKeys.TERMS_AND_CONDITION}`)
-    // redisClient.setex(payload.type === 'privacy-policy' ? `public:${RedisKeys.PRIVACY_POLICY}` : `public:${RedisKeys.TERMS_AND_CONDITION}`, 60 * 60 * 24, JSON.stringify(isExist))
   } else {
-    const result = await Public.create(payload);
+    const result = await Public.create(payload)
 
     if (!result)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Public')
-    //store the result in redis
-    // redisClient.del(payload.type === 'privacy-policy' ? `public:${RedisKeys.PRIVACY_POLICY}` : `public:${RedisKeys.TERMS_AND_CONDITION}`)
-    // redisClient.setex(payload.type === 'privacy-policy' ? `public:${RedisKeys.PRIVACY_POLICY}` : `public:${RedisKeys.TERMS_AND_CONDITION}`, 60 * 60 * 24, JSON.stringify(result))
   }
 
   return `${payload.type} created successfully}`
@@ -46,13 +35,7 @@ const createPublic = async (payload: IPublic) => {
 const getAllPublics = async (
   type: 'privacy-policy' | 'terms-and-condition',
 ) => {
-  // const cachedResult = await redisClient.get(type === 'privacy-policy' ? `public:${RedisKeys.PRIVACY_POLICY}` : `public:${RedisKeys.TERMS_AND_CONDITION}`)
-  // if (cachedResult) {
-  //   return JSON.parse(cachedResult)
-  // }
   const result = await Public.findOne({ type: type }).lean()
-  //store the result in redis
-  // redisClient.setex(type === 'privacy-policy' ? `public:${RedisKeys.PRIVACY_POLICY}` : `public:${RedisKeys.TERMS_AND_CONDITION}`, 60 * 60 * 24, JSON.stringify(result))
   return result || null
 }
 
@@ -94,9 +77,6 @@ const createContact = async (payload: IContact) => {
 
     await emailHelper.sendEmail(emailData)
 
-    // emailQueue.add('emails', emailData)
-
-    // Send confirmation email to the user
     const userEmailData = {
       to: payload.email,
       subject: 'Thank you for contacting us',
@@ -111,8 +91,6 @@ const createContact = async (payload: IContact) => {
     }
 
     await emailHelper.sendEmail(userEmailData)
-
-    // emailQueue.add('emails', userEmailData)
 
     return {
       message: 'Contact form submitted successfully',
@@ -130,16 +108,11 @@ const createFaq = async (payload: IFaq) => {
   if (!result)
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Faq')
   // redisClient.del(`public:${RedisKeys.FAQ}`)
-  return result 
+  return result
 }
 
 const getAllFaqs = async () => {
-  // const cachedResult = await redisClient.get(`public:${RedisKeys.FAQ}`)
-  // if (cachedResult) {
-    // return JSON.parse(cachedResult)
-  // }
   const result = await Faq.find({})
-  // redisClient.setex(`public:${RedisKeys.FAQ}`, 60 * 60 * 24, JSON.stringify(result))
   return result || []
 }
 
@@ -156,38 +129,34 @@ const updateFaq = async (id: string, payload: Partial<IFaq>) => {
       new: true,
     },
   )
-  // redisClient.del(`public:${RedisKeys.FAQ}`)
   return result
 }
 
 const deleteFaq = async (id: string) => {
   const result = await Faq.findByIdAndDelete(id)
-  // redisClient.del(`public:${RedisKeys.FAQ}`)
   return result
 }
 
-
 const updatePublic = async (id: string, payload: Partial<IPublic>) => {
-  const data = await Public.findById(id);
+  const data = await Public.findById(id)
 
   if (!data) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Public document not found');
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Public document not found')
   }
 
   // Filter payload to only allow 'content' field update
   const updateData = {
     content: payload.content,
-  };
+  }
 
   const result = await Public.findByIdAndUpdate(
     id,
     { $set: updateData },
-    { new: true }
-  );
+    { new: true },
+  )
 
-  return result;
-};
-
+  return result
+}
 
 export const PublicServices = {
   createPublic,

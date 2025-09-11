@@ -88,7 +88,7 @@ export const updateStripeProductCatalog = async (
       payload.paymentType || (interval === 'year' ? 'Yearly' : 'Monthly'),
     productId,
     paymentLink: paymentLink.url,
-    status: 'Active',
+    status: 'active',
     _id: payload._id || undefined,
   }
 

@@ -15,28 +15,50 @@ const createPlanToDB = async (payload: IPlan): Promise<IPlan | null> => {
     price: Number(payload.price),
   }
 
-  const product = await createStripeProductCatalog(productPayload)
+  // Check if a free plan (price: 0) already exists
+  if (productPayload.price === 0) {
+    const existingFreePlan = await Plan.findOne({ price: 0, status: 'active' })
+    if (existingFreePlan) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        `Free plan "${existingFreePlan.title}" already exists. Consider updating it instead.`,
+      )
+    }
 
+    // Create free plan without Stripe integration
+    payload.paymentLink = ''
+    payload.productId = ''
+    payload.priceId = ''
+    const freePlan = await Plan.create(payload)
+    return freePlan
+  }
+
+  // For paid plans, create a Stripe product
+  const product = await createStripeProductCatalog(productPayload)
   if (!product) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Failed to create subscription product',
+      'Failed to create subscription product in Stripe.',
     )
   }
 
-  if (product) {
-    payload.paymentLink = product.paymentLink
-    payload.productId = product.productId
-    payload.priceId = product.priceId
-  }
+  // Attach Stripe details to payload
+  payload.paymentLink = product.paymentLink
+  payload.productId = product.productId
+  payload.priceId = product.priceId
 
-  const result = await Plan.create(payload)
-  if (!result) {
+  // Create the plan in DB
+  try {
+    const result = await Plan.create(payload)
+    return result
+  } catch (err) {
+    // Rollback Stripe product if DB creation fails
     await stripe.products.del(product.productId)
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to created Package')
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to create the plan in database.',
+    )
   }
-
-  return result
 }
 
 export const updatePlanToDB = async (
@@ -86,7 +108,7 @@ export const updatePlanToDB = async (
 
 const getPlanFromDB = async (paymentType: string): Promise<IPlan[]> => {
   const query: any = {
-    status: 'Active',
+    status: 'active',
   }
   if (paymentType) {
     query.paymentType = paymentType

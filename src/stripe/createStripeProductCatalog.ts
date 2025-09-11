@@ -47,8 +47,6 @@ export const createStripeProductCatalog = async (
     recurring: { interval, interval_count: intervalCount },
   })
 
-  console.log('Created price:', price);
-
   if (!price) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,

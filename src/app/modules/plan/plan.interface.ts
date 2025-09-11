@@ -15,9 +15,9 @@ export type IPlan = {
     postsPerWeek: number
     storiesPerWeek: number
     businessesManageable: number
-    carouselPerWeek : number
+    carouselPerWeek: number
   }
-  status: 'Active' | 'Delete'
+  status: 'active' | 'Delete'
 }
 
 export type PlanModel = Model<IPlan, Record<string, unknown>>

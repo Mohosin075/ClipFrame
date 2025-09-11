@@ -29,12 +29,10 @@ const planSchema = new Schema<IPlan, PlanModel>(
       required: true,
     },
     productId: {
-      type: String,
-      required: true,
+      type: String
     },
     paymentLink: {
-      type: String,
-      required: true,
+      type: String
     },
     limits: {
       reelsPerWeek: { type: Number, default: 0 },
@@ -45,8 +43,8 @@ const planSchema = new Schema<IPlan, PlanModel>(
     },
     status: {
       type: String,
-      enum: ['Active', 'Delete'],
-      default: 'Active',
+      enum: ['active', 'Delete'],
+      default: 'active',
     },
   },
   {

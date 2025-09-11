@@ -7,24 +7,36 @@ import { ISubscription } from './subscription.interface'
 import { v4 as uuidv4 } from 'uuid'
 import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
+import mongoose from 'mongoose'
 
 export const checkAndIncrementUsage = async (
   user: JwtPayload,
   type: ContentType,
+  session: mongoose.ClientSession | null = null, // default to null
 ) => {
-  // Find active subscription for this user and populate plan
   const paid_subscription = await Subscription.findOne({
     user: user.authId,
     status: 'active',
-  }).populate<{ plan: IPlan }>('plan') // TS knows plan is populated
+  })
+    .populate<{ plan: IPlan }>('plan')
+    .session(session) // session can be null
 
-  const plan = await Plan.findOne({ price: 0 })
+  const plan = await Plan.findOne({ price: 0, status: 'active' }).session(
+    session,
+  )
+
+  if (!plan) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'No Free Plan is currently available. Please consider upgrading to a Pro Plan to continue.',
+    )
+  }
 
   const now = new Date()
-  const currentPeriodStart = now.toISOString() // start is now
+  const currentPeriodStart = now.toISOString()
   const currentPeriodEnd = new Date(
     now.getFullYear(),
-    now.getMonth() + 1, // next month
+    now.getMonth() + 1,
     now.getDate(),
     now.getHours(),
     now.getMinutes(),
@@ -32,7 +44,7 @@ export const checkAndIncrementUsage = async (
   ).toISOString()
 
   const subscriptionPayload: Partial<ISubscription> = {
-    customerId: `cus_${uuidv4()}`, // unique customer id
+    customerId: `cus_${uuidv4()}`,
     subscriptionId: `sub_${uuidv4()}`,
     price: 0,
     plan: plan?._id,
@@ -42,19 +54,20 @@ export const checkAndIncrementUsage = async (
   }
 
   if (!paid_subscription || !paid_subscription.plan) {
-    await Subscription.create(subscriptionPayload)
+    await Subscription.create([subscriptionPayload], { session })
   }
 
   const subscription = await Subscription.findOne({
     user: user.authId,
     status: 'active',
-  }).populate<{ plan: IPlan }>('plan')
+  })
+    .populate<{ plan: IPlan }>('plan')
+    .session(session)
 
   if (!subscription || !subscription.plan) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'No Subscripton found.')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No Subscription found.')
   }
 
-  // Map type to usage + limit fields
   const usageMap: Record<ContentType, keyof typeof subscription.usage> = {
     reels: 'reelsUsed',
     post: 'postsUsed',
@@ -74,20 +87,22 @@ export const checkAndIncrementUsage = async (
 
   const used = subscription.usage[usageKey]
   const limit = subscription.plan.limits[limitKey]
-  console.log({ used })
 
   if (used >= limit) {
     throw new Error(`Limit reached for ${type}. Please upgrade.`)
   }
 
-  // Increment usage
-  subscription.usage[usageKey] += 1
-  await subscription.save()
+  // Atomic increment using findByIdAndUpdate
+  await Subscription.findByIdAndUpdate(
+    subscription._id,
+    { $inc: { [usageKey]: 1 } },
+    { session },
+  )
 
   return {
     subscriptionId: subscription._id,
     type,
-    used: subscription.usage[usageKey],
+    used: used + 1,
     limit,
   }
 }

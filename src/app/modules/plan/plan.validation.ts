@@ -22,6 +22,6 @@ export const createPlanZodValidationSchema = z.object({
     }),
 
     // Plan status
-    status: z.enum(['Active', 'Delete']).default('Active'),
+    status: z.enum(['active', 'Delete']).default('active'),
   }),
 })

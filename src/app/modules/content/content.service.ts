@@ -5,30 +5,38 @@ import { JwtPayload } from 'jsonwebtoken'
 import { IPaginationOptions } from '../../../interfaces/pagination'
 import { paginationHelper } from '../../../helpers/paginationHelper'
 import { CONTENT_STATUS, contentSearchableFields } from './content.constants'
-import { Types } from 'mongoose'
+import mongoose, { Types } from 'mongoose'
 import { ContentType, IContent, IContentFilterables } from './content.interface'
 import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 
-const createContent = async (
+export const createContent = async (
   user: JwtPayload,
   payload: IContent,
 ): Promise<IContent> => {
-  const result = await checkAndIncrementUsage(
-    user,
-    payload.contentType as ContentType,
-  )
-// return
+  const session = await mongoose.startSession()
+  session.startTransaction()
+
   try {
-    const result = await Content.create(payload)
-    if (!result) {
+    // Check and increment usage inside the session
+    await checkAndIncrementUsage(user, payload.contentType as ContentType, session)
+
+    // Create content inside the same session
+    const result = await Content.create([payload], { session }) // note the array form
+    if (!result || result.length === 0) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         'Failed to create Content, please try again with valid data.',
       )
     }
 
-    return result
+    await session.commitTransaction()
+    session.endSession()
+
+    return result[0]
   } catch (error: any) {
+    await session.abortTransaction()
+    session.endSession()
+
     if (error.code === 11000) {
       throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found')
     }

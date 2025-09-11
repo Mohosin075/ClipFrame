@@ -17,7 +17,7 @@ const createContent = async (
     user,
     payload.contentType as ContentType,
   )
-
+// return
   try {
     const result = await Content.create(payload)
     if (!result) {

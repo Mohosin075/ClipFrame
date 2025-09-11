@@ -2,19 +2,56 @@ import { Subscription } from './subscription.model'
 import { JwtPayload } from 'jsonwebtoken'
 import { IPlan } from '../plan/plan.interface'
 import { ContentType } from '../content/content.interface'
+import { Plan } from '../plan/plan.model'
+import { ISubscription } from './subscription.interface'
+import { v4 as uuidv4 } from 'uuid'
+import ApiError from '../../../errors/ApiError'
+import { StatusCodes } from 'http-status-codes'
 
 export const checkAndIncrementUsage = async (
   user: JwtPayload,
   type: ContentType,
 ) => {
   // Find active subscription for this user and populate plan
-  const subscription = await Subscription.findOne({
+  const paid_subscription = await Subscription.findOne({
     user: user.authId,
     status: 'active',
   }).populate<{ plan: IPlan }>('plan') // TS knows plan is populated
 
+  const plan = await Plan.findOne({ price: 0 })
+
+  const now = new Date()
+  const currentPeriodStart = now.toISOString() // start is now
+  const currentPeriodEnd = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1, // next month
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+  ).toISOString()
+
+  const subscriptionPayload: Partial<ISubscription> = {
+    customerId: `cus_${uuidv4()}`, // unique customer id
+    subscriptionId: `sub_${uuidv4()}`,
+    price: 0,
+    plan: plan?._id,
+    user: user.authId,
+    currentPeriodStart,
+    currentPeriodEnd,
+  }
+
+  if (!paid_subscription || !paid_subscription.plan) {
+    await Subscription.create(subscriptionPayload)
+  }
+
+  const subscription = await Subscription.findOne({
+    user: user.authId,
+    status: 'active',
+  }).populate<{ plan: IPlan }>('plan')
+
   if (!subscription || !subscription.plan) {
-    throw new Error('No active subscription')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No Subscripton found.')
   }
 
   // Map type to usage + limit fields

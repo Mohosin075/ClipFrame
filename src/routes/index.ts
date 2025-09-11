@@ -9,6 +9,7 @@ import { ContentRoutes } from '../app/modules/content/content.route'
 import { SocialintegrationRoutes } from '../app/modules/socialintegration/socialintegration.route'
 import { PlanRoutes } from '../app/modules/plan/plan.routes'
 import { SubscriptionRoutes } from '../app/modules/subscription/subscription.routes'
+import { StatsRoutes } from '../app/modules/stats/stats.route'
 
 const router = express.Router()
 
@@ -23,6 +24,7 @@ const apiRoutes: { path: string; route: Router }[] = [
   { path: '/socialintegration', route: SocialintegrationRoutes },
   { path: '/plan', route: PlanRoutes },
   { path: '/subscription', route: SubscriptionRoutes },
+  { path: '/stats', route: StatsRoutes },
 ]
 
 apiRoutes.forEach(route => {

@@ -36,6 +36,13 @@ const planSchema = new Schema<IPlan, PlanModel>(
       type: String,
       required: true,
     },
+    limits: {
+      reelsPerWeek: { type: Number, default: 0 },
+      postsPerWeek: { type: Number, default: 0 },
+      storiesPerWeek: { type: Number, default: 0 },
+      businessesManageable: { type: Number, default: 1 },
+      carouselPerWeek: { type: Number, default: 1 },
+    },
     status: {
       type: String,
       enum: ['Active', 'Delete'],

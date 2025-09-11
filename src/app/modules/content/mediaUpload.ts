@@ -117,7 +117,6 @@ export const handleMediaUpload = async (req: any, res: any, next: any) => {
     // ===============================
     req.body = { ...payload.data, mediaUrls, clips }
 
-    console.log('✅ req.body after media upload:', req.body)
 
     next()
   } catch (error) {

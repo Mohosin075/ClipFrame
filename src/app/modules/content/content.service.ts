@@ -6,12 +6,18 @@ import { IPaginationOptions } from '../../../interfaces/pagination'
 import { paginationHelper } from '../../../helpers/paginationHelper'
 import { CONTENT_STATUS, contentSearchableFields } from './content.constants'
 import { Types } from 'mongoose'
-import { IContent, IContentFilterables } from './content.interface'
+import { ContentType, IContent, IContentFilterables } from './content.interface'
+import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 
 const createContent = async (
   user: JwtPayload,
   payload: IContent,
 ): Promise<IContent> => {
+  const result = await checkAndIncrementUsage(
+    user,
+    payload.contentType as ContentType,
+  )
+
   try {
     const result = await Content.create(payload)
     if (!result) {

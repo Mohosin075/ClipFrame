@@ -37,6 +37,15 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
       type: String,
       required: true,
     },
+
+    // Track usage against plan limits
+    usage: {
+      reelsUsed: { type: Number, default: 0 },
+      postsUsed: { type: Number, default: 0 },
+      storiesUsed: { type: Number, default: 0 },
+      businessesUsed: { type: Number, default: 0 },
+      carouselUsed: { type: Number, default: 0 },
+    },
     status: {
       type: String,
       enum: ['expired', 'active', 'cancel'],

@@ -30,6 +30,12 @@ export const updateStripeProductCatalog = async (
       break
   }
 
+  // Step 0: Update product details in Stripe
+  await stripe.products.update(productId, {
+    name: payload.title,
+    description: payload.description,
+  })
+
   // Step 1: Deactivate old prices
   const oldPrices = await stripe.prices.list({
     product: productId,
@@ -83,7 +89,7 @@ export const updateStripeProductCatalog = async (
     productId,
     paymentLink: paymentLink.url,
     status: 'Active',
-    _id: payload._id || undefined, // keep existing DB ID if updating
+    _id: payload._id || undefined,
   }
 
   return updatedPlan

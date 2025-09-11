@@ -5,6 +5,7 @@ import mongoose from 'mongoose'
 import stripe from '../../../config/stripe'
 import { createStripeProductCatalog } from '../../../stripe/createStripeProductCatalog'
 import ApiError from '../../../errors/ApiError'
+import { updateStripeProductCatalog } from '../../../stripe/updateStripeProductCatalog'
 
 const createPlanToDB = async (payload: IPlan): Promise<IPlan | null> => {
   const productPayload = {
@@ -38,20 +39,46 @@ const createPlanToDB = async (payload: IPlan): Promise<IPlan | null> => {
   return result
 }
 
-const updatePlanToDB = async (
+export const updatePlanToDB = async (
   id: string,
-  payload: IPlan,
-): Promise<IPlan | null> => {
+  payload: Partial<IPlan>, // partial to allow updating only some fields
+): Promise<IPlan> => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Plan ID')
   }
 
-  const result = await Plan.findByIdAndUpdate({ _id: id }, payload, {
-    new: true,
-  })
+  // Step 1: Fetch the current plan
+  const existingPlan = await Plan.findById(id)
+  if (!existingPlan) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Plan not found')
+  }
 
+  // Step 2: Update Stripe product if price or duration changed
+  let stripeUpdate: { priceId?: string; paymentLink?: string } = {}
+  if (!existingPlan.productId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Stripe productId is missing')
+  }
+  if (payload.price || payload.duration) {
+    stripeUpdate = await updateStripeProductCatalog(
+      existingPlan.productId as string,
+      {
+        ...existingPlan.toObject(),
+        ...payload, // merge updates
+      },
+    )
+  }
+
+  // Step 3: Merge payload + Stripe update
+  const updatedData = {
+    ...payload,
+    ...stripeUpdate,
+    updatedAt: new Date(),
+  }
+
+  // Step 4: Update DB and return updated document
+  const result = await Plan.findByIdAndUpdate(id, updatedData, { new: true })
   if (!result) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to Update Package')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to update plan')
   }
 
   return result

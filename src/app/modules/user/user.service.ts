@@ -13,6 +13,8 @@ import { S3Helper } from '../../../helpers/image/s3helper'
 import { Useronboarding } from '../useronboarding/useronboarding.model'
 import config from '../../../config'
 import { IUseronboarding } from '../useronboarding/useronboarding.interface'
+import { Subscription } from '../subscription/subscription.model'
+import { IPlan } from '../plan/plan.interface'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({
@@ -196,6 +198,7 @@ const updateUserStatus = async (userId: string, status: USER_STATUS) => {
 }
 
 export const getProfile = async (user: JwtPayload) => {
+  // --- Fetch user ---
   const isUserExist = await User.findOne({
     _id: user.authId,
     status: { $nin: [USER_STATUS.DELETED] },
@@ -205,25 +208,36 @@ export const getProfile = async (user: JwtPayload) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found.')
   }
 
-  const isOnboarded: any = await Useronboarding.findOne({ userId: user.authId })
+  // --- Fetch onboarding + subscription ---
+  const [isOnboarded, subscriber] = await Promise.all([
+    Useronboarding.findOne({ userId: user.authId }),
+    Subscription.findOne({
+      status: 'active',
+      user: user.authId,
+    })
+      .populate<{ plan: IPlan }>({
+        path: 'plan',
+        select: 'name price features duration title',
+      })
+      .lean()
+      .exec(),
+  ])
 
- // if (!isOnboarded) {
-  //   throw new ApiError(StatusCodes.FORBIDDEN, 'User not onboarded.')
-  // }
+  // --- Extract onboarding details ---
+  const socialPlatforms =
+    isOnboarded?.socialHandles?.map(s => s?.platform) ?? []
 
-  const social =
-    isOnboarded?.socialHandles.map((social: any) => social?.platform) || []
-
-  const profileData = {
+  // --- Build profile response ---
+  return {
     ...isUserExist.toObject(),
-    platforms: social,
-    preferredLanguages: isOnboarded?.preferredLanguages || [],
-    businessType: isOnboarded?.businessType || 'General',
-    customBusinessType: isOnboarded?.customBusinessType || '',
+    platforms: socialPlatforms,
+    membership: subscriber?.plan?.title ?? '',
+    preferredLanguages: isOnboarded?.preferredLanguages ?? [],
+    businessType: isOnboarded?.businessType ?? 'General',
+    customBusinessType: isOnboarded?.customBusinessType ?? '',
   }
-
-  return profileData
 }
+
 export const UserServices = {
   updateProfile,
   createAdmin,

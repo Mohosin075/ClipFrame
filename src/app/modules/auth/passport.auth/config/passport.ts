@@ -94,7 +94,7 @@ passport.use(
             refreshToken,
           })
           await user.save()
-          console.log('✅ New user created:', user.email)
+          console.log('✅ New user created:', user)
         } else {
           // Update existing user
           // user.accessToken = accessToken
@@ -106,7 +106,13 @@ passport.use(
           console.log('♻️ User updated:', user.email)
         }
 
-        return done(null, user)
+        return done(null, {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          accessToken, // add
+          refreshToken, // add
+        })
       } catch (error) {
         console.error('❌ Facebook strategy error:', error)
         return done(error, null)

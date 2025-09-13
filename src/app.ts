@@ -75,15 +75,26 @@ app.get(
   }),
 )
 
-// Callback
+// callback facebook
 app.get(
   '/facebook/callback',
   passport.authenticate('facebook', {
     failureRedirect: 'https://mohosin5001.binarybards.online/privacy-policy',
+    session: false,
   }),
-  (req, res) => {
-    // Successful login → redirect to dashboard
-    res.redirect('https://mohosin5001.binarybards.online/privacy-policy')
+  (req: any, res) => {
+    const userData = req.user
+
+    const redirectUrl = `https://mohosin5001.binarybards.online/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+    res.redirect(redirectUrl)
+
+    // res.json({
+    //   success: true,
+    //   accessToken: userData.accessToken,
+    //   refreshToken: userData.refreshToken,
+    //   email: userData.email,
+    //   name: userData.name,
+    // })
   },
 )
 

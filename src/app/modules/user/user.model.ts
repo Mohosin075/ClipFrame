@@ -41,7 +41,7 @@ const UserSchema = new Schema<IUser, UserModel>(
     },
     subscribe: { type: Boolean, default: false },
 
-    password: { type: String, required: true, minlength: 6 },
+    password: { type: String, minlength: 6 },
     role: {
       type: String,
       enum: Object.values(USER_ROLES),

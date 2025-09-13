@@ -2,52 +2,100 @@ import cors from 'cors'
 import express, { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import path from 'path'
+import session from 'express-session'
+import cookieParser from 'cookie-parser'
+import passport from './app/modules/auth/passport.auth/config/passport'
 
 import router from './routes'
 import { Morgan } from './shared/morgan'
-import cookieParser from 'cookie-parser'
 import globalErrorHandler from './app/middleware/globalErrorHandler'
-import passport from './app/modules/auth/passport.auth/config/passport'
 import './task/scheduler'
 import handleStripeWebhook from './stripe/handleStripeWebhook'
+import config from './config'
 
 const app = express()
 
-// Stripe webhook route
+// -------------------- Middleware --------------------
+// Session must come before passport
 app.use(
-  '/webhook',
-  express.raw({ type: 'application/json' }),
-  handleStripeWebhook,
+  session({
+    secret: config.jwt.jwt_secret || 'secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // true if using HTTPS
+  }),
 )
 
-//morgan
-app.use(Morgan.successHandler)
-app.use(Morgan.errorHandler)
-//body parser
+// Initialize Passport
+app.use(passport.initialize())
+app.use(passport.session())
+
+// CORS
 app.use(
   cors({
     origin: '*',
     credentials: true,
   }),
 )
-app.use(express.json())
-app.use(passport.initialize())
-app.use(express.urlencoded({ extended: true }))
-app.use(cookieParser())
-//file retrieve
-app.use(express.static('uploads'))
 
+// Body parser
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// Cookie parser
+app.use(cookieParser())
+
+// Morgan logging
+app.use(Morgan.successHandler)
+app.use(Morgan.errorHandler)
+
+// -------------------- Static Files --------------------
+app.use(express.static('uploads'))
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
-//router
+// -------------------- Stripe Webhook --------------------
+app.use(
+  '/webhook',
+  express.raw({ type: 'application/json' }),
+  handleStripeWebhook,
+)
+
+// -------------------- Facebook Login Routes --------------------
+// Start login
+app.get(
+  '/auth/facebook',
+  passport.authenticate('facebook', {
+    scope: [
+      'email',
+      'public_profile',
+      'pages_manage_posts',
+      'instagram_basic',
+      'instagram_content_publish',
+    ],
+  }),
+)
+
+// Callback
+app.get(
+  '/facebook/callback',
+  passport.authenticate('facebook', {
+    failureRedirect: 'https://mohosin5001.binarybards.online/privacy-policy',
+  }),
+  (req, res) => {
+    // Successful login → redirect to dashboard
+    res.redirect('https://mohosin5001.binarybards.online/privacy-policy')
+  },
+)
+
+// -------------------- API Routes --------------------
 app.use('/api/v1', router)
 
-// Serve the privacy policy HTML
+// -------------------- Privacy Policy --------------------
 app.get('/privacy-policy', (req, res) => {
   res.sendFile(path.join(__dirname, 'privacy-policy.html'))
 })
 
-//live response
+// -------------------- Root / Live Response --------------------
 app.get('/', (req: Request, res: Response) => {
   res.send(`
     <div style="
@@ -62,9 +110,7 @@ app.get('/', (req: Request, res: Response) => {
       padding: 2rem;
     ">
       <div>
-        <h1 style="font-size: 3rem; margin-bottom: 1rem;">
-          🛑 Whoa there, hacker man.
-        </h1>
+        <h1 style="font-size: 3rem; margin-bottom: 1rem;">🛑 Whoa there, hacker man.</h1>
         <p style="font-size: 1.4rem; line-height: 1.6;">
           You really just typed <code style="color:#ffd700;">'/'</code> in your browser and expected magic?<br><br>
           This isn’t Hogwarts, and you’re not the chosen one. 🧙‍♂️<br><br>
@@ -78,9 +124,10 @@ app.get('/', (req: Request, res: Response) => {
   `)
 })
 
-//global error handle
+// -------------------- Global Error Handler --------------------
 app.use(globalErrorHandler)
 
+// -------------------- 404 Handler --------------------
 app.use((req, res) => {
   res.status(StatusCodes.NOT_FOUND).json({
     success: false,

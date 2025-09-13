@@ -52,7 +52,7 @@ passport.use(
     },
     async (req, accessToken, refreshToken, profile, done) => {
       req.body.profile = profile
-      req.body.role = USER_ROLES.STUDENT
+      req.body.role = USER_ROLES.USER
 
       try {
         return done(null, req.body)
@@ -73,33 +73,42 @@ passport.use(
       passReqToCallback: true,
     },
     async (
+      req: any,
       accessToken: string,
       refreshToken: string,
       profile: any,
       done: any,
     ) => {
       try {
-        // Find or create user
+        // Check if user exists
         let user = await User.findOne({ appId: profile.id })
 
         if (!user) {
+          // Create new user
           user = new User({
             appId: profile.id,
             email: profile.emails?.[0]?.value,
             name: profile.displayName,
             profilePhoto: profile.photos?.[0]?.value,
-            accessToken: accessToken,
-            refreshToken: refreshToken,
+            accessToken,
+            refreshToken,
           })
           await user.save()
+          console.log('✅ New user created:', user.email)
         } else {
-          // Update access token if user exists
-
+          // Update existing user
+          // user.accessToken = accessToken
+          // user.refreshToken = refreshToken
+          user.email = profile.emails?.[0]?.value || user.email
+          user.name = profile.displayName || user.name
+          // user.profilePhoto = profile.photos?.[0]?.value || user.profilePhoto
           await user.save()
+          console.log('♻️ User updated:', user.email)
         }
 
         return done(null, user)
       } catch (error) {
+        console.error('❌ Facebook strategy error:', error)
         return done(error, null)
       }
     },

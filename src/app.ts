@@ -85,6 +85,8 @@ app.get(
   (req: any, res) => {
     const userData = req.user
 
+    console.log({userData})
+
     const redirectUrl = `https://mohosin5001.binarybards.online/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
     res.redirect(redirectUrl)
 

@@ -9,6 +9,7 @@ export async function getFacebookUser(accessToken: string) {
     const url = `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`
     const res = await fetch(url)
     const data = await res.json()
+    console.log({ data })
 
     if (data.error) {
       console.error('FB User Error:', data.error)
@@ -24,13 +25,14 @@ export async function getFacebookUser(accessToken: string) {
 
 /**
  * 2️⃣ Get Facebook Pages and linked Instagram Business accounts
- * @param accessToken - Facebook user access token
+//  * @param accessToken - Facebook user access token
  */
 export async function getFacebookPages(accessToken: string) {
   try {
-    const url = `https://graph.facebook.com/me/accounts?access_token=${accessToken}`
+    const url = `https://graph.facebook.com/v17.0/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${accessToken}`
     const res = await fetch(url)
     const data = await res.json()
+    // console.log(data )
 
     if (data.error) {
       console.error('FB Pages Error:', data.error)
@@ -348,45 +350,44 @@ export async function createInstagramStory(
   igBusinessId: string,
   pageAccessToken: string,
   mediaUrl: string, // HTTPS image/video URL
-  caption?: string
+  caption?: string,
 ) {
   const res = await fetch(
     `https://graph.facebook.com/v21.0/${igBusinessId}/media`,
     {
-      method: "POST",
+      method: 'POST',
       body: new URLSearchParams({
-        media_type: mediaUrl.endsWith(".mp4") ? "VIDEO" : "IMAGE",
-        story: "true",          // marks it as a Story
-        caption: caption || "",
-        [mediaUrl.endsWith(".mp4") ? "video_url" : "image_url"]: mediaUrl,
+        media_type: mediaUrl.endsWith('.mp4') ? 'VIDEO' : 'IMAGE',
+        story: 'true', // marks it as a Story
+        caption: caption || '',
+        [mediaUrl.endsWith('.mp4') ? 'video_url' : 'image_url']: mediaUrl,
         access_token: pageAccessToken,
       }),
-    }
-  );
+    },
+  )
 
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.id; // creation_id
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+  return data.id // creation_id
 }
 
 export async function publishInstagramStory(
   igBusinessId: string,
   pageAccessToken: string,
-  creationId: string
+  creationId: string,
 ) {
   const res = await fetch(
     `https://graph.facebook.com/v21.0/${igBusinessId}/media_publish`,
     {
-      method: "POST",
+      method: 'POST',
       body: new URLSearchParams({
         creation_id: creationId,
         access_token: pageAccessToken,
       }),
-    }
-  );
+    },
+  )
 
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.id; // live Story ID
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+  return data.id // live Story ID
 }
-

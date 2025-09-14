@@ -17,13 +17,19 @@ import { Subscription } from '../subscription/subscription.model'
 import { IPlan } from '../plan/plan.interface'
 import {
   createFacebookMultiPhotoPost,
+  createInstagramReel,
+  createInstagramStory,
   deleteFacebookPost,
+  editFacebookPostCaption,
   getFacebookPages,
   getFacebookPostDetails,
   getFacebookUser,
   getFacebookVideoInsights,
+  postInstagramPhoto,
   postToFacebookPage,
   postVideoToFacebookPage,
+  publishInstagramReel,
+  publishInstagramStory,
   uploadFacebookPhoto,
 } from '../../../utils/facebookTokenVerify'
 
@@ -248,10 +254,10 @@ export const getProfile = async (user: JwtPayload) => {
 
   // For upload multiple images with description
   const images = [
-            "https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png",
-            "https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png",
-            "https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png"
-        ]
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png',
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png',
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png',
+  ]
 
   // const photoIds = []
   // for (const img of images) {
@@ -265,6 +271,54 @@ export const getProfile = async (user: JwtPayload) => {
   //   photoIds,
   //   'Check out our new carousel!',
   // )
+
+  // const postId = '107280208355828_1204338478165891'
+  const newCaption = 'Updated caption from ClipFrame! ✨'
+
+  // await editFacebookPostCaption(
+  //     postId,
+  //     pageAccessToken,
+  //     newCaption,
+  //   )
+
+  // For instagram
+
+  const igBusinessId = ''
+
+  // await postInstagramPhoto(
+  //   igBusinessId,
+  //   pageAccessToken,
+  //   'https://your-public-bucket.com/photo.jpg',
+  //   '🔥 First Insta post from ClipFrame!',
+  // )
+
+  // for IG reels create
+
+  // const creationId = await createInstagramReel(
+  //   igBusinessId,
+  //   pageAccessToken,
+  //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/myreel.mp4',
+  //   '🔥 Instant Reel from ClipFrame!',
+  // )
+  // console.log({ creationId })
+  // publishInstagramReel(igBusinessId, pageAccessToken, creationId)
+
+  const mediaUrl =
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/story1.mp4' // or image
+  // const caption = '🔥 My first Story from ClipFrame!'
+  // const creationId = await createInstagramStory(
+  //   igBusinessId,
+  //   pageAccessToken,
+  //   mediaUrl,
+  //   caption,
+  // )
+
+  // Step 2: publish the story immediately
+  // await publishInstagramStory(
+  //     igBusinessId,
+  //     pageAccessToken,
+  //     creationId,
+  //   )
 
   // --- Fetch user ---
   const isUserExist = await User.findOne({

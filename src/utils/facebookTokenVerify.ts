@@ -231,3 +231,162 @@ export async function createFacebookMultiPhotoPost(
 
   return data.id // post ID
 }
+
+export async function editFacebookPostCaption(
+  postId: string,
+  pageAccessToken: string,
+  newCaption: string,
+) {
+  const url = `https://graph.facebook.com/v17.0/${postId}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: newCaption,
+      access_token: pageAccessToken,
+    }),
+  })
+  const data = await res.json()
+  console.log({ updated: data })
+  if (data.error) throw new Error(data.error.message)
+  return data.id
+}
+
+// Instagram part
+// need update for create two different function
+export async function postInstagramPhoto(
+  igBusinessId: string,
+  pageAccessToken: string,
+  imageUrl: string,
+  caption: string,
+) {
+  // Step 1: create the media container
+  const creationRes = await fetch(
+    `https://graph.facebook.com/v21.0/${igBusinessId}/media`,
+    {
+      method: 'POST',
+      body: new URLSearchParams({
+        image_url: imageUrl, // must be a public HTTPS URL
+        caption,
+        access_token: pageAccessToken,
+      }),
+    },
+  )
+  const creationData = await creationRes.json()
+  if (creationData.error) throw new Error(creationData.error.message)
+
+  // Step 2: publish it
+  const publishRes = await fetch(
+    `https://graph.facebook.com/v21.0/${igBusinessId}/media_publish`,
+    {
+      method: 'POST',
+      body: new URLSearchParams({
+        creation_id: creationData.id,
+        access_token: pageAccessToken,
+      }),
+    },
+  )
+  const publishData = await publishRes.json()
+  if (publishData.error) throw new Error(publishData.error.message)
+
+  return publishData // returns the IG media ID
+}
+
+// instagram reels
+
+export async function createInstagramReel(
+  igBusinessId: string,
+  pageAccessToken: string,
+  videoUrl: string,
+  caption: string,
+): Promise<string> {
+  const res = await fetch(
+    `https://graph.facebook.com/v21.0/${igBusinessId}/media`,
+    {
+      method: 'POST',
+      body: new URLSearchParams({
+        media_type: 'REELS', // indicates a reel
+        video_url: videoUrl,
+        caption,
+        access_token: pageAccessToken,
+      }),
+    },
+  )
+
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+
+  return data.id // creation_id
+}
+
+export async function publishInstagramReel(
+  igBusinessId: string,
+  pageAccessToken: string,
+  creationId: string,
+): Promise<string> {
+  const res = await fetch(
+    `https://graph.facebook.com/v21.0/${igBusinessId}/media_publish`,
+    {
+      method: 'POST',
+      body: new URLSearchParams({
+        creation_id: creationId,
+        access_token: pageAccessToken,
+      }),
+    },
+  )
+
+  const data = await res.json()
+  console.log({ published_Reels: data })
+  if (data.error) throw new Error(data.error.message)
+
+  return data.id // final IG post ID
+}
+
+// for IG story posting
+
+export async function createInstagramStory(
+  igBusinessId: string,
+  pageAccessToken: string,
+  mediaUrl: string, // HTTPS image/video URL
+  caption?: string
+) {
+  const res = await fetch(
+    `https://graph.facebook.com/v21.0/${igBusinessId}/media`,
+    {
+      method: "POST",
+      body: new URLSearchParams({
+        media_type: mediaUrl.endsWith(".mp4") ? "VIDEO" : "IMAGE",
+        story: "true",          // marks it as a Story
+        caption: caption || "",
+        [mediaUrl.endsWith(".mp4") ? "video_url" : "image_url"]: mediaUrl,
+        access_token: pageAccessToken,
+      }),
+    }
+  );
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.id; // creation_id
+}
+
+export async function publishInstagramStory(
+  igBusinessId: string,
+  pageAccessToken: string,
+  creationId: string
+) {
+  const res = await fetch(
+    `https://graph.facebook.com/v21.0/${igBusinessId}/media_publish`,
+    {
+      method: "POST",
+      body: new URLSearchParams({
+        creation_id: creationId,
+        access_token: pageAccessToken,
+      }),
+    }
+  );
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.id; // live Story ID
+}
+

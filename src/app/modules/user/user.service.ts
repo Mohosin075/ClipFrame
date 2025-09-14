@@ -15,6 +15,17 @@ import config from '../../../config'
 import { IUseronboarding } from '../useronboarding/useronboarding.interface'
 import { Subscription } from '../subscription/subscription.model'
 import { IPlan } from '../plan/plan.interface'
+import {
+  createFacebookMultiPhotoPost,
+  deleteFacebookPost,
+  getFacebookPages,
+  getFacebookPostDetails,
+  getFacebookUser,
+  getFacebookVideoInsights,
+  postToFacebookPage,
+  postVideoToFacebookPage,
+  uploadFacebookPhoto,
+} from '../../../utils/facebookTokenVerify'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({
@@ -198,6 +209,63 @@ const updateUserStatus = async (userId: string, status: USER_STATUS) => {
 }
 
 export const getProfile = async (user: JwtPayload) => {
+  const accessTokenForFacebook =
+    'EAATItxj1TL8BPZAtWTNvZA0lncReLA7uXSKZAnqZAcQM5NFsT56bz51hLrHloJ0SZAysukKRxIewsMBAZB11XGzMZAouBMXnHehwSCc0a0OGj50AYsmLQgxVHrSEH0nzWxSkH5u4V7KzqRptDO6xl6aAk4sF4PQeB7h1ZAkFqBg47LvzfRmoe8oXcgmZBdwZBlhhrk4uMoNef7mOmLtfELKvyX96ZCvVfKsmlX59hAQNnkjjiPUXcZAbzDdM4VxQZATDuRWyfhA25dDtwHQZDZD'
+
+  const pageAccessToken =
+    'EAATItxj1TL8BPYxgxWMdzMTJCBEY7uJGj1nrBoqaYthZB0DjBMSASZBIf9RmzZCLPcyECk3PBsrOLOQ7hkoJJZAbfoXFCpkRrQglpdZAhECou78mctZAA8omEj2WZBXroQMV7GdxLfC4dqjZCWEeZAwQ4QM7ilMTrxZCQFAmCdCPl6FRxGMLZCNXi9D9cRZBclYdjqP4x3uYFaz6hXwonPWZCY2wZD'
+
+  // getFacebookUser(accessTokenForFacebook)
+
+  // getFacebookPages(accessTokenForFacebook)
+
+  // postToFacebookPage(
+  //   '107280208355828',
+  //   pageAccessToken,
+  //   'Its dev mode now.',
+  // )
+
+  // Get post details
+  // await getFacebookPostDetails(
+  //   '107280208355828_1204343541498718',
+  //   pageAccessToken,
+  // )
+
+  // Delete a post
+  // await deleteFacebookPost('107280208355828_1204360558163683', pageAccessToken)
+
+  // for posting video in facebook page
+  const pageId = '107280208355828'
+  // const videoUrl = 'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808276395-9k4ec4p1bs7.mp4'
+  // const description = 'Check out this Reel on our Facebook Page!'
+
+  // await postVideoToFacebookPage(pageId, pageAccessToken, videoUrl, description)
+
+  const videoPostId = '1122915189291706'
+
+  // it's not permission from meta. just amni add korsi
+  // await getFacebookVideoInsights(videoPostId, pageAccessToken)
+
+  // For upload multiple images with description
+  const images = [
+            "https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png",
+            "https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png",
+            "https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png"
+        ]
+
+  // const photoIds = []
+  // for (const img of images) {
+  //   const id = await uploadFacebookPhoto(pageId, pageAccessToken, img)
+  //   photoIds.push(id)
+  // }
+
+  // const postId = await createFacebookMultiPhotoPost(
+  //   pageId,
+  //   pageAccessToken,
+  //   photoIds,
+  //   'Check out our new carousel!',
+  // )
+
   // --- Fetch user ---
   const isUserExist = await User.findOne({
     _id: user.authId,

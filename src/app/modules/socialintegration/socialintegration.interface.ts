@@ -9,8 +9,9 @@ export interface ISocialintegrationFilterables {
 
 export interface ISocialintegration {
   _id: Types.ObjectId;
+  user : Types.ObjectId
   platform: string;
-  accountId: string;
+  appId: string;
   accessToken: string;
   refreshToken?: string;
   expiresAt?: Date;

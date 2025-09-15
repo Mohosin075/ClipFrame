@@ -1,4 +1,53 @@
 import fetch from 'node-fetch'
+import config from '../config'
+import ApiError from '../errors/ApiError'
+import { StatusCodes } from 'http-status-codes'
+
+export async function exchangeForLongLivedToken(
+  shortLivedToken: string,
+  appId: string,
+  appSecret: string,
+) {
+  const url = new URL(`https://graph.facebook.com/v23.0/oauth/access_token`)
+  url.searchParams.set('grant_type', 'fb_exchange_token')
+  url.searchParams.set('client_id', appId)
+  url.searchParams.set('client_secret', appSecret)
+  url.searchParams.set('fb_exchange_token', shortLivedToken)
+
+  const res = await fetch(url.toString(), { method: 'GET' })
+  const data = await res.json()
+
+  if (data.error) {
+    console.error('Facebook Token Exchange Error:', data.error)
+    throw new Error(data.error.message)
+  }
+
+  return {
+    accessToken: data.access_token,
+    tokenType: data.token_type,
+    expiresIn: data.expires_in, // usually 60 days in seconds
+  }
+}
+
+export async function validateFacebookToken(inputToken: string) {
+  const appId = config.facebook.app_id
+  const appSecret = config.facebook.app_secret
+
+  const url = `https://graph.facebook.com/v23.0/debug_token?input_token=${inputToken}&access_token=${appId}|${appSecret}`
+
+  const res = await fetch(url)
+  const result = await res.json()
+
+  // This is the actual token info object
+  const tokenInfo = result.data
+
+  if (!tokenInfo.is_valid) {
+    // return tokenInfo.is_valid
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Facebook token expired')
+  }
+
+  return tokenInfo.is_valid // { is_valid, expires_at, scopes, user_id, ... }
+}
 
 // ----------------------
 // Facebook Functions

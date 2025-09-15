@@ -8,6 +8,10 @@ const FacebookStrategy = require('passport-facebook').Strategy
 import config from '../../../../../config'
 import ApiError from '../../../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
+import { Socialintegration } from '../../../socialintegration/socialintegration.model'
+import { ISocialintegration } from '../../../socialintegration/socialintegration.interface'
+import { exchangeForLongLivedToken } from '../../../../../helpers/graphAPIHelper'
+import { CustomAuthServices } from '../../custom.auth/custom.auth.service'
 
 passport.use(
   new LocalStrategy(
@@ -83,6 +87,23 @@ passport.use(
         // Check if user exists
         let user = await User.findOne({ appId: profile.id })
 
+        const longLiveToken = await exchangeForLongLivedToken(
+          accessToken,
+          config.facebook.app_id!,
+          config.facebook.app_secret!,
+        )
+
+        // console.log({tokenInfo})
+
+        const payload = {
+          platform: 'facebook',
+          appId: profile.id,
+          accessToken: longLiveToken?.accessToken,
+          refreshToken,
+        }
+        let localAccessToken
+        let localRefreshToken
+
         if (!user) {
           // Create new user
           user = new User({
@@ -92,9 +113,21 @@ passport.use(
             profilePhoto: profile.photos?.[0]?.value,
             accessToken,
             refreshToken,
+            verified: true,
           })
-          await user.save()
-          console.log('✅ New user created:', user)
+          const savedUser = (await user.save())._id.toString()
+
+          await Socialintegration.create({
+            ...payload,
+            user: savedUser,
+          })
+
+          const localToken = await CustomAuthServices.socialLogin(
+            profile.id,
+            '',
+          )
+          localAccessToken = localToken.accessToken
+          localRefreshToken = localToken.refreshToken
         } else {
           // Update existing user
           // user.accessToken = accessToken
@@ -102,16 +135,44 @@ passport.use(
           user.email = profile.emails?.[0]?.value || user.email
           user.name = profile.displayName || user.name
           // user.profilePhoto = profile.photos?.[0]?.value || user.profilePhoto
-          await user.save()
-          console.log('♻️ User updated:', user.email)
+          const savedUser = (await user.save())._id.toString()
+
+          const isSocialInegrationExist = await Socialintegration.findOne({
+            appId: profile.id,
+          })
+          if (!isSocialInegrationExist) {
+            await Socialintegration.create({
+              ...payload,
+              user: savedUser,
+            })
+          }
+
+          await Socialintegration.findOneAndUpdate(
+            {
+              appId: profile.id,
+            },
+            {
+              accessToken: longLiveToken?.accessToken,
+            },
+            {
+              new: true,
+            },
+          )
+
+          const localToken = await CustomAuthServices.socialLogin(
+            profile.id,
+            '',
+          )
+          localAccessToken = localToken.accessToken
+          localRefreshToken = localToken.refreshToken
         }
 
         return done(null, {
           _id: user._id,
           email: user.email,
           name: user.name,
-          accessToken, // add
-          refreshToken, // add
+          accessToken: localAccessToken, // add
+          refreshToken: localRefreshToken, // add
         })
       } catch (error) {
         console.error('❌ Facebook strategy error:', error)

@@ -12,6 +12,7 @@ import globalErrorHandler from './app/middleware/globalErrorHandler'
 import './task/scheduler'
 import handleStripeWebhook from './stripe/handleStripeWebhook'
 import config from './config'
+import { Socialintegration } from './app/modules/socialintegration/socialintegration.model'
 
 const app = express()
 
@@ -84,8 +85,6 @@ app.get(
   }),
   (req: any, res) => {
     const userData = req.user
-
-    console.log({userData})
 
     const redirectUrl = `https://mohosin5001.binarybards.online/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
     res.redirect(redirectUrl)

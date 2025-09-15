@@ -32,6 +32,8 @@ import {
   publishInstagramStory,
   uploadFacebookPhoto,
 } from '../../../utils/facebookTokenVerify'
+import { Socialintegration } from '../socialintegration/socialintegration.model'
+import { validateFacebookToken } from '../../../helpers/graphAPIHelper'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({
@@ -222,6 +224,12 @@ export const getProfile = async (user: JwtPayload) => {
 
   const pageAccessToken =
     'EAATItxj1TL8BPfzoMWAiRqZAi9lTVcajfsvTthP5o2Qxv3rb2pvsbqZBZCdwiCXxwI7XjpztShE3j3jrkuMps7H9FMEDw3YQ79944tPbN05wlTS3Gz4PjhIrBHjxBwduqu4hXWGsA32yIMrggvhMAZBncZBIV1RYkc0ZAKQq0kTk40eNtDinkkPPM7PcGUkaTZBbv6kwk8GyxvCq0TMdznOcpgZD'
+  const token = await Socialintegration.findOne({ user: user.authId })
+
+  if (token) {
+    const isValid = await validateFacebookToken(token.accessToken)
+    console.log({ tokenValid: isValid })
+  }
 
   // getFacebookUser(accessTokenForFacebook)
 
@@ -325,7 +333,7 @@ export const getProfile = async (user: JwtPayload) => {
 
   // Step 2: publish the story immediately
   const creationId = '18055107215446277'
-  await publishInstagramStory(igBusinessId, pageAccessToken, creationId)
+  // await publishInstagramStory(igBusinessId, pageAccessToken, creationId)
 
   // --- Fetch user ---
   const isUserExist = await User.findOne({

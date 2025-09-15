@@ -18,13 +18,13 @@ import { IPlan } from '../plan/plan.interface'
 import {
   createFacebookMultiPhotoPost,
   createInstagramReel,
-  createInstagramStory,
   deleteFacebookPost,
   editFacebookPostCaption,
   getFacebookPages,
   getFacebookPostDetails,
   getFacebookUser,
   getFacebookVideoInsights,
+  getInstagramAccountDetails,
   postInstagramPhoto,
   postToFacebookPage,
   postVideoToFacebookPage,
@@ -225,7 +225,7 @@ export const getProfile = async (user: JwtPayload) => {
 
   // getFacebookUser(accessTokenForFacebook)
 
-  getFacebookPages(accessTokenForFacebook)
+  // getFacebookPages(accessTokenForFacebook)
 
   // postToFacebookPage(
   //   '107280208355828',
@@ -285,12 +285,14 @@ export const getProfile = async (user: JwtPayload) => {
 
   // For instagram
 
-  const igBusinessId = ''
+  const igBusinessId = '17841443388295568'
+
+  // await getInstagramAccountDetails(igBusinessId, pageAccessToken)
 
   // await postInstagramPhoto(
   //   igBusinessId,
   //   pageAccessToken,
-  //   'https://your-public-bucket.com/photo.jpg',
+  //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png',
   //   '🔥 First Insta post from ClipFrame!',
   // )
 
@@ -299,28 +301,31 @@ export const getProfile = async (user: JwtPayload) => {
   // const creationId = await createInstagramReel(
   //   igBusinessId,
   //   pageAccessToken,
-  //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/myreel.mp4',
+  //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4',
   //   '🔥 Instant Reel from ClipFrame!',
   // )
   // console.log({ creationId })
-  // publishInstagramReel(igBusinessId, pageAccessToken, creationId)
+  // publishInstagramReel(igBusinessId, pageAccessToken, '18055106300446277')
 
-  const mediaUrl =
-    'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/story1.mp4' // or image
+  // const mediaUrl =
+  //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png'
   // const caption = '🔥 My first Story from ClipFrame!'
-  // const creationId = await createInstagramStory(
-  //   igBusinessId,
-  //   pageAccessToken,
-  //   mediaUrl,
-  //   caption,
-  // )
 
-  // Step 2: publish the story immediately
-  // await publishInstagramStory(
+  // try {
+  //   const creationId = await createInstagramStory(
   //     igBusinessId,
   //     pageAccessToken,
-  //     creationId,
+  //     mediaUrl,
+  //     caption,
   //   )
+  //   console.log('Story creation_id:', creationId)
+  // } catch (err) {
+  //   console.error(err)
+  // }
+
+  // Step 2: publish the story immediately
+  const creationId = '18055107215446277'
+  await publishInstagramStory(igBusinessId, pageAccessToken, creationId)
 
   // --- Fetch user ---
   const isUserExist = await User.findOne({

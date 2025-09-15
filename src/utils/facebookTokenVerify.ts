@@ -255,6 +255,39 @@ export async function editFacebookPostCaption(
 }
 
 // Instagram part
+
+export async function getInstagramAccountDetails(
+  igUserId: string,          // Instagram Business Account ID
+  pageAccessToken: string,   // Page Access Token linked to Instagram
+) {
+  try {
+    const url = `https://graph.facebook.com/v23.0/${igUserId}?fields=id,username,followers_count,follows_count,media_count&access_token=${pageAccessToken}`
+
+    const res = await fetch(url)
+    const data = await res.json()
+
+    console.log({ instagramDetails: data })
+
+    if (data.error) {
+      console.error('Instagram Details Error:', data.error)
+      throw new Error(data.error.message)
+    }
+
+    return data // Contains id, username, followers_count, follows_count, media_count
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
+}
+
+
+
+
+
+
+
+
+
 // need update for create two different function
 export async function postInstagramPhoto(
   igBusinessId: string,
@@ -346,30 +379,45 @@ export async function publishInstagramReel(
 
 // for IG story posting
 
-export async function createInstagramStory(
+export async function createInstagramImageStory(
   igBusinessId: string,
   pageAccessToken: string,
-  mediaUrl: string, // HTTPS image/video URL
+  imageUrl: string,
   caption?: string,
-) {
-  const res = await fetch(
-    `https://graph.facebook.com/v21.0/${igBusinessId}/media`,
-    {
-      method: 'POST',
-      body: new URLSearchParams({
-        media_type: mediaUrl.endsWith('.mp4') ? 'VIDEO' : 'IMAGE',
-        story: 'true', // marks it as a Story
-        caption: caption || '',
-        [mediaUrl.endsWith('.mp4') ? 'video_url' : 'image_url']: mediaUrl,
-        access_token: pageAccessToken,
-      }),
-    },
-  )
+): Promise<string> {
+  try {
+    // Construct request body for image only
+    const body = {
+      access_token: pageAccessToken,
+      media_type: 'IMAGE',
+      image_url: imageUrl,
+      caption: caption || '',
+    }
 
-  const data = await res.json()
-  if (data.error) throw new Error(data.error.message)
-  return data.id // creation_id
+    // Call Graph API to create media container
+    const res = await fetch(`https://graph.facebook.com/v23.0/${igBusinessId}/media`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+    const data = await res.json()
+
+    if (data.error) {
+      console.error('Instagram Image Story Error Response:', data.error)
+      throw new Error(data.error.message)
+    }
+
+    console.log('Instagram Image Story Created:', data)
+    return data.id // creation_id
+  } catch (err) {
+    console.error('Instagram Image Story Error:', err)
+    throw err
+  }
 }
+
+
+
 
 export async function publishInstagramStory(
   igBusinessId: string,
@@ -388,6 +436,7 @@ export async function publishInstagramStory(
   )
 
   const data = await res.json()
+  console.log({data})
   if (data.error) throw new Error(data.error.message)
   return data.id // live Story ID
 }

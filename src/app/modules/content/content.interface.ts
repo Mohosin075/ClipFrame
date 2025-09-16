@@ -78,3 +78,19 @@ export interface IContent {
 }
 
 export type ContentModel = Model<IContent, {}, {}>
+
+
+
+
+export interface VideoStats {
+  id: string;
+  description?: string;
+  permalink: string;
+  createdAt: string;
+  updatedAt: string;
+  durationSec?: number;
+  videoUrl?: string;
+  likesCount: number;
+  commentsCount: number;
+  insights: Record<string, number>;
+}

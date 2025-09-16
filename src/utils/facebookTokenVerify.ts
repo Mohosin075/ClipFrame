@@ -1,4 +1,5 @@
 import fetch from 'node-fetch'
+import { VideoStats } from '../app/modules/content/content.interface'
 
 /**
  * 1️⃣ Get basic Facebook user info
@@ -185,18 +186,7 @@ export async function postVideoToFacebookPage(
   return { videoId: data.id, permalink: meta.permalink_url };
 }
 
-interface VideoStats {
-  id: string;
-  description?: string;
-  permalink: string;
-  createdAt: string;
-  updatedAt: string;
-  durationSec?: number;
-  videoUrl?: string;
-  likesCount: number;
-  commentsCount: number;
-  insights: Record<string, number>;
-}
+
 
 
 // it's not permission from meta. just amni add korsi

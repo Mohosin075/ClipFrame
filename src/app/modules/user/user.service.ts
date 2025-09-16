@@ -257,20 +257,20 @@ export const getProfile = async (user: JwtPayload) => {
   const pageId = '823267804193695'
   const videoUrl =
     'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808276395-9k4ec4p1bs7.mp4'
-  const description = 'Check out this Reel on our Facebook Page!'
+  const description = 'Check Post'
 
   // const dadta = await postVideoToFacebookPage(pageId, pageAccessToken, videoUrl, description)
 
   // console.log({dadta})
 
-  const videoPostId = '2603907269991361'
+  const videoPostId = '1296375255515316'
 
   // it's not permission from meta. just amni add korsi
-  // const res = await getFacebookVideoFullDetails(videoPostId, pageAccessToken)
+  const res = await getFacebookVideoFullDetails(videoPostId, pageAccessToken)
   // console.log({res})
 
-  const stats = await getAllPageVideoStats(pageId, pageAccessToken)
-  console.log(stats)
+  // const stats = await getAllPageVideoStats(pageId, pageAccessToken)
+  // console.log(stats)
 
   // For upload multiple images with description
   const images = [

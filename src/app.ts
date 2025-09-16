@@ -69,9 +69,16 @@ app.get(
     scope: [
       'email',
       'public_profile',
+      'pages_show_list',
+      'pages_read_engagement',
       'pages_manage_posts',
+      'pages_read_user_content',
       'instagram_basic',
       'instagram_content_publish',
+      'instagram_manage_insights',
+      'instagram_manage_comments',
+      'business_management',
+      'read_insights',
     ],
   }),
 )
@@ -86,16 +93,16 @@ app.get(
   (req: any, res) => {
     const userData = req.user
 
-    const redirectUrl = `https://mohosin5001.binarybards.online/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
-    res.redirect(redirectUrl)
+    // const redirectUrl = `https://mohosin5001.binarybards.online/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+    // res.redirect(redirectUrl)
 
-    // res.json({
-    //   success: true,
-    //   accessToken: userData.accessToken,
-    //   refreshToken: userData.refreshToken,
-    //   email: userData.email,
-    //   name: userData.name,
-    // })
+    res.json({
+      success: true,
+      accessToken: userData.accessToken,
+      refreshToken: userData.refreshToken,
+      email: userData.email,
+      name: userData.name,
+    })
   },
 )
 

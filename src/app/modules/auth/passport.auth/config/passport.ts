@@ -84,6 +84,7 @@ passport.use(
       done: any,
     ) => {
       try {
+        console.log(req.user)
         // Check if user exists
         let user = await User.findOne({ appId: profile.id })
 
@@ -134,6 +135,7 @@ passport.use(
           // user.refreshToken = refreshToken
           user.email = profile.emails?.[0]?.value || user.email
           user.name = profile.displayName || user.name
+          user.appId = profile.id
           // user.profilePhoto = profile.photos?.[0]?.value || user.profilePhoto
           const savedUser = (await user.save())._id.toString()
 

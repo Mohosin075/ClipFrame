@@ -20,10 +20,11 @@ import {
   createInstagramReel,
   deleteFacebookPost,
   editFacebookPostCaption,
+  getAllPageVideoStats,
   getFacebookPages,
   getFacebookPostDetails,
   getFacebookUser,
-  getFacebookVideoInsights,
+  getFacebookVideoFullDetails,
   getInstagramAccountDetails,
   postInstagramPhoto,
   postToFacebookPage,
@@ -220,47 +221,56 @@ export const getProfile = async (user: JwtPayload) => {
   // const accessTokenForFacebook =
   //   'EAATItxj1TL8BPZAtWTNvZA0lncReLA7uXSKZAnqZAcQM5NFsT56bz51hLrHloJ0SZAysukKRxIewsMBAZB11XGzMZAouBMXnHehwSCc0a0OGj50AYsmLQgxVHrSEH0nzWxSkH5u4V7KzqRptDO6xl6aAk4sF4PQeB7h1ZAkFqBg47LvzfRmoe8oXcgmZBdwZBlhhrk4uMoNef7mOmLtfELKvyX96ZCvVfKsmlX59hAQNnkjjiPUXcZAbzDdM4VxQZATDuRWyfhA25dDtwHQZDZD'
   const accessTokenForFacebook =
-    'EAATItxj1TL8BPdqAykkLsBmsP8x6c82GQPJMu8RWgYRcajxKF4RZC1wTSIKdiAccg0dyvK1r8iB6tbgG91Q3wDzCZCG94kJ0Hxjqj6ZAZCEHqQtUtcpX66naGP2HUONuBM60XIfv1Po4wa8jyZASUD4ZAPpcBCvUuLZBg0B8kDd598xjMaYJ4bZCREJRPauD1qx3YLtSGyve5837s6ENVHeDPMZAjcyMmfeAPKOeSxRZAkQ2DLEGGt0EwAMHZCKcbmFRaCQ3M3cuTkHZBAZDZD'
+    'EAATItxj1TL8BPcVANZBAuO2YPcf8eZCIA8R71iYEiv4kxicvbFwTOIOZCSPxoKhANTEiwGdDYPSqw4OxSRZB2nJWYZCvZBedawhNpNzIqZBvDIaZA15v6XV5wfAmHENfv1gFAyxbm12LApxFif89CCl02rl3EcvjJKZCvwhAHeb3QJIPGBsSsqBHGHsLbdjUEFEhgcWsSaZAG4kZCMQ'
 
   const pageAccessToken =
-    'EAATItxj1TL8BPfzoMWAiRqZAi9lTVcajfsvTthP5o2Qxv3rb2pvsbqZBZCdwiCXxwI7XjpztShE3j3jrkuMps7H9FMEDw3YQ79944tPbN05wlTS3Gz4PjhIrBHjxBwduqu4hXWGsA32yIMrggvhMAZBncZBIV1RYkc0ZAKQq0kTk40eNtDinkkPPM7PcGUkaTZBbv6kwk8GyxvCq0TMdznOcpgZD'
+    'EAATItxj1TL8BPT10uT2lZCdm87HZAxEokZAaWZC8BK44sgKttuY4FBZBUOFYtmXZBIWMorvdraUZCXnXb0xdPHRAwvGDZAMMhAjEnRTZBeSGPDsXUlOowonYWwVGZAEidLjLkZBndP2FnjgmkoKPRPLceZB5vNeiYuWIfmMFZAeeBZAuv58MQ21uPeYYjpdXP8iSxc8ZABvxwTZBJb3RlizW6TOp8Ilq'
   const token = await Socialintegration.findOne({ user: user.authId })
 
-  if (token) {
-    const isValid = await validateFacebookToken(token.accessToken)
-    console.log({ tokenValid: isValid })
-  }
+  // if (token) {
+  //   const isValid = await validateFacebookToken(token.accessToken)
+  //   console.log({ tokenValid: isValid })
+  // }
 
   // getFacebookUser(accessTokenForFacebook)
 
   // getFacebookPages(accessTokenForFacebook)
 
   // postToFacebookPage(
-  //   '107280208355828',
+  //   '823267804193695',
   //   pageAccessToken,
   //   'Its dev mode now.',
   // )
 
   // Get post details
-  // await getFacebookPostDetails(
-  //   '107280208355828_1204343541498718',
-  //   pageAccessToken,
-  // )
+  // const post = await getFacebookPostDetails('798669632642408', pageAccessToken)
+
+  // console.log(post)
+
+  // const stats = await getFacebookVideoStats("798669632642408", pageAccessToken);
+  // console.log(stats.metrics.total_video_views);
 
   // Delete a post
   // await deleteFacebookPost('107280208355828_1204360558163683', pageAccessToken)
 
   // for posting video in facebook page
-  const pageId = '107280208355828'
-  // const videoUrl = 'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808276395-9k4ec4p1bs7.mp4'
-  // const description = 'Check out this Reel on our Facebook Page!'
+  const pageId = '823267804193695'
+  const videoUrl =
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808276395-9k4ec4p1bs7.mp4'
+  const description = 'Check out this Reel on our Facebook Page!'
 
-  // await postVideoToFacebookPage(pageId, pageAccessToken, videoUrl, description)
+  // const dadta = await postVideoToFacebookPage(pageId, pageAccessToken, videoUrl, description)
 
-  const videoPostId = '1122915189291706'
+  // console.log({dadta})
+
+  const videoPostId = '2603907269991361'
 
   // it's not permission from meta. just amni add korsi
-  // await getFacebookVideoInsights(videoPostId, pageAccessToken)
+  // const res = await getFacebookVideoFullDetails(videoPostId, pageAccessToken)
+  // console.log({res})
+
+  const stats = await getAllPageVideoStats(pageId, pageAccessToken)
+  console.log(stats)
 
   // For upload multiple images with description
   const images = [

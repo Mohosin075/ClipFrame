@@ -95,11 +95,25 @@ router.post(
   CustomAuthController.logout,
 )
 
-// Initiate Facebook authentication
+// -------------------- Facebook Login Routes --------------------
+// Start login
 router.get(
   '/facebook',
   passport.authenticate('facebook', {
-    scope: ['email', 'public_profile'],
+    scope: [
+      'email',
+      'public_profile',
+      'pages_show_list',
+      'pages_read_engagement',
+      'pages_manage_posts',
+      'pages_read_user_content',
+      'instagram_basic',
+      'instagram_content_publish',
+      'instagram_manage_insights',
+      'instagram_manage_comments',
+      'business_management',
+      'read_insights',
+    ],
   }),
 )
 

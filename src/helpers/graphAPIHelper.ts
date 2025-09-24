@@ -144,7 +144,7 @@ export async function uploadFacebookPhoto(
   return data.id
 }
 
-// it's not permission from meta. just amni add korsi
+
 export async function getFacebookVideoFullDetails(
   videoId: string,
   pageAccessToken: string
@@ -437,6 +437,7 @@ export async function createInstagramCarousel(
   return data.id
 }
 
+// not completed
 export async function getInstagramPostInsights(
   igMediaId: string,
   pageAccessToken: string,

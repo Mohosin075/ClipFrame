@@ -61,39 +61,19 @@ app.use(
   handleStripeWebhook,
 )
 
-// -------------------- Facebook Login Routes --------------------
-// Start login
-app.get(
-  '/auth/facebook',
-  passport.authenticate('facebook', {
-    scope: [
-      'email',
-      'public_profile',
-      'pages_show_list',
-      'pages_read_engagement',
-      'pages_manage_posts',
-      'pages_read_user_content',
-      'instagram_basic',
-      'instagram_content_publish',
-      'instagram_manage_insights',
-      'instagram_manage_comments',
-      'business_management',
-      'read_insights',
-    ],
-  }),
-)
 
 // callback facebook
 app.get(
   '/facebook/callback',
   passport.authenticate('facebook', {
-    failureRedirect: 'https://mohosin5001.binarybards.online/privacy-policy',
+    failureRedirect:
+      'https://jackson-personally-beta-highways.trycloudflare.com/privacy-policy',
     session: false,
   }),
   (req: any, res) => {
     const userData = req.user
 
-    // const redirectUrl = `https://mohosin5001.binarybards.online/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+    // const redirectUrl = `https://jackson-personally-beta-highways.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
     // res.redirect(redirectUrl)
 
     res.json({

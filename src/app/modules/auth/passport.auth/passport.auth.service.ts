@@ -31,7 +31,7 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }): Promise<IAu
     profile: photos[0].value,
     name: displayName,
     verified: true,
-    password: id,
+    // password: id,
     status: USER_STATUS.ACTIVE,
     appId: id,
     role: payload.role,

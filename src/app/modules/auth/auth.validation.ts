@@ -61,6 +61,7 @@ const loginZodSchema = z.object({
         message: 'Invalid phone number format',
       }),
     deviceToken: z.string().min(1).optional(),
+    rememberMe: z.boolean().optional(),
     password: z.string().min(8, { message: 'Password is required' }),
   }),
 })

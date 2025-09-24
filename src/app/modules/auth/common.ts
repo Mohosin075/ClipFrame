@@ -11,13 +11,13 @@ import { emailTemplate } from '../../../shared/emailTemplate'
 import { emailHelper } from '../../../helpers/emailHelper'
 // import { emailQueue } from '../../../helpers/bull-mq-producer'
 
-const handleLoginLogic = async (payload: ILoginData, isUserExist: IUser):Promise<IAuthResponse> => {
-
+const handleLoginLogic = async (
+  payload: ILoginData,
+  isUserExist: IUser,
+): Promise<IAuthResponse> => {
   const { authentication, verified, status, password } = isUserExist
 
   const { restrictionLeftAt, wrongLoginAttempts } = authentication
-
-
 
   if (!verified) {
     //send otp to user
@@ -49,9 +49,10 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: IUser):Promise
 
     // emailQueue.add('emails', otpTemplate)
 
-
-    return authResponse(StatusCodes.PROXY_AUTHENTICATION_REQUIRED, `An OTP has been sent to your ${payload.email}. Please verify.`)
-
+    return authResponse(
+      StatusCodes.PROXY_AUTHENTICATION_REQUIRED,
+      `An OTP has been sent to your ${payload.email}. Please verify.`,
+    )
   }
 
   if (status === USER_STATUS.DELETED) {
@@ -126,18 +127,34 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: IUser):Promise
     { new: true },
   )
 
-  const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name, isUserExist.email)
+  const tokens = AuthHelper.createToken(
+    isUserExist._id,
+    isUserExist.role,
+    isUserExist.name,
+    isUserExist.email,
+  )
 
-  return authResponse(StatusCodes.OK, `Welcome back ${isUserExist.name}`, isUserExist.role, tokens.accessToken, tokens.refreshToken)
+  return authResponse(
+    StatusCodes.OK,
+    `Welcome back ${isUserExist.name}`,
+    isUserExist.role,
+    tokens.accessToken,
+    tokens.refreshToken,
+  )
 }
 
 export const AuthCommonServices = {
   handleLoginLogic,
 }
 
-
-
-export const authResponse = (status: number, message: string,role?: string, accessToken?: string, refreshToken?: string, token?: string): IAuthResponse => {
+export const authResponse = (
+  status: number,
+  message: string,
+  role?: string,
+  accessToken?: string,
+  refreshToken?: string,
+  token?: string,
+): IAuthResponse => {
   return {
     status,
     message,

@@ -67,7 +67,7 @@ const createUser = async (payload: IUser) => {
 }
 
 const customLogin = async (payload: ILoginData): Promise<IAuthResponse> => {
-  const { email, phone, rememberMe, password } = payload
+  const { email, phone } = payload
   const query = email ? { email: email.toLowerCase().trim() } : { phone: phone }
 
   const isUserExist = await User.findOne({

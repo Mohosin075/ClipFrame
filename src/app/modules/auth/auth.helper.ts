@@ -22,6 +22,8 @@ const createToken = (
     ? (config.jwt.jwt_refresh_expire_long as string)
     : (config.jwt.jwt_refresh_expire_in as string)
 
+    console.log({refreshExpiry})
+
   const refreshToken = jwtHelper.createToken(
     { authId, role, name, email, deviceToken },
     config.jwt.jwt_refresh_secret as Secret,

@@ -126,12 +126,15 @@ const handleLoginLogic = async (
     },
     { new: true },
   )
+  const rememberMe = payload.rememberMe || false
 
   const tokens = AuthHelper.createToken(
     isUserExist._id,
     isUserExist.role,
     isUserExist.name,
     isUserExist.email,
+    payload.deviceToken,
+    rememberMe,
   )
 
   return authResponse(

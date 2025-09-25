@@ -72,7 +72,7 @@ const customLogin = async (payload: ILoginData): Promise<IAuthResponse> => {
 
   const isUserExist = await User.findOne({
     ...query,
-    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.INACTIVE] },
+    status: { $in: [USER_STATUS.ACTIVE] },
   })
     .select('+password +authentication')
     .lean()
@@ -508,7 +508,7 @@ const resendOtpToPhoneOrEmail = async (
       { new: true },
     )
   }
-
+  // TODO : need mobile varificaition implementation after signup with phone
   if (phone) {
     //implement this feature using twilio/aws sns
 

@@ -28,7 +28,7 @@ export const UserOnboardingSchema = z.object({
     .regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId')
     .optional(),
   businessType: z.string().default('General'),
-  customBusinessType: z.string().default(''),
+  // customBusinessType: z.string().default(''),
   businessDescription: z.string().default(''),
   targetAudience: z.array(z.nativeEnum(TargetAudience)).default([]),
   preferredLanguages: z

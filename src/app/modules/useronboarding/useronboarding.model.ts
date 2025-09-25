@@ -24,7 +24,7 @@ const BrandColorSchema = new Schema<IBrandColor>({
 const UserOnboardingSchema = new Schema<IUseronboarding>({
   userId: { type: Schema.Types.ObjectId, ref: 'User' },
   businessType: { type: String, default: 'General' },
-  customBusinessType: { type: String, default: '' },
+  // customBusinessType: { type: String, default: '' },
   businessDescription: { type: String, default: '' },
   targetAudience: {
     type: [String],

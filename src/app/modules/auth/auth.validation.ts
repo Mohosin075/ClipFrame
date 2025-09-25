@@ -1,5 +1,6 @@
-import { optional, z } from 'zod'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { USER_ROLES } from '../../../enum/user'
+import { z } from 'zod'
 
 const verifyEmailOrPhoneOtpZodSchema = z.object({
   body: z.object({
@@ -141,7 +142,13 @@ const createUserZodSchema = z.object({
     email: z.string({ required_error: 'Email is required' }).email(),
     password: z.string({ required_error: 'Password is required' }).min(6),
     name: z.string({ required_error: 'Name is required' }).optional(),
-    phone: z.string({ required_error: 'Phone is required' }).optional(),
+    phone: z.string().refine(
+      val => {
+        const p = parsePhoneNumberFromString(val)
+        return p?.isValid() ?? false
+      },
+      { message: 'Invalid phone number' },
+    ),
     address: addressSchema.optional(),
     role: z.enum([USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR], {
       message: 'Role must be one of admin, user, creator',

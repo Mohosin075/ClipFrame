@@ -101,6 +101,7 @@ const createAdmin = async (): Promise<Partial<IUser> | null> => {
 }
 
 const getAllUsers = async (paginationOptions: IPaginationOptions) => {
+  console.log('iiiii')
   const { page, limit, skip, sortBy, sortOrder } =
     paginationHelper.calculatePagination(paginationOptions)
 
@@ -380,8 +381,7 @@ export const getProfile = async (user: JwtPayload) => {
     platforms: socialPlatforms,
     membership: subscriber?.plan?.title ?? '',
     preferredLanguages: isOnboarded?.preferredLanguages ?? [],
-    businessType: isOnboarded?.businessType ?? 'General',
-    customBusinessType: isOnboarded?.customBusinessType ?? '',
+    businessType: isOnboarded?.businessType ?? 'General'
   }
 }
 

@@ -44,6 +44,7 @@ export interface IUser {
   password: string
   role: USER_ROLES
   appId?: string
+  provider?: string
   deviceToken?: string
   timezone: string
   subscribe: boolean

@@ -96,7 +96,7 @@ router.post(
 )
 
 // -------------------- Facebook Login Routes --------------------
-// Start login
+
 router.get(
   '/facebook',
   passport.authenticate('facebook', {
@@ -118,26 +118,6 @@ router.get(
 )
 
 // Facebook callback handler
-router.get(
-  '/facebook/callback',
-  passport.authenticate('facebook', { session: false }),
-  (req, res, next) => {
-    console.log('hit')
-    const user = req.user as any
-    const token = AuthHelper.createToken(user.authId, user.role)
 
-    console.log({ token })
-
-    res.status(200).json({
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
-    })
-  },
-)
 
 export const AuthRoutes = router

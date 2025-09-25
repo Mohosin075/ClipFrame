@@ -84,9 +84,10 @@ passport.use(
       done: any,
     ) => {
       try {
-        console.log(req.user)
         // Check if user exists
-        let user = await User.findOne({ appId: profile.id })
+        let user = await User.findOne({
+          $or: [{ email: profile.emails[0].value }, { appId: profile.id }],
+        })
 
         const longLiveToken = await exchangeForLongLivedToken(
           accessToken,

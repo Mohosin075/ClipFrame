@@ -48,6 +48,7 @@ const UserSchema = new Schema<IUser, UserModel>(
       default: USER_ROLES.USER,
     },
     appId: { type: String },
+    provider: { type: String },
     deviceToken: { type: String },
     timezone: { type: String, default: 'UTC' },
 

@@ -9,7 +9,9 @@ import { AuthHelper } from '../auth.helper'
 import { IAuthResponse } from '../auth.interface'
 import { authResponse } from '../common'
 
-const handleGoogleLogin = async (payload: IUser & { profile: any }): Promise<IAuthResponse> => {
+const handleGoogleLogin = async (
+  payload: IUser & { profile: any },
+): Promise<IAuthResponse> => {
   const { emails, photos, displayName, id } = payload.profile
   const email = emails[0].value.toLowerCase().trim()
   const isUserExist = await User.findOne({
@@ -20,7 +22,13 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }): Promise<IAu
     //return only the token
     const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
     console.log('Google login tokens:', tokens)
-    return authResponse(StatusCodes.OK, `Welcome ${isUserExist.name} to our platform.`, isUserExist.role, tokens.accessToken, tokens.refreshToken)
+    return authResponse(
+      StatusCodes.OK,
+      `Welcome ${isUserExist.name} to our platform.`,
+      isUserExist.role,
+      tokens.accessToken,
+      tokens.refreshToken,
+    )
   }
 
   const session = await User.startSession()
@@ -49,7 +57,13 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }): Promise<IAu
     await session.commitTransaction()
     await session.endSession()
 
-    return authResponse(StatusCodes.OK, `Welcome ${user[0].name} to our platform.`, user[0].role, tokens.accessToken, tokens.refreshToken)
+    return authResponse(
+      StatusCodes.OK,
+      `Welcome ${user[0].name} to our platform.`,
+      user[0].role,
+      tokens.accessToken,
+      tokens.refreshToken,
+    )
   } catch (error) {
     await session.abortTransaction(session)
     session.endSession()
@@ -59,6 +73,8 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }): Promise<IAu
   }
 }
 
+
+
 export const PassportAuthServices = {
-  handleGoogleLogin,
+  handleGoogleLogin
 }

@@ -61,19 +61,18 @@ app.use(
   handleStripeWebhook,
 )
 
-
 // callback facebook
 app.get(
   '/facebook/callback',
   passport.authenticate('facebook', {
     failureRedirect:
-      'https://jackson-personally-beta-highways.trycloudflare.com/privacy-policy',
+      'https://insured-gifts-strips-hottest.trycloudflare.com/privacy-policy',
     session: false,
   }),
   (req: any, res) => {
     const userData = req.user
 
-    // const redirectUrl = `https://jackson-personally-beta-highways.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+    // const redirectUrl = `https://insured-gifts-strips-hottest.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
     // res.redirect(redirectUrl)
 
     res.json({

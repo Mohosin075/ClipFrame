@@ -237,11 +237,11 @@ export const getProfile = async (user: JwtPayload) => {
 
   // getFacebookPages(accessTokenForFacebook)
 
-  // postToFacebookPage(
-  //   '823267804193695',
-  //   pageAccessToken,
-  //   'Its dev mode now.',
-  // )
+  postToFacebookPage(
+    '823267804193695',
+    pageAccessToken,
+    'Its dev mode now.',
+  )
 
   // Get post details
   // const post = await getFacebookPostDetails('798669632642408', pageAccessToken)

@@ -46,8 +46,8 @@ export interface IClips {
 }
 
 export interface IContent {
-  title?: string
-  description?: string
+  caption?: string
+  // description?: string
   mediaUrls?: string[]
   contentType?: ContentType
   scheduledAt?: ScheduledAt

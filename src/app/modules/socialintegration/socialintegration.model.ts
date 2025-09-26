@@ -14,6 +14,7 @@ const socialintegrationSchema = new Schema<
     appId: { type: String },
     accessToken: { type: String },
     refreshToken: { type: String },
+    pageInfo: [{ type: Schema.Types.Mixed }],
     expiresAt: { type: Date },
   },
   {

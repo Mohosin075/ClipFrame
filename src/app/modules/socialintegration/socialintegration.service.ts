@@ -1,58 +1,73 @@
-import { StatusCodes } from 'http-status-codes';
-import ApiError from '../../../errors/ApiError';
-import { ISocialintegrationFilterables, ISocialintegration } from './socialintegration.interface';
-import { Socialintegration } from './socialintegration.model';
-import { JwtPayload } from 'jsonwebtoken';
-import { IPaginationOptions } from '../../../interfaces/pagination';
-import { paginationHelper } from '../../../helpers/paginationHelper';
-import { socialintegrationSearchableFields } from './socialintegration.constants';
-import { Types } from 'mongoose';
-
+import { StatusCodes } from 'http-status-codes'
+import ApiError from '../../../errors/ApiError'
+import {
+  ISocialintegrationFilterables,
+  ISocialintegration,
+} from './socialintegration.interface'
+import { Socialintegration } from './socialintegration.model'
+import { JwtPayload } from 'jsonwebtoken'
+import { IPaginationOptions } from '../../../interfaces/pagination'
+import { paginationHelper } from '../../../helpers/paginationHelper'
+import { socialintegrationSearchableFields } from './socialintegration.constants'
+import { Types } from 'mongoose'
+import {
+  getFacebookPages,
+  validateFacebookToken,
+} from '../../../helpers/graphAPIHelper'
 
 const createSocialintegration = async (
   user: JwtPayload,
-  payload: ISocialintegration
+  payload: ISocialintegration,
 ): Promise<ISocialintegration> => {
   try {
-    const result = await Socialintegration.create(payload);
+    const result = await Socialintegration.create(payload)
     if (!result) {
-      
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
-        'Failed to create Socialintegration, please try again with valid data.'
-      );
+        'Failed to create Socialintegration, please try again with valid data.',
+      )
     }
 
-    return result;
+    return result
   } catch (error: any) {
-    
     if (error.code === 11000) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found');
+      throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found')
     }
-    throw error;
+    throw error
   }
-};
+}
 
 const getAllSocialintegrations = async (
   user: JwtPayload,
   filterables: ISocialintegrationFilterables,
-  pagination: IPaginationOptions
+  pagination: IPaginationOptions,
 ) => {
-  const { searchTerm, ...filterData } = filterables;
-  const { page, skip, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(pagination);
+  const isUser = await Socialintegration.findOne({ user: user.authId })
 
-  const andConditions = [];
+  const Pages = await getFacebookPages(isUser?.accessToken as string)
+
+  await Socialintegration.findOneAndUpdate(
+    { user: user.authId },
+    { pageInfo: Pages },
+    { new: true },
+  )
+
+  const { searchTerm, ...filterData } = filterables
+  const { page, skip, limit, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(pagination)
+
+  const andConditions = []
 
   // Search functionality
   if (searchTerm) {
     andConditions.push({
-      $or: socialintegrationSearchableFields.map((field) => ({
+      $or: socialintegrationSearchableFields.map(field => ({
         [field]: {
           $regex: searchTerm,
           $options: 'i',
         },
       })),
-    });
+    })
   }
 
   // Filter functionality
@@ -61,19 +76,18 @@ const getAllSocialintegrations = async (
       $and: Object.entries(filterData).map(([key, value]) => ({
         [key]: value,
       })),
-    });
+    })
   }
 
-  const whereConditions = andConditions.length ? { $and: andConditions } : {};
+  const whereConditions = andConditions.length ? { $and: andConditions } : {}
 
   const [result, total] = await Promise.all([
-    Socialintegration
-      .find(whereConditions)
+    Socialintegration.find(whereConditions)
       .skip(skip)
       .limit(limit)
       .sort({ [sortBy]: sortOrder }),
     Socialintegration.countDocuments(whereConditions),
-  ]);
+  ])
 
   return {
     meta: {
@@ -83,31 +97,33 @@ const getAllSocialintegrations = async (
       totalPages: Math.ceil(total / limit),
     },
     data: result,
-  };
-};
+  }
+}
 
-const getSingleSocialintegration = async (id: string): Promise<ISocialintegration> => {
+const getSingleSocialintegration = async (
+  id: string,
+): Promise<ISocialintegration> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Socialintegration ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Socialintegration ID')
   }
 
-  const result = await Socialintegration.findById(id);
+  const result = await Socialintegration.findById(id)
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Requested socialintegration not found, please try again with valid id'
-    );
+      'Requested socialintegration not found, please try again with valid id',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
 const updateSocialintegration = async (
   id: string,
-  payload: Partial<ISocialintegration>
+  payload: Partial<ISocialintegration>,
 ): Promise<ISocialintegration | null> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Socialintegration ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Socialintegration ID')
   }
 
   const result = await Socialintegration.findByIdAndUpdate(
@@ -116,34 +132,36 @@ const updateSocialintegration = async (
     {
       new: true,
       runValidators: true,
-    }
-  );
+    },
+  )
 
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Requested socialintegration not found, please try again with valid id'
-    );
+      'Requested socialintegration not found, please try again with valid id',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
-const deleteSocialintegration = async (id: string): Promise<ISocialintegration> => {
+const deleteSocialintegration = async (
+  id: string,
+): Promise<ISocialintegration> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Socialintegration ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Socialintegration ID')
   }
 
-  const result = await Socialintegration.findByIdAndDelete(id);
+  const result = await Socialintegration.findByIdAndDelete(id)
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Something went wrong while deleting socialintegration, please try again with valid id.'
-    );
+      'Something went wrong while deleting socialintegration, please try again with valid id.',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
 export const SocialintegrationServices = {
   createSocialintegration,
@@ -151,4 +169,4 @@ export const SocialintegrationServices = {
   getSingleSocialintegration,
   updateSocialintegration,
   deleteSocialintegration,
-};
+}

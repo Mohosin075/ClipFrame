@@ -9,7 +9,7 @@ const router = express.Router()
 
 router.get(
   '/',
-  auth(USER_ROLES.ADMIN),
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
   SocialintegrationController.getAllSocialintegrations,
 )
 

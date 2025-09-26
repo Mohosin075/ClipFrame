@@ -48,8 +48,8 @@ export const clipSchema = z.object({
 export const ContentValidations = {
   create: z.object({
     body: z.object({
-      title: z.string(),
-      description: z.string().optional(),
+      caption: z.string(),
+      // description: z.string().optional(),
       mediaUrls: z.array(z.string()),
       contentType: z.enum(['post', 'reels', 'story', 'carousel']),
       scheduledAt: ScheduledAtSchema.optional(),
@@ -62,8 +62,8 @@ export const ContentValidations = {
 
   update: z.object({
     body: z.object({
-      title: z.string().optional(),
-      description: z.string().optional(),
+      caption: z.string().optional(),
+      // description: z.string().optional(),
       scheduledAt: ScheduledAtSchema.optional(),
     }),
   }),

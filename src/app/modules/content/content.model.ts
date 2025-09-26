@@ -4,8 +4,8 @@ import { CONTENT_STATUS } from './content.constants'
 
 const contentSchema = new Schema<IContent>(
   {
-    title: { type: String },
-    description: { type: String },
+    caption: { type: String },
+    // description: { type: String },
     mediaUrls: { type: [String] },
     contentType: { type: String, enum: ['post', 'reels', 'story', 'carousel'] },
     scheduledAt: {

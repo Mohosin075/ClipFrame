@@ -8,6 +8,9 @@ import { CONTENT_STATUS, contentSearchableFields } from './content.constants'
 import mongoose, { Types } from 'mongoose'
 import { ContentType, IContent, IContentFilterables } from './content.interface'
 import { checkAndIncrementUsage } from '../subscription/checkSubscription'
+import { Socialintegration } from '../socialintegration/socialintegration.model'
+import { buildCaptionWithTags } from '../../../utils/caption'
+import { uploadFacebookPhotoScheduled } from '../../../helpers/graphAPIHelper'
 
 export const createContent = async (
   user: JwtPayload,
@@ -15,18 +18,66 @@ export const createContent = async (
 ): Promise<IContent> => {
   const session = await mongoose.startSession()
   session.startTransaction()
+  const contentUrl =
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
+  const imageUrl =
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png'
 
+  payload.mediaUrls = [imageUrl]
   try {
     // Check and increment usage inside the session
-    await checkAndIncrementUsage(user, payload.contentType as ContentType, session)
+    await checkAndIncrementUsage(
+      user,
+      payload.contentType as ContentType,
+      session,
+    )
 
     // Create content inside the same session
     const result = await Content.create([payload], { session }) // note the array form
+
     if (!result || result.length === 0) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         'Failed to create Content, please try again with valid data.',
       )
+    }
+
+    const socialAccount = await Socialintegration.findOne({
+      user: user.authId,
+      platform: 'facebook',
+    }).session(session)
+    if (
+      !socialAccount ||
+      !socialAccount.pageInfo ||
+      socialAccount.pageInfo.length === 0
+    ) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'No Facebook social account found, please connect your Facebook account first.',
+      )
+    }
+
+    // console.log('Social Account:', socialAccount)
+
+    const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
+    const now = new Date()
+
+    // Add 2 minutes (2 * 60 * 1000 milliseconds)
+    const scheduledAt = new Date(now.getTime() + 2 * 60 * 1000)
+
+    if (socialAccount && socialAccount?.pageInfo?.length > 0) {
+      const pageId = socialAccount.pageInfo[0].pageId
+      const pageAccessToken = socialAccount.pageInfo[0].pageAccessToken!
+
+      const published = await uploadFacebookPhotoScheduled(
+        pageId,
+        pageAccessToken,
+        payload.mediaUrls![0],
+        caption,
+        scheduledAt,
+      )
+
+      console.log('Published to Facebook Page:', published)
     }
 
     await session.commitTransaction()
@@ -235,7 +286,7 @@ const duplicateContent = async (
     updatedAt: undefined,
     user: new Types.ObjectId(user.authId), // assign new user if needed
     status: CONTENT_STATUS.SCHEDULED, // reset status
-    title: `${originalContent.title} (Duplicate)`, // add "Duplicate" to title
+    caption: `${originalContent.caption} (Duplicate)`, // add "Duplicate" to caption
   }
 
   // 3️⃣ Create new content

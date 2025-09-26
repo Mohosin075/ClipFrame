@@ -10,7 +10,10 @@ import ApiError from '../../../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { Socialintegration } from '../../../socialintegration/socialintegration.model'
 import { ISocialintegration } from '../../../socialintegration/socialintegration.interface'
-import { exchangeForLongLivedToken } from '../../../../../helpers/graphAPIHelper'
+import {
+  exchangeForLongLivedToken,
+  getFacebookPages,
+} from '../../../../../helpers/graphAPIHelper'
 import { CustomAuthServices } from '../../custom.auth/custom.auth.service'
 
 passport.use(
@@ -168,6 +171,22 @@ passport.use(
           )
           localAccessToken = localToken.accessToken
           localRefreshToken = localToken.refreshToken
+        }
+
+        const socialintegration = await Socialintegration.findOne({
+          appId: profile.id,
+        })
+
+        if (socialintegration) {
+          const pageInfo = await getFacebookPages(socialintegration.accessToken)
+
+          if (pageInfo.length > 0) {
+            await Socialintegration.findOneAndUpdate(
+              { appId: profile.id },
+              { pageInfo },
+              { new: true },
+            )
+          }
         }
 
         return done(null, {

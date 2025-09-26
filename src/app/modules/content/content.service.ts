@@ -11,6 +11,7 @@ import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
+  uploadFacebookCarouselScheduled,
   uploadFacebookPhotoScheduled,
   uploadFacebookReelScheduled,
 } from '../../../helpers/graphAPIHelper'
@@ -85,11 +86,16 @@ export const createContent = async (
 
     const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
 
-    let publishedDate: Date = new Date()
+    let publishedDate: Date
+
     if (payload.scheduledAt?.date && payload.scheduledAt?.time) {
+      // Merge date + time
       const dateObj = new Date(payload.scheduledAt.date) // convert string → Date
       const dateStr = dateObj.toISOString().split('T')[0] // "YYYY-MM-DD"
       publishedDate = new Date(`${dateStr}T${payload.scheduledAt.time}:00.000Z`)
+    } else {
+      // Default: current time + 15 minutes
+      publishedDate = new Date(Date.now() + 15 * 60 * 1000)
     }
 
     if (socialAccount && socialAccount?.pageInfo?.length > 0) {
@@ -124,6 +130,21 @@ export const createContent = async (
           throw new ApiError(
             StatusCodes.BAD_REQUEST,
             'Failed to schedule Facebook reel, please try again.',
+          )
+        }
+      } else if (payload.contentType === 'carousel') {
+        const carouselPublished = await uploadFacebookCarouselScheduled(
+          pageId,
+          pageAccessToken,
+          payload.mediaUrls!,
+          caption,
+          publishedDate,
+        )
+        console.log('Published to Facebook Page:', carouselPublished)
+        if (!carouselPublished) {
+          throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to schedule Facebook carousel, please try again.',
           )
         }
       }

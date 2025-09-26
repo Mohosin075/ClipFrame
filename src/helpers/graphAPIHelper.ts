@@ -76,6 +76,7 @@ export async function getFacebookPages(accessToken: string) {
   }))
 }
 
+// not needed in clipframe but it's working for feed post
 export async function postToFacebookPage(
   pageId: string,
   pageAccessToken: string,
@@ -91,7 +92,7 @@ export async function postToFacebookPage(
   if (data.error) throw new Error(data.error.message)
   return data
 }
-
+// not use this time i user later
 export async function deleteFacebookPost(
   postId: string,
   pageAccessToken: string,
@@ -105,7 +106,7 @@ export async function deleteFacebookPost(
   return data
 }
 
-// perfect working function
+// perfect working function for photo
 export async function uploadFacebookPhotoScheduled(
   pageId: string,
   pageAccessToken: string,
@@ -138,7 +139,7 @@ export async function uploadFacebookPhotoScheduled(
   return data.id
 }
 
-// Function to upload a Facebook Reel (video) scheduled or immediately
+// perfect working function for reels
 export async function uploadFacebookReelScheduled(
   pageId: string,
   pageAccessToken: string,
@@ -169,6 +170,74 @@ export async function uploadFacebookReelScheduled(
   const data = await res.json()
   if (data.error) throw new Error(data.error.message)
   return data.id
+}
+
+// Upload multiple photos as a carousel (scheduled or immediate)
+export async function uploadFacebookCarouselScheduled(
+  pageId: string,
+  pageAccessToken: string,
+  imageUrls: string[], // array of image URLs
+  caption: string,
+  scheduledAt?: Date, // optional: if not provided, post immediately
+) {
+  if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
+    throw new Error('imageUrls must be a non-empty array')
+  }
+
+  // Step 1: Upload each photo as unpublished to get media_fbid
+  const mediaFbids: string[] = []
+
+  for (const url of imageUrls) {
+    const photoBody: any = {
+      url,
+      published: false, // must be false for carousel
+      access_token: pageAccessToken,
+    }
+
+    const photoRes = await fetch(
+      `https://graph.facebook.com/v23.0/${pageId}/photos`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(photoBody),
+      },
+    )
+
+    const photoData = await photoRes.json()
+    if (photoData.error) throw new Error(photoData.error.message)
+
+    mediaFbids.push(photoData.id)
+  }
+
+  // Step 2: Create the carousel post
+  const postBody: any = {
+    message: caption,
+    attached_media: mediaFbids.map(id => ({ media_fbid: id })),
+    access_token: pageAccessToken,
+  }
+
+  // Schedule if needed
+  if (scheduledAt) {
+    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000)
+    postBody.published = false
+    postBody.scheduled_publish_time = unixTimestamp
+  } else {
+    postBody.published = true
+  }
+
+  const postRes = await fetch(
+    `https://graph.facebook.com/v23.0/${pageId}/feed`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postBody),
+    },
+  )
+
+  const postData = await postRes.json()
+  if (postData.error) throw new Error(postData.error.message)
+
+  return postData.id
 }
 
 export async function getFacebookVideoFullDetails(

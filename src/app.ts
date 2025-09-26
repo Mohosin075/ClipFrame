@@ -66,13 +66,13 @@ app.get(
   '/facebook/callback',
   passport.authenticate('facebook', {
     failureRedirect:
-      'https://insured-gifts-strips-hottest.trycloudflare.com/privacy-policy',
+      'https://std-appraisal-custom-valued.trycloudflare.com/privacy-policy',
     session: false,
   }),
   (req: any, res) => {
     const userData = req.user
 
-    // const redirectUrl = `https://insured-gifts-strips-hottest.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+    // const redirectUrl = `https://std-appraisal-custom-valued.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
     // res.redirect(redirectUrl)
 
     res.json({

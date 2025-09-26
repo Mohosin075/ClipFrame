@@ -131,33 +131,32 @@ export async function uploadFacebookPhotoScheduled(
   pageAccessToken: string,
   imageUrl: string,
   caption: string,
-  scheduledAt?: Date // optional: if not provided, post immediately
+  scheduledAt?: Date, // optional: if not provided, post immediately
 ) {
   const body: any = {
     caption,
     url: imageUrl,
     access_token: pageAccessToken,
-  };
+  }
 
   if (scheduledAt) {
-    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000);
-    body.published = false; // must be false to schedule
-    body.scheduled_publish_time = unixTimestamp;
+    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000)
+    body.published = false // must be false to schedule
+    body.scheduled_publish_time = unixTimestamp
   } else {
-    body.published = true; // publish immediately
+    body.published = true // publish immediately
   }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/photos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  });
+  })
 
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.id;
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+  return data.id
 }
-
 
 export async function getFacebookVideoFullDetails(
   videoId: string,

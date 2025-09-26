@@ -60,10 +60,20 @@ export const createContent = async (
     // console.log('Social Account:', socialAccount)
 
     const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
-    const now = new Date()
 
-    // Add 2 minutes (2 * 60 * 1000 milliseconds)
-    const scheduledAt = new Date(now.getTime() + 2 * 60 * 1000)
+    // Add 15 minutes (15 * 60 * 1000 milliseconds)
+
+    let publishedDate: Date = new Date()
+
+    if (payload.scheduledAt?.date && payload.scheduledAt?.time) {
+      const dateObj = new Date(payload.scheduledAt.date) // convert string → Date
+      const dateStr = dateObj.toISOString().split('T')[0] // "YYYY-MM-DD"
+
+      publishedDate = new Date(`${dateStr}T${payload.scheduledAt.time}:00.000Z`)
+      // console.log(publishedDate.toString())
+    }
+
+    console.log(publishedDate, 'will be published to Facebook Page')
 
     if (socialAccount && socialAccount?.pageInfo?.length > 0) {
       const pageId = socialAccount.pageInfo[0].pageId
@@ -74,7 +84,7 @@ export const createContent = async (
         pageAccessToken,
         payload.mediaUrls![0],
         caption,
-        scheduledAt,
+        publishedDate,
       )
 
       console.log('Published to Facebook Page:', published)
@@ -100,6 +110,11 @@ const getAllContents = async (
   filterables: IContentFilterables,
   pagination: IPaginationOptions,
 ) => {
+  const photoId = '122105534763022104'
+  const pageId = '823267804193695'
+  const pageAccessToken =
+    'EAATItxj1TL8BPplgyghpsxBaKrxukEkmWvNVKaE2EsnbkLDeQ8QBwYpPyc1wD7e1JZB12CI8kX31LBXEz7XblgEr5SYzr10zIcJ2ffdTr9uypBXKoC7HT0azEs83onsQV9CVon6H92YYEsVS4rgCYXUUPB2WslctJ0eXsPqJQHZCzwn2qmMiJADrl7D9mp81AffoFZCp4lFrhk5frZB6'
+
   const { searchTerm, date, ...otherFilters } = filterables
   const { page, skip, limit, sortBy, sortOrder } =
     paginationHelper.calculatePagination(pagination)

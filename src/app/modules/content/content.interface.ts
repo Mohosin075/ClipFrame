@@ -11,24 +11,21 @@ export interface IContentFilterables {
 
 export type ContentType = 'post' | 'reels' | 'story' | 'carousel'
 
-interface ScheduledAtAny {
-  type: 'any' // any time
+enum ScheduledAtType {
+  ANY = 'any',
+  SINGLE = 'single',
+  RANGE = 'range',
 }
 
-interface ScheduledAtSingle {
-  type: 'single' // specific date + time
-  date: Date // "YYYY-MM-DD"
-  time: string // "HH:mm"
-}
+interface ScheduledAt {
+  type: ScheduledAtType
 
-interface ScheduledAtRange {
-  type: 'range' // range
-  date: Date // "YYYY-MM-DD"
-  startTime: string // "HH:mm"
-  endTime: string // "HH:mm"
+  // optional fields depending on type
+  date?: Date // "YYYY-MM-DD"
+  time?: string // "HH:mm"
+  startTime?: string // "HH:mm"
+  endTime?: string // "HH:mm"
 }
-
-type ScheduledAt = ScheduledAtAny | ScheduledAtSingle | ScheduledAtRange
 
 export type ContentStatus =
   | 'draft'
@@ -79,18 +76,15 @@ export interface IContent {
 
 export type ContentModel = Model<IContent, {}, {}>
 
-
-
-
 export interface VideoStats {
-  id: string;
-  description?: string;
-  permalink: string;
-  createdAt: string;
-  updatedAt: string;
-  durationSec?: number;
-  videoUrl?: string;
-  likesCount: number;
-  commentsCount: number;
-  insights: Record<string, number>;
+  id: string
+  description?: string
+  permalink: string
+  createdAt: string
+  updatedAt: string
+  durationSec?: number
+  videoUrl?: string
+  likesCount: number
+  commentsCount: number
+  insights: Record<string, number>
 }

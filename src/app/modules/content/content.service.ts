@@ -10,7 +10,10 @@ import { ContentType, IContent, IContentFilterables } from './content.interface'
 import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
-import { uploadFacebookPhotoScheduled } from '../../../helpers/graphAPIHelper'
+import {
+  uploadFacebookPhotoScheduled,
+  uploadFacebookReelScheduled,
+} from '../../../helpers/graphAPIHelper'
 
 export const createContent = async (
   user: JwtPayload,
@@ -20,10 +23,32 @@ export const createContent = async (
   session.startTransaction()
   const contentUrl =
     'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
-  const imageUrl =
-    'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1757809793604.png'
 
-  payload.mediaUrls = [imageUrl]
+  if (!payload.mediaUrls || payload.mediaUrls.length === 0) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Media URLs are required to create content.',
+    )
+  }
+
+  if (
+    (payload.contentType === 'post' ||
+      payload.contentType === 'reels' ||
+      payload.contentType === 'story') &&
+    Array.isArray(payload.mediaUrls)
+  ) {
+    payload.mediaUrls = payload.mediaUrls.slice(0, 1)
+  }
+
+  if (payload.contentType === 'carousel') {
+    if (payload.mediaUrls.length < 2) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'At least 2 media URLs are required for carousel content.',
+      )
+    }
+  }
+
   try {
     // Check and increment usage inside the session
     await checkAndIncrementUsage(
@@ -46,6 +71,7 @@ export const createContent = async (
       user: user.authId,
       platform: 'facebook',
     }).session(session)
+
     if (
       !socialAccount ||
       !socialAccount.pageInfo ||
@@ -57,37 +83,50 @@ export const createContent = async (
       )
     }
 
-    // console.log('Social Account:', socialAccount)
-
     const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
 
-    // Add 15 minutes (15 * 60 * 1000 milliseconds)
-
     let publishedDate: Date = new Date()
-
     if (payload.scheduledAt?.date && payload.scheduledAt?.time) {
       const dateObj = new Date(payload.scheduledAt.date) // convert string → Date
       const dateStr = dateObj.toISOString().split('T')[0] // "YYYY-MM-DD"
-
       publishedDate = new Date(`${dateStr}T${payload.scheduledAt.time}:00.000Z`)
-      // console.log(publishedDate.toString())
     }
-
-    console.log(publishedDate, 'will be published to Facebook Page')
 
     if (socialAccount && socialAccount?.pageInfo?.length > 0) {
       const pageId = socialAccount.pageInfo[0].pageId
       const pageAccessToken = socialAccount.pageInfo[0].pageAccessToken!
 
-      const published = await uploadFacebookPhotoScheduled(
-        pageId,
-        pageAccessToken,
-        payload.mediaUrls![0],
-        caption,
-        publishedDate,
-      )
-
-      console.log('Published to Facebook Page:', published)
+      if (payload.contentType === 'post') {
+        const published = await uploadFacebookPhotoScheduled(
+          pageId,
+          pageAccessToken,
+          payload.mediaUrls![0],
+          caption,
+          publishedDate,
+        )
+        console.log('Published to Facebook Page:', published)
+        if (!published) {
+          throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to schedule Facebook post, please try again.',
+          )
+        }
+      } else if (payload.contentType === 'reels') {
+        const reelsPublished = await uploadFacebookReelScheduled(
+          pageId,
+          pageAccessToken,
+          payload.mediaUrls![0],
+          caption,
+          publishedDate,
+        )
+        console.log('Published to Facebook Page:', reelsPublished)
+        if (!reelsPublished) {
+          throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to schedule Facebook reel, please try again.',
+          )
+        }
+      }
     }
 
     await session.commitTransaction()

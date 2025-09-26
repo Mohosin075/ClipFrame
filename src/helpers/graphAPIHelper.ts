@@ -92,27 +92,6 @@ export async function postToFacebookPage(
   return data
 }
 
-export async function scheduleFacebookPost(
-  pageId: string,
-  pageAccessToken: string,
-  message: string,
-  publishTime: number, // UNIX timestamp
-) {
-  const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/feed`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message,
-      published: false,
-      scheduled_publish_time: publishTime,
-      access_token: pageAccessToken,
-    }),
-  })
-  const data = await res.json()
-  if (data.error) throw new Error(data.error.message)
-  return data
-}
-
 export async function deleteFacebookPost(
   postId: string,
   pageAccessToken: string,
@@ -126,6 +105,7 @@ export async function deleteFacebookPost(
   return data
 }
 
+// perfect working function
 export async function uploadFacebookPhotoScheduled(
   pageId: string,
   pageAccessToken: string,
@@ -148,6 +128,39 @@ export async function uploadFacebookPhotoScheduled(
   }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/photos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+  return data.id
+}
+
+// Function to upload a Facebook Reel (video) scheduled or immediately
+export async function uploadFacebookReelScheduled(
+  pageId: string,
+  pageAccessToken: string,
+  videoUrl: string,
+  caption: string,
+  scheduledAt?: Date, // optional: if not provided, post immediately
+) {
+  const body: any = {
+    description: caption, // Reels use 'description' instead of 'caption'
+    file_url: videoUrl, // video URL
+    access_token: pageAccessToken,
+  }
+
+  if (scheduledAt) {
+    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000)
+    body.published = false // must be false to schedule
+    body.scheduled_publish_time = unixTimestamp
+  } else {
+    body.published = true // publish immediately
+  }
+
+  const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/videos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

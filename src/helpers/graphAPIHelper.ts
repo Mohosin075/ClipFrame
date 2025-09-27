@@ -172,7 +172,7 @@ export async function uploadFacebookReelScheduled(
   return data.id
 }
 
-// Upload multiple photos as a carousel (scheduled or immediate)
+// Perfect working Upload multiple photos as a carousel (scheduled or immediate)
 export async function uploadFacebookCarouselScheduled(
   pageId: string,
   pageAccessToken: string,
@@ -238,6 +238,59 @@ export async function uploadFacebookCarouselScheduled(
   if (postData.error) throw new Error(postData.error.message)
 
   return postData.id
+}
+
+// Function to post a Facebook Story (photo or video)
+export async function uploadFacebookPageStory(
+  pageId: string,
+  pageAccessToken: string,
+  mediaUrl: string, // photo or video URL
+  type: 'photo' | 'video', // media type
+  caption?: string, // optional caption
+  scheduledAt?: Date, // optional: schedule reel
+) {
+  const body: any = {
+    access_token: pageAccessToken,
+  }
+
+  if (type === 'photo') {
+    body.url = mediaUrl // photo URL
+    if (caption) body.description = caption
+  } else if (type === 'video') {
+    body.file_url = mediaUrl // video URL
+    if (caption) body.description = caption
+  } else {
+    throw new Error('Invalid type: must be photo or video')
+  }
+
+  // Schedule if provided
+  if (scheduledAt) {
+    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000)
+    body.published = false
+    body.scheduled_publish_time = unixTimestamp
+  } else {
+    body.published = true // publish immediately
+  }
+
+  const endpoint =
+    type === 'video'
+      ? `https://graph.facebook.com/v23.0/${pageId}/videos`
+      : `https://graph.facebook.com/v23.0/${pageId}/photos`
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+
+  return {
+    id: data.id,
+    simulatedStory: true,
+    type,
+  }
 }
 
 export async function getFacebookVideoFullDetails(

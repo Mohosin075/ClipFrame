@@ -12,6 +12,7 @@ import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
   uploadFacebookCarouselScheduled,
+  uploadFacebookPageStory,
   uploadFacebookPhotoScheduled,
   uploadFacebookReelScheduled,
 } from '../../../helpers/graphAPIHelper'
@@ -145,6 +146,22 @@ export const createContent = async (
           throw new ApiError(
             StatusCodes.BAD_REQUEST,
             'Failed to schedule Facebook carousel, please try again.',
+          )
+        }
+      } else if (payload.contentType === 'story') {
+        const storyPublished = await uploadFacebookPageStory(
+          pageId,
+          pageAccessToken,
+          payload.mediaUrls![0],
+          'photo',
+          caption,
+          publishedDate,
+        )
+        console.log('Published to Facebook Page:', storyPublished)
+        if (!storyPublished) {
+          throw new ApiError(
+            StatusCodes.BAD_REQUEST,
+            'Failed to schedule Facebook story, please try again.',
           )
         }
       }

@@ -15,6 +15,9 @@ import config from './config'
 import axios from 'axios'
 import qs from 'qs'
 import { Socialintegration } from './app/modules/socialintegration/socialintegration.model'
+import auth from './app/middleware/auth'
+import { USER_ROLES } from './enum/user'
+import { User } from './app/modules/user/user.model'
 
 const app = express()
 
@@ -68,13 +71,13 @@ app.get(
   '/facebook/callback',
   passport.authenticate('facebook', {
     failureRedirect:
-      'https://std-appraisal-custom-valued.trycloudflare.com/privacy-policy',
+      'https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy',
     session: false,
   }),
   (req: any, res) => {
     const userData = req.user
 
-    // const redirectUrl = `https://std-appraisal-custom-valued.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+    // const redirectUrl = `https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
     // res.redirect(redirectUrl)
 
     res.json({
@@ -87,18 +90,30 @@ app.get(
   },
 )
 
-app.get('/instagram/connect', (req: any, res: any) => {
-  const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=1301179034780432&redirect_uri=https://std-appraisal-custom-valued.trycloudflare.com/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`
+app.get(
+  '/instagram/connect',
+  // auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.CREATOR),
+  (req: any, res: any) => {
+    // const user = req.user!
+    // const state = user.authId.toString() // or JWT/session token
+    const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${config.instagram.client_id}&redirect_uri=${config.instagram.callback_url}&response_type=code&scope=instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights&state=68b1fd9e3a485a0f4fc4b527`
 
-  res.redirect(instagramAuthUrl)
-})
+    // const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${config.instagram.client_id}&redirect_uri=${config.instagram.callback_url}&response_type=code&scope=instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights&state=${state}`
+
+    res.redirect(instagramAuthUrl)
+  },
+)
 
 // for Instagram
 
 app.get('/instagram/callback', async (req: any, res: any) => {
-  const code = req.query.code as string
-
+  const { code, state } = req.query
   if (!code) return res.status(400).send('Missing code')
+  const isUserExist = await User.findById(state).select('email name role')
+
+  if (!isUserExist) {
+    return res.status(400).send('User not found')
+  }
 
   try {
     // Step 1: Exchange code for short-lived access token
@@ -134,7 +149,32 @@ app.get('/instagram/callback', async (req: any, res: any) => {
     const longLivedToken: string = longTokenResponse.data.access_token
     const expiresIn: number = longTokenResponse.data.expires_in
 
-    console.log({ longLivedToken, expiresIn })
+    const existingIntegration = await Socialintegration.findOne({
+      user: isUserExist._id,
+      platform: 'instagram',
+    })
+
+    if (existingIntegration) {
+      // Update existing record
+      existingIntegration.accessToken = longLivedToken
+      existingIntegration.expiresAt = new Date(Date.now() + expiresIn * 1000)
+      await existingIntegration.save()
+    } else {
+      // Create new record
+      await Socialintegration.create({
+        user: isUserExist._id,
+        platform: 'instagram',
+        accessToken: longLivedToken,
+        expiresAt: new Date(Date.now() + expiresIn * 1000),
+      })
+    }
+
+    // Respond with token info
+    res.json({
+      userId,
+      accessToken: longLivedToken,
+      expiresIn,
+    })
 
     // Respond with token info
     res.json({

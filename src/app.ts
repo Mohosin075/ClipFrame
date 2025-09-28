@@ -12,6 +12,8 @@ import globalErrorHandler from './app/middleware/globalErrorHandler'
 import './task/scheduler'
 import handleStripeWebhook from './stripe/handleStripeWebhook'
 import config from './config'
+import axios from 'axios'
+import qs from 'qs'
 import { Socialintegration } from './app/modules/socialintegration/socialintegration.model'
 
 const app = express()
@@ -84,6 +86,71 @@ app.get(
     })
   },
 )
+
+app.get('/instagram/connect', (req: any, res: any) => {
+  const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=1301179034780432&redirect_uri=https://std-appraisal-custom-valued.trycloudflare.com/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`
+
+  res.redirect(instagramAuthUrl)
+})
+
+// for Instagram
+
+app.get('/instagram/callback', async (req: any, res: any) => {
+  const code = req.query.code as string
+
+  if (!code) return res.status(400).send('Missing code')
+
+  try {
+    // Step 1: Exchange code for short-lived access token
+    const tokenResponse = await axios.post(
+      'https://api.instagram.com/oauth/access_token',
+      qs.stringify({
+        client_id: config.instagram.client_id!,
+        client_secret: config.instagram.client_secret!,
+        grant_type: 'authorization_code',
+        redirect_uri: config.instagram.callback_url!,
+        code,
+      }),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      },
+    )
+
+    const shortLivedToken: string = tokenResponse.data.access_token
+    const userId: string = tokenResponse.data.user_id
+
+    // Step 2: Exchange short-lived token for long-lived token
+    const longTokenResponse = await axios.get(
+      'https://graph.instagram.com/access_token',
+      {
+        params: {
+          grant_type: 'ig_exchange_token',
+          client_secret: config.instagram.client_secret!,
+          access_token: shortLivedToken,
+        },
+      },
+    )
+
+    const longLivedToken: string = longTokenResponse.data.access_token
+    const expiresIn: number = longTokenResponse.data.expires_in
+
+    console.log({ longLivedToken, expiresIn })
+
+    // Respond with token info
+    res.json({
+      userId,
+      accessToken: longLivedToken,
+      expiresIn,
+    })
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error(error.response?.data || error.message)
+    } else {
+      console.error(error)
+    }
+    res.status(500).send('Instagram login failed')
+  }
+})
 
 // -------------------- API Routes --------------------
 app.use('/api/v1', router)

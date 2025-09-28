@@ -22,6 +22,11 @@ export default {
     app_secret: process.env.FACEBOOK_APP_SECRET,
     callback_url: process.env.FACEBOOK_CALLBACK_URL,
   },
+  instagram: {
+    client_id: process.env.INSTAGRAM_CLIENT_ID,
+    client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
+    callback_url: process.env.INSTAGRAM_CALLBACK_URL,
+  },
   aws: {
     access_key_id: process.env.AWS_ACCESS_KEY_ID,
     secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,

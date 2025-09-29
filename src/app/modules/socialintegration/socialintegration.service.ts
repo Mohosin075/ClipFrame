@@ -14,6 +14,7 @@ import {
   getFacebookPages,
   getInstagramAccounts,
 } from '../../../helpers/graphAPIHelper'
+import { IUser } from '../user/user.interface'
 
 const createSocialintegration = async (
   user: JwtPayload,
@@ -42,6 +43,13 @@ const getAllSocialintegrations = async (
   filterables: ISocialintegrationFilterables,
   pagination: IPaginationOptions,
 ) => {
+  console.log({ user })
+  const social = await Socialintegration.findOne({
+    user: user.authId,
+    platform: 'instagram',
+  })
+
+
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =
     paginationHelper.calculatePagination(pagination)
@@ -153,8 +161,11 @@ const deleteSocialintegration = async (
   return result
 }
 
-export async function upsertFacebookPages(accessToken: string, profile: any) {
-  console.log('Upsert Facebook Pages for profile:', profile)
+export async function upsertFacebookPages(
+  accessToken: string,
+  profile: any,
+  user: IUser,
+) {
   // 1️⃣ Pull the list of FB Pages the user manages
   const pages = await getFacebookPages(accessToken)
 
@@ -162,6 +173,7 @@ export async function upsertFacebookPages(accessToken: string, profile: any) {
   return Socialintegration.findOneAndUpdate(
     { appId: profile.id, platform: 'facebook' },
     {
+      user: user._id,
       platform: 'facebook',
       appId: profile.id,
       accessToken,
@@ -179,6 +191,7 @@ export async function upsertFacebookPages(accessToken: string, profile: any) {
 export async function upsertInstagramAccounts(
   accessToken: string,
   profile: any,
+  user: IUser,
 ) {
   // 1️⃣ Find IG business/creator accounts tied to this FB user
   const igAccounts = await getInstagramAccounts(accessToken)
@@ -189,6 +202,7 @@ export async function upsertInstagramAccounts(
   return Socialintegration.findOneAndUpdate(
     { appId: profile.id, platform: 'instagram' },
     {
+      user: user._id,
       platform: 'instagram',
       appId: profile.id,
       accessToken,

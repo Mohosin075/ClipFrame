@@ -174,15 +174,22 @@ export const createContent = async (
         platform: 'instagram',
       }).session(session)
 
-      if (!instagramAccount || !instagramAccount.accessToken) {
+      if (
+        !instagramAccount ||
+        !instagramAccount.accessToken ||
+        instagramAccount.accounts?.length === 0
+      ) {
         throw new ApiError(
           StatusCodes.BAD_REQUEST,
           'No Instagram social account found, please connect your Instagram account first.',
         )
       }
 
-      const instagramId = instagramAccount.appId
-      const instagramAccessToken = instagramAccount.accessToken
+      const instagramId =
+        instagramAccount.accounts && instagramAccount.accounts[0].igUserId
+      const instagramAccessToken =
+        instagramAccount.accounts &&
+        instagramAccount.accounts[0].pageAccessToken!
 
       if (payload.contentType === 'reels') {
         const reelPublished = await scheduleInstagramReel(

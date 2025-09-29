@@ -443,6 +443,7 @@ export async function getAllPageVideoStats(
 
 // Get instagram User Profile
 
+// perfect working function
 export async function getInstagramAccounts(accessToken: string) {
   try {
     // 1️⃣ Get all Facebook Pages for this user
@@ -507,9 +508,8 @@ export async function scheduleInstagramReel(
   publishTime?: Date,
 ): Promise<string> {
   try {
-    console.log({ igBusinessId, accessToken, videoUrl, caption, publishTime })
-    // Step 1: Create Reel container
-    const containerRes = await axios.post(
+    // Step 1: Create container
+    const { data: container } = await axios.post(
       `https://graph.facebook.com/v23.0/${igBusinessId}/media`,
       {
         media_type: 'REELS',
@@ -519,29 +519,46 @@ export async function scheduleInstagramReel(
       },
     )
 
-    const creationId = containerRes.data.id
+    const creationId = container.id
 
-    // Step 2: Publish container (with or without scheduling)
-    const publishPayload: any = {
+    // Step 2: Poll until ready
+    let status = 'IN_PROGRESS'
+    const maxRetries = 20
+    const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+    for (let i = 0; i < maxRetries; i++) {
+      const { data } = await axios.get(
+        `https://graph.facebook.com/v23.0/${creationId}`,
+        { params: { fields: 'status_code', access_token: accessToken } },
+      )
+
+      status = data.status_code
+      if (status === 'FINISHED') break
+
+      await delay(5000) // wait 5s before re-checking
+    }
+
+    if (status !== 'FINISHED') {
+      throw new Error('Video not ready after polling')
+    }
+
+    // Step 3: Publish (or schedule)
+    const publishPayload: Record<string, any> = {
       creation_id: creationId,
       access_token: accessToken,
     }
-
     if (publishTime) {
       publishPayload.publish_at = Math.floor(publishTime.getTime() / 1000)
     }
 
-    const publishRes = await axios.post(
+    const { data: publishRes } = await axios.post(
       `https://graph.facebook.com/v23.0/${igBusinessId}/media_publish`,
       publishPayload,
     )
 
-    return publishRes.data.id // Reel ID
-  } catch (error: any) {
-    console.error(
-      'Error scheduling reel:',
-      error.response?.data || error.message,
-    )
+    return publishRes.id
+  } catch (err: any) {
+    console.error('Error scheduling reel:', err.response?.data || err.message)
     throw new Error('Failed to schedule Reel')
   }
 }

@@ -225,8 +225,9 @@ passport.use(
       done: any,
     ) => {
       try {
+        const userId = req.user?.authId
         const user = await User.findOne({
-          _id: '68d5998fd9ec2bbe9069c6b0',
+          _id: '68b1fd9e3a485a0f4fc4b527',
         }).select('email name role')
 
         const flow = req.session.connectType // 'facebook' or 'instagram'
@@ -236,9 +237,13 @@ passport.use(
           config.facebook.app_secret!,
         )
         if (flow === 'facebook') {
-          await upsertFacebookPages(longLiveToken.accessToken, profile)
+          await upsertFacebookPages(longLiveToken.accessToken, profile, user!)
         } else if (flow === 'instagram') {
-          await upsertInstagramAccounts(longLiveToken.accessToken, profile)
+          await upsertInstagramAccounts(
+            longLiveToken.accessToken,
+            profile,
+            user!,
+          )
         }
 
         done(null, { platform: flow, token: longLiveToken.accessToken, user })

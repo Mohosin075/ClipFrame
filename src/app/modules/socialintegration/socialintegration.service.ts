@@ -12,6 +12,7 @@ import { socialintegrationSearchableFields } from './socialintegration.constants
 import { Types } from 'mongoose'
 import {
   getFacebookPages,
+  getInstagramUser,
   validateFacebookToken,
 } from '../../../helpers/graphAPIHelper'
 
@@ -42,15 +43,8 @@ const getAllSocialintegrations = async (
   filterables: ISocialintegrationFilterables,
   pagination: IPaginationOptions,
 ) => {
-  const isUser = await Socialintegration.findOne({ user: user.authId })
-
-  const Pages = await getFacebookPages(isUser?.accessToken as string)
-
-  await Socialintegration.findOneAndUpdate(
-    { user: user.authId },
-    { pageInfo: Pages },
-    { new: true },
-  )
+  const getInstagram = await getInstagramUser(user.authId)
+  console.log('Instagram User:', getInstagram)
 
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =

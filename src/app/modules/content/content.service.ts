@@ -11,6 +11,7 @@ import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
+  scheduleInstagramReel,
   uploadFacebookCarouselScheduled,
   uploadFacebookPageStory,
   uploadFacebookPhotoScheduled,
@@ -25,11 +26,25 @@ export const createContent = async (
   session.startTransaction()
   const contentUrl =
     'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
+  payload.mediaUrls = [contentUrl]
 
   if (!payload.mediaUrls || payload.mediaUrls.length === 0) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Media URLs are required to create content.',
+    )
+  }
+
+  let facebook, instagram
+  if (payload.platform) {
+    facebook = payload.platform.includes('facebook')
+    instagram = payload.platform.includes('instagram')
+  }
+
+  if (!facebook && !instagram) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Please select at least one platform (Facebook or Instagram) to publish the content.',
     )
   }
 
@@ -69,22 +84,6 @@ export const createContent = async (
       )
     }
 
-    const socialAccount = await Socialintegration.findOne({
-      user: user.authId,
-      platform: 'facebook',
-    }).session(session)
-
-    if (
-      !socialAccount ||
-      !socialAccount.pageInfo ||
-      socialAccount.pageInfo.length === 0
-    ) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        'No Facebook social account found, please connect your Facebook account first.',
-      )
-    }
-
     const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
 
     let publishedDate: Date
@@ -99,69 +98,105 @@ export const createContent = async (
       publishedDate = new Date(Date.now() + 15 * 60 * 1000)
     }
 
-    if (socialAccount && socialAccount?.pageInfo?.length > 0) {
-      const pageId = socialAccount.pageInfo[0].pageId
-      const pageAccessToken = socialAccount.pageInfo[0].pageAccessToken!
+    if (facebook) {
+      const facebookAccount = await Socialintegration.findOne({
+        user: user.authId,
+        platform: 'facebook',
+      }).session(session)
 
-      if (payload.contentType === 'post') {
-        const published = await uploadFacebookPhotoScheduled(
-          pageId,
-          pageAccessToken,
+      if (
+        !facebookAccount ||
+        !facebookAccount.pageInfo ||
+        facebookAccount.pageInfo.length === 0
+      ) {
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          'No Facebook social account found, please connect your Facebook account first.',
+        )
+      }
+
+      if (facebookAccount && facebookAccount?.pageInfo?.length > 0) {
+        const pageId = facebookAccount.pageInfo[0].pageId
+        const pageAccessToken = facebookAccount.pageInfo[0].pageAccessToken!
+
+        if (payload.contentType === 'post') {
+          const published = await uploadFacebookPhotoScheduled(
+            pageId,
+            pageAccessToken,
+            payload.mediaUrls![0],
+            caption,
+            publishedDate,
+          )
+          console.log('Published to Facebook Page:', published)
+          if (!published) {
+            throw new ApiError(
+              StatusCodes.BAD_REQUEST,
+              'Failed to schedule Facebook post, please try again.',
+            )
+          }
+        } else if (payload.contentType === 'reels') {
+          const reelsPublished = await uploadFacebookReelScheduled(
+            pageId,
+            pageAccessToken,
+            payload.mediaUrls![0],
+            caption,
+            publishedDate,
+          )
+          console.log('Published to Facebook Page:', reelsPublished)
+          if (!reelsPublished) {
+            throw new ApiError(
+              StatusCodes.BAD_REQUEST,
+              'Failed to schedule Facebook reel, please try again.',
+            )
+          }
+        } else if (payload.contentType === 'carousel') {
+          const carouselPublished = await uploadFacebookCarouselScheduled(
+            pageId,
+            pageAccessToken,
+            payload.mediaUrls!,
+            caption,
+            publishedDate,
+          )
+          console.log('Published to Facebook Page:', carouselPublished)
+          if (!carouselPublished) {
+            throw new ApiError(
+              StatusCodes.BAD_REQUEST,
+              'Failed to schedule Facebook carousel, please try again.',
+            )
+          }
+        }
+      }
+    }
+
+    if (instagram) {
+      const instagramAccount = await Socialintegration.findOne({
+        user: user.authId,
+        platform: 'instagram',
+      }).session(session)
+
+      if (!instagramAccount || !instagramAccount.accessToken) {
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          'No Instagram social account found, please connect your Instagram account first.',
+        )
+      }
+
+      const instagramId = instagramAccount.appId
+      const instagramAccessToken = instagramAccount.accessToken
+
+      if (payload.contentType === 'reels') {
+        const reelPublished = await scheduleInstagramReel(
+          instagramId!,
+          instagramAccessToken!,
           payload.mediaUrls![0],
           caption,
           publishedDate,
         )
-        console.log('Published to Facebook Page:', published)
-        if (!published) {
+        console.log('Published to Instagram:', reelPublished)
+        if (!reelPublished) {
           throw new ApiError(
             StatusCodes.BAD_REQUEST,
-            'Failed to schedule Facebook post, please try again.',
-          )
-        }
-      } else if (payload.contentType === 'reels') {
-        const reelsPublished = await uploadFacebookReelScheduled(
-          pageId,
-          pageAccessToken,
-          payload.mediaUrls![0],
-          caption,
-          publishedDate,
-        )
-        console.log('Published to Facebook Page:', reelsPublished)
-        if (!reelsPublished) {
-          throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            'Failed to schedule Facebook reel, please try again.',
-          )
-        }
-      } else if (payload.contentType === 'carousel') {
-        const carouselPublished = await uploadFacebookCarouselScheduled(
-          pageId,
-          pageAccessToken,
-          payload.mediaUrls!,
-          caption,
-          publishedDate,
-        )
-        console.log('Published to Facebook Page:', carouselPublished)
-        if (!carouselPublished) {
-          throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            'Failed to schedule Facebook carousel, please try again.',
-          )
-        }
-      } else if (payload.contentType === 'story') {
-        const storyPublished = await uploadFacebookPageStory(
-          pageId,
-          pageAccessToken,
-          payload.mediaUrls![0],
-          'photo',
-          caption,
-          publishedDate,
-        )
-        console.log('Published to Facebook Page:', storyPublished)
-        if (!storyPublished) {
-          throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            'Failed to schedule Facebook story, please try again.',
+            'Failed to schedule Instagram reel, please try again.',
           )
         }
       }
@@ -269,7 +304,7 @@ const getSingleContent = async (id: string): Promise<IContent> => {
     select: 'name email verified',
   })
 
-  // .populate('socialAccounts')
+  // .populate('facebookAccounts')
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,

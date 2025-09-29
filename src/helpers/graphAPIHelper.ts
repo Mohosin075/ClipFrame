@@ -3,6 +3,8 @@ import config from '../config'
 import ApiError from '../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { VideoStats } from '../app/modules/content/content.interface'
+import axios from 'axios'
+import { Socialintegration } from '../app/modules/socialintegration/socialintegration.model'
 
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,
@@ -240,7 +242,7 @@ export async function uploadFacebookCarouselScheduled(
   return postData.id
 }
 
-// Function to post a Facebook Story (photo or video)
+// Function to post a Facebook Story (photo or video) == not access by graph api
 export async function uploadFacebookPageStory(
   pageId: string,
   pageAccessToken: string,
@@ -293,6 +295,7 @@ export async function uploadFacebookPageStory(
   }
 }
 
+// work later for video insights and stats
 export async function getFacebookVideoFullDetails(
   videoId: string,
   pageAccessToken: string,
@@ -357,6 +360,7 @@ export async function getFacebookVideoFullDetails(
   }
 }
 
+// work later for all video stats from page
 export async function getAllPageVideoStats(
   pageId: string,
   pageAccessToken: string,
@@ -436,6 +440,88 @@ export async function getAllPageVideoStats(
 // ----------------------
 // Instagram Functions
 // ----------------------
+
+// Get instagram User Profile
+
+export const getInstagramUser = async (userId: string) => {
+  const socialIntegration = await Socialintegration.findOne({
+    user: userId,
+    platform: 'instagram',
+  })
+
+  if (!socialIntegration || !socialIntegration.accessToken) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      'Instagram access token not found for user',
+    )
+  }
+
+  try {
+    const response = await axios.get('https://graph.instagram.com/me', {
+      params: {
+        fields: 'id,username',
+        access_token: socialIntegration.accessToken,
+      },
+    })
+
+    return response.data // { id, username }
+  } catch (error: any) {
+    console.error(
+      'Error fetching Instagram user:',
+      error.response?.data || error.message,
+    )
+    throw new Error('Failed to fetch Instagram user info')
+  }
+}
+
+// for instagram reels with scheduling
+export async function scheduleInstagramReel(
+  igBusinessId: string,
+  accessToken: string,
+  videoUrl: string,
+  caption: string,
+  publishTime?: Date,
+): Promise<string> {
+  try {
+    console.log({ igBusinessId, accessToken, videoUrl, caption, publishTime })
+    // Step 1: Create Reel container
+    const containerRes = await axios.post(
+      `https://graph.facebook.com/v23.0/${igBusinessId}/media`,
+      {
+        media_type: 'REELS',
+        video_url: videoUrl,
+        caption,
+        access_token: accessToken,
+      },
+    )
+
+    const creationId = containerRes.data.id
+
+    // Step 2: Publish container (with or without scheduling)
+    const publishPayload: any = {
+      creation_id: creationId,
+      access_token: accessToken,
+    }
+
+    if (publishTime) {
+      publishPayload.publish_at = Math.floor(publishTime.getTime() / 1000)
+    }
+
+    const publishRes = await axios.post(
+      `https://graph.facebook.com/v23.0/${igBusinessId}/media_publish`,
+      publishPayload,
+    )
+
+    return publishRes.data.id // Reel ID
+  } catch (error: any) {
+    console.error(
+      'Error scheduling reel:',
+      error.response?.data || error.message,
+    )
+    throw new Error('Failed to schedule Reel')
+  }
+}
+
 export async function createInstagramImage(
   igBusinessId: string,
   pageAccessToken: string,
@@ -520,30 +606,6 @@ export async function scheduleInstagramPost(
       body: JSON.stringify({
         creation_id: creationId,
         publish_at: publishTime,
-        access_token: pageAccessToken,
-      }),
-    },
-  )
-  const data = await res.json()
-  if (data.error) throw new Error(data.error.message)
-  return data.id
-}
-
-export async function createInstagramReel(
-  igBusinessId: string,
-  pageAccessToken: string,
-  videoUrl: string,
-  caption: string,
-) {
-  const res = await fetch(
-    `https://graph.facebook.com/v23.0/${igBusinessId}/media`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        media_type: 'REELS',
-        video_url: videoUrl,
-        caption,
         access_token: pageAccessToken,
       }),
     },

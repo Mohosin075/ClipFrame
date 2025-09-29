@@ -157,6 +157,7 @@ app.get('/instagram/callback', async (req: any, res: any) => {
     if (existingIntegration) {
       // Update existing record
       existingIntegration.accessToken = longLivedToken
+      existingIntegration.appId = userId
       existingIntegration.expiresAt = new Date(Date.now() + expiresIn * 1000)
       await existingIntegration.save()
     } else {
@@ -164,6 +165,7 @@ app.get('/instagram/callback', async (req: any, res: any) => {
       await Socialintegration.create({
         user: isUserExist._id,
         platform: 'instagram',
+        appId: userId,
         accessToken: longLivedToken,
         expiresAt: new Date(Date.now() + expiresIn * 1000),
       })
@@ -178,7 +180,7 @@ app.get('/instagram/callback', async (req: any, res: any) => {
 
     // Respond with token info
     res.json({
-      userId,
+      appId: userId,
       accessToken: longLivedToken,
       expiresIn,
     })

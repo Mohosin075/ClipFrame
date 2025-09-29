@@ -97,8 +97,35 @@ router.post(
 
 // -------------------- Facebook Login Routes --------------------
 
+// Old route
+// router.get(
+//   '/facebook',
+//   passport.authenticate('facebook', {
+//     scope: [
+//       'email',
+//       'public_profile',
+//       'pages_show_list',
+//       'pages_read_engagement',
+//       'pages_manage_posts',
+//       'pages_read_user_content',
+//       'instagram_basic',
+//       'instagram_content_publish',
+//       'instagram_manage_insights',
+//       'instagram_manage_comments',
+//       'business_management',
+//       'read_insights',
+//     ],
+//   }),
+// )
+
+// 👉 Connect Facebook only
 router.get(
   '/facebook',
+  (req, res, next) => {
+    // flag the flow
+    req.session.connectType = 'facebook'
+    next()
+  },
   passport.authenticate('facebook', {
     scope: [
       'email',
@@ -107,6 +134,22 @@ router.get(
       'pages_read_engagement',
       'pages_manage_posts',
       'pages_read_user_content',
+    ],
+  }),
+)
+
+// 👉 Connect Instagram (uses FB login w/ IG scopes)
+router.get(
+  '/instagram',
+  (req, res, next) => {
+    req.session.connectType = 'instagram'
+    next()
+  },
+  passport.authenticate('facebook', {
+    scope: [
+      'email',
+      'public_profile',
+      'pages_show_list',
       'instagram_basic',
       'instagram_content_publish',
       'instagram_manage_insights',
@@ -116,8 +159,5 @@ router.get(
     ],
   }),
 )
-
-// Facebook callback handler
-
 
 export const AuthRoutes = router

@@ -12,8 +12,7 @@ import { socialintegrationSearchableFields } from './socialintegration.constants
 import { Types } from 'mongoose'
 import {
   getFacebookPages,
-  getInstagramUser,
-  validateFacebookToken,
+  getInstagramAccounts,
 } from '../../../helpers/graphAPIHelper'
 
 const createSocialintegration = async (
@@ -43,9 +42,6 @@ const getAllSocialintegrations = async (
   filterables: ISocialintegrationFilterables,
   pagination: IPaginationOptions,
 ) => {
-  const getInstagram = await getInstagramUser(user.authId)
-  console.log('Instagram User:', getInstagram)
-
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =
     paginationHelper.calculatePagination(pagination)
@@ -155,6 +151,56 @@ const deleteSocialintegration = async (
   }
 
   return result
+}
+
+export async function upsertFacebookPages(accessToken: string, profile: any) {
+  console.log('Upsert Facebook Pages for profile:', profile)
+  // 1️⃣ Pull the list of FB Pages the user manages
+  const pages = await getFacebookPages(accessToken)
+
+  // 2️⃣ Upsert into your Socialintegration collection
+  return Socialintegration.findOneAndUpdate(
+    { appId: profile.id, platform: 'facebook' },
+    {
+      platform: 'facebook',
+      appId: profile.id,
+      accessToken,
+      pageInfo: pages,
+      metaProfile: {
+        email: profile.emails?.[0]?.value,
+        name: profile.displayName,
+        photo: profile.photos?.[0]?.value,
+      },
+    },
+    { upsert: true, new: true },
+  )
+}
+
+export async function upsertInstagramAccounts(
+  accessToken: string,
+  profile: any,
+) {
+  // 1️⃣ Find IG business/creator accounts tied to this FB user
+  const igAccounts = await getInstagramAccounts(accessToken)
+
+  console.log('Found IG Accounts:', igAccounts)
+
+  // 2️⃣ Upsert
+  return Socialintegration.findOneAndUpdate(
+    { appId: profile.id, platform: 'instagram' },
+    {
+      platform: 'instagram',
+      appId: profile.id,
+      accessToken,
+      pageInfo: igAccounts,
+      metaProfile: {
+        email: profile.emails?.[0]?.value,
+        name: profile.displayName,
+        photo: profile.photos?.[0]?.value,
+      },
+    },
+    { upsert: true, new: true },
+  )
 }
 
 export const SocialintegrationServices = {

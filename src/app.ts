@@ -66,135 +66,157 @@ app.use(
   handleStripeWebhook,
 )
 
-// callback facebook
+// routes/auth.ts
+// import express from 'express'
+// import passport from 'passport'
+
+// const router = express.Router()
+
+// common callback
 app.get(
   '/facebook/callback',
-  passport.authenticate('facebook', {
-    failureRedirect:
-      'https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy',
-    session: false,
-  }),
-  (req: any, res) => {
-    const userData = req.user
-
-    // const redirectUrl = `https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
-    // res.redirect(redirectUrl)
-
-    res.json({
-      success: true,
-      accessToken: userData.accessToken,
-      refreshToken: userData.refreshToken,
-      email: userData.email,
-      name: userData.name,
-    })
+  passport.authenticate('facebook', { failureRedirect: '/auth/fail' }),
+  (req, res) => {
+    console.log('✅ OAuth successful, user:', req.user)
+    // send them back to frontend with a token or success msg
+    res.redirect(
+      `https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy`,
+    )
   },
 )
 
-app.get(
-  '/instagram/connect',
-  // auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.CREATOR),
-  (req: any, res: any) => {
-    // const user = req.user!
-    // const state = user.authId.toString() // or JWT/session token
-    const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${config.instagram.client_id}&redirect_uri=${config.instagram.callback_url}&response_type=code&scope=instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights&state=68b1fd9e3a485a0f4fc4b527`
+// export default router
 
-    // const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${config.instagram.client_id}&redirect_uri=${config.instagram.callback_url}&response_type=code&scope=instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights&state=${state}`
+// callback facebook
+// app.get(
+//   '/facebook/callback',
+//   passport.authenticate('facebook', {
+//     failureRedirect:
+//       'https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy',
+//     session: false,
+//   }),
+//   (req: any, res) => {
+//     const userData = req.user
 
-    res.redirect(instagramAuthUrl)
-  },
-)
+//     // const redirectUrl = `https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+//     // res.redirect(redirectUrl)
 
-// for Instagram
+//     res.json({
+//       success: true,
+//       accessToken: userData.accessToken,
+//       refreshToken: userData.refreshToken,
+//       email: userData.email,
+//       name: userData.name,
+//     })
+//   },
+// )
 
-app.get('/instagram/callback', async (req: any, res: any) => {
-  const { code, state } = req.query
-  if (!code) return res.status(400).send('Missing code')
-  const isUserExist = await User.findById(state).select('email name role')
+// app.get(
+//   '/instagram/connect',
+//   // auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.CREATOR),
+//   (req: any, res: any) => {
+//     // const user = req.user!
+//     // const state = user.authId.toString() // or JWT/session token
+//     const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${config.instagram.client_id}&redirect_uri=${config.instagram.callback_url}&response_type=code&scope=instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights&state=68b1fd9e3a485a0f4fc4b527`
 
-  if (!isUserExist) {
-    return res.status(400).send('User not found')
-  }
+//     // const instagramAuthUrl = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${config.instagram.client_id}&redirect_uri=${config.instagram.callback_url}&response_type=code&scope=instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights&state=${state}`
 
-  try {
-    // Step 1: Exchange code for short-lived access token
-    const tokenResponse = await axios.post(
-      'https://api.instagram.com/oauth/access_token',
-      qs.stringify({
-        client_id: config.instagram.client_id!,
-        client_secret: config.instagram.client_secret!,
-        grant_type: 'authorization_code',
-        redirect_uri: config.instagram.callback_url!,
-        code,
-      }),
-      {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      },
-    )
+//     res.redirect(instagramAuthUrl)
+//   },
+// )
 
-    const shortLivedToken: string = tokenResponse.data.access_token
-    const userId: string = tokenResponse.data.user_id
+// // for Instagram
 
-    // Step 2: Exchange short-lived token for long-lived token
-    const longTokenResponse = await axios.get(
-      'https://graph.instagram.com/access_token',
-      {
-        params: {
-          grant_type: 'ig_exchange_token',
-          client_secret: config.instagram.client_secret!,
-          access_token: shortLivedToken,
-        },
-      },
-    )
+// app.get('/instagram/callback', async (req: any, res: any) => {
+//   const { code, state } = req.query
+//   if (!code) return res.status(400).send('Missing code')
+//   const isUserExist = await User.findById(state).select('email name role')
 
-    const longLivedToken: string = longTokenResponse.data.access_token
-    const expiresIn: number = longTokenResponse.data.expires_in
+//   if (!isUserExist) {
+//     return res.status(400).send('User not found')
+//   }
 
-    const existingIntegration = await Socialintegration.findOne({
-      user: isUserExist._id,
-      platform: 'instagram',
-    })
+//   try {
+//     // Step 1: Exchange code for short-lived access token
+//     const tokenResponse = await axios.post(
+//       'https://api.instagram.com/oauth/access_token',
+//       qs.stringify({
+//         client_id: config.instagram.client_id!,
+//         client_secret: config.instagram.client_secret!,
+//         grant_type: 'authorization_code',
+//         redirect_uri: config.instagram.callback_url!,
+//         code,
+//       }),
+//       {
+//         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+//       },
+//     )
 
-    if (existingIntegration) {
-      // Update existing record
-      existingIntegration.accessToken = longLivedToken
-      existingIntegration.appId = userId
-      existingIntegration.expiresAt = new Date(Date.now() + expiresIn * 1000)
-      await existingIntegration.save()
-    } else {
-      // Create new record
-      await Socialintegration.create({
-        user: isUserExist._id,
-        platform: 'instagram',
-        appId: userId,
-        accessToken: longLivedToken,
-        expiresAt: new Date(Date.now() + expiresIn * 1000),
-      })
-    }
+//     const shortLivedToken: string = tokenResponse.data.access_token
+//     const userId: string = tokenResponse.data.user_id
 
-    // Respond with token info
-    res.json({
-      userId,
-      accessToken: longLivedToken,
-      expiresIn,
-    })
+//     // Step 2: Exchange short-lived token for long-lived token
+//     const longTokenResponse = await axios.get(
+//       'https://graph.instagram.com/access_token',
+//       {
+//         params: {
+//           grant_type: 'ig_exchange_token',
+//           client_secret: config.instagram.client_secret!,
+//           access_token: shortLivedToken,
+//         },
+//       },
+//     )
 
-    // Respond with token info
-    res.json({
-      appId: userId,
-      accessToken: longLivedToken,
-      expiresIn,
-    })
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      console.error(error.response?.data || error.message)
-    } else {
-      console.error(error)
-    }
-    res.status(500).send('Instagram login failed')
-  }
-})
+//     const longLivedToken: string = longTokenResponse.data.access_token
+//     const expiresIn: number = longTokenResponse.data.expires_in
+
+//     const existingIntegration = await Socialintegration.findOne({
+//       user: isUserExist._id,
+//       platform: 'instagram',
+//     })
+
+//     if (existingIntegration) {
+//       // Update existing record
+//       existingIntegration.accessToken = longLivedToken
+//       existingIntegration.appId = userId
+//       existingIntegration.expiresAt = new Date(Date.now() + expiresIn * 1000)
+//       await existingIntegration.save()
+//     } else {
+//       // Create new record
+//       await Socialintegration.create({
+//         user: isUserExist._id,
+//         platform: 'instagram',
+//         appId: userId,
+//         accessToken: longLivedToken,
+//         expiresAt: new Date(Date.now() + expiresIn * 1000),
+//       })
+//     }
+
+//     // Respond with token info
+//     res.json({
+//       userId,
+//       accessToken: longLivedToken,
+//       expiresIn,
+//     })
+
+//     // Respond with token info
+//     res.json({
+//       appId: userId,
+//       accessToken: longLivedToken,
+//       expiresIn,
+//     })
+//   } catch (error: unknown) {
+//     if (axios.isAxiosError(error)) {
+//       console.error(error.response?.data || error.message)
+//     } else {
+//       console.error(error)
+//     }
+//     res.status(500).send('Instagram login failed')
+//   }
+// })
 
 // -------------------- API Routes --------------------
+
 app.use('/api/v1', router)
 
 // -------------------- Privacy Policy --------------------

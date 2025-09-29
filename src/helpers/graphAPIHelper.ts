@@ -443,34 +443,58 @@ export async function getAllPageVideoStats(
 
 // Get instagram User Profile
 
-export const getInstagramUser = async (userId: string) => {
-  const socialIntegration = await Socialintegration.findOne({
-    user: userId,
-    platform: 'instagram',
-  })
-
-  if (!socialIntegration || !socialIntegration.accessToken) {
-    throw new ApiError(
-      StatusCodes.NOT_FOUND,
-      'Instagram access token not found for user',
-    )
-  }
-
+export async function getInstagramAccounts(accessToken: string) {
   try {
-    const response = await axios.get('https://graph.instagram.com/me', {
-      params: {
-        fields: 'id,username',
-        access_token: socialIntegration.accessToken,
+    // 1️⃣ Get all Facebook Pages for this user
+    const pagesResp = await axios.get(
+      `https://graph.facebook.com/v19.0/me/accounts`,
+      {
+        params: { access_token: accessToken },
       },
-    })
-
-    return response.data // { id, username }
-  } catch (error: any) {
-    console.error(
-      'Error fetching Instagram user:',
-      error.response?.data || error.message,
     )
-    throw new Error('Failed to fetch Instagram user info')
+
+    const pages = pagesResp.data?.data || []
+    const igAccounts: Array<{
+      pageId: string
+      igUserId: string
+      pageAccessToken: string
+    }> = []
+
+    // 2️⃣ Loop through each page to find connected IG accounts
+    for (const page of pages) {
+      if (!page.id || !page.access_token) continue
+
+      try {
+        const igResp = await axios.get(
+          `https://graph.facebook.com/v19.0/${page.id}`,
+          {
+            params: {
+              fields: 'connected_instagram_account',
+              access_token: page.access_token,
+            },
+          },
+        )
+
+        const igAccount = igResp.data?.connected_instagram_account
+        if (igAccount?.id) {
+          igAccounts.push({
+            pageId: page.id,
+            igUserId: igAccount.id,
+            pageAccessToken: page.access_token,
+          })
+        }
+      } catch (err: any) {
+        console.warn(
+          `Failed to fetch IG account for page ${page.id}`,
+          err.message,
+        )
+      }
+    }
+
+    return igAccounts
+  } catch (err: any) {
+    console.error('Failed to get Instagram accounts', err.message)
+    return []
   }
 }
 

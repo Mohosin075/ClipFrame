@@ -47,7 +47,7 @@ cron.schedule('* * * * *', async () => {
             user?._id.toString() || '',
             content?.user.toString(),
             'Content Published',
-            `Your content "${content.title}" has been published successfully.`,
+            `Your content "${content.caption}" has been published successfully.`,
           )
         }
 

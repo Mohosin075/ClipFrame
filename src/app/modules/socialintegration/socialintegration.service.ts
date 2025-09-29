@@ -165,7 +165,7 @@ export async function upsertFacebookPages(accessToken: string, profile: any) {
       platform: 'facebook',
       appId: profile.id,
       accessToken,
-      pageInfo: pages,
+      accounts: pages,
       metaProfile: {
         email: profile.emails?.[0]?.value,
         name: profile.displayName,
@@ -192,7 +192,7 @@ export async function upsertInstagramAccounts(
       platform: 'instagram',
       appId: profile.id,
       accessToken,
-      pageInfo: igAccounts,
+      accounts: igAccounts,
       metaProfile: {
         email: profile.emails?.[0]?.value,
         name: profile.displayName,

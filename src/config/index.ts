@@ -27,6 +27,11 @@ export default {
     client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
     callback_url: process.env.INSTAGRAM_CALLBACK_URL,
   },
+  tikok: {
+    client_id: process.env.TIKTOK_CLIENT_ID,
+    client_secret: process.env.TIKTOK_CLIENT_SECRET,
+    callback_url: process.env.TIKTOK_CALLBACK_URL,
+  },
   aws: {
     access_key_id: process.env.AWS_ACCESS_KEY_ID,
     secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,

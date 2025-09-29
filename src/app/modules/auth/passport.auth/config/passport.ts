@@ -182,12 +182,12 @@ passport.use(
 //         })
 
 //         if (socialintegration) {
-//           const pageInfo = await getFacebookPages(socialintegration.accessToken)
+//           const accounts = await getFacebookPages(socialintegration.accessToken)
 
-//           if (pageInfo.length > 0) {
+//           if (accounts.length > 0) {
 //             await Socialintegration.findOneAndUpdate(
 //               { appId: profile.id },
-//               { pageInfo },
+//               { accounts },
 //               { new: true },
 //             )
 //           }
@@ -225,23 +225,23 @@ passport.use(
       done: any,
     ) => {
       try {
-        console.log({ profile })
+        const user = await User.findOne({
+          _id: '68d5998fd9ec2bbe9069c6b0',
+        }).select('email name role')
+
         const flow = req.session.connectType // 'facebook' or 'instagram'
-        console.log('OAuth flow type:', flow)
         const longLiveToken = await exchangeForLongLivedToken(
           accessToken,
           config.facebook.app_id!,
           config.facebook.app_secret!,
         )
-console.log({flow, longLiveToken, profile})
         if (flow === 'facebook') {
-
           await upsertFacebookPages(longLiveToken.accessToken, profile)
         } else if (flow === 'instagram') {
           await upsertInstagramAccounts(longLiveToken.accessToken, profile)
         }
 
-        done(null, { platform: flow, token: longLiveToken.accessToken })
+        done(null, { platform: flow, token: longLiveToken.accessToken, user })
       } catch (err) {
         done(err)
       }
@@ -249,16 +249,35 @@ console.log({flow, longLiveToken, profile})
   ),
 )
 
-passport.serializeUser((user, done) => {
-  done(null, user)
+// Serialize the user
+passport.serializeUser((data: any, done) => {
+  console.log('Serializing user:', data)
+  // If we have a DB user, store the _id; otherwise, store the whole object for social-only login
+  if (data.user?._id) {
+    done(null, { type: 'db', id: data.user._id.toString() })
+  } else {
+    done(null, { type: 'social', data }) // store social-only info
+  }
 })
 
-passport.deserializeUser(async (id, done) => {
+// Deserialize the user
+passport.deserializeUser(async (payload: any, done) => {
+  console.log('Deserializing payload:', payload)
   try {
-    const user = await User.findById(id)
-    done(null, user)
-  } catch (error) {
-    done(error, null)
+    if (!payload) return done(null, null)
+
+    if (payload.type === 'db') {
+      // Fetch DB user by _id
+      const user = await User.findById(payload.id).select('email name role')
+      return done(null, user || null)
+    } else if (payload.type === 'social') {
+      // Social-only user, just return stored data
+      return done(null, payload.data)
+    }
+
+    return done(null, null)
+  } catch (err) {
+    done(err, null)
   }
 })
 

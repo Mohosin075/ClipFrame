@@ -106,8 +106,8 @@ export const createContent = async (
 
       if (
         !facebookAccount ||
-        !facebookAccount.pageInfo ||
-        facebookAccount.pageInfo.length === 0
+        !facebookAccount.accounts ||
+        facebookAccount.accounts.length === 0
       ) {
         throw new ApiError(
           StatusCodes.BAD_REQUEST,
@@ -115,9 +115,9 @@ export const createContent = async (
         )
       }
 
-      if (facebookAccount && facebookAccount?.pageInfo?.length > 0) {
-        const pageId = facebookAccount.pageInfo[0].pageId
-        const pageAccessToken = facebookAccount.pageInfo[0].pageAccessToken!
+      if (facebookAccount && facebookAccount?.accounts?.length > 0) {
+        const pageId = facebookAccount.accounts[0].pageId
+        const pageAccessToken = facebookAccount.accounts[0].pageAccessToken!
 
         if (payload.contentType === 'post') {
           const published = await uploadFacebookPhotoScheduled(

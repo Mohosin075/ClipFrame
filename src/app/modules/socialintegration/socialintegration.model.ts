@@ -14,7 +14,12 @@ const socialintegrationSchema = new Schema<
     appId: { type: String },
     accessToken: { type: String },
     refreshToken: { type: String },
-    pageInfo: [{ type: Schema.Types.Mixed }],
+    metaProfile: {
+      email: { type: String },
+      name: { type: String },
+      photo: { type: String },
+    },
+    accounts: [{ type: Schema.Types.Mixed }],
     expiresAt: { type: Date },
   },
   {

@@ -14,8 +14,13 @@ export interface ISocialintegration {
   appId: string
   accessToken: string
   refreshToken?: string
+  metaProfile?: {
+    email?: string
+    name?: string
+    photo?: string
+  }
 
-  pageInfo?: Record<string, any>[]
+  accounts?: Record<string, any>[]
   expiresAt?: Date
 }
 

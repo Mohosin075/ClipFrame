@@ -11,7 +11,7 @@ import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
-  scheduleInstagramReel,
+  scheduleInstagramContent,
   uploadFacebookCarouselScheduled,
   uploadFacebookPageStory,
   uploadFacebookPhotoScheduled,
@@ -192,12 +192,12 @@ export const createContent = async (
         instagramAccount.accounts[0].pageAccessToken!
 
       if (payload.contentType === 'reels') {
-        const reelPublished = await scheduleInstagramReel(
+        const reelPublished = await scheduleInstagramContent(
           instagramId!,
           instagramAccessToken!,
           payload.mediaUrls![0],
           caption,
-          publishedDate,
+          publishedDate
         )
         console.log('Published to Instagram:', reelPublished)
         if (!reelPublished) {

@@ -11,8 +11,10 @@ import { paginationHelper } from '../../../helpers/paginationHelper'
 import { socialintegrationSearchableFields } from './socialintegration.constants'
 import { Types } from 'mongoose'
 import {
+  createInstagramMedia,
   getFacebookPages,
   getInstagramAccounts,
+  publishInstagramMedia,
 } from '../../../helpers/graphAPIHelper'
 import { IUser } from '../user/user.interface'
 
@@ -49,6 +51,39 @@ const getAllSocialintegrations = async (
     platform: 'instagram',
   })
 
+  const igBusinessId = '17841443388295568'
+  const pageAccessToken =
+    'EAATItxj1TL8BPtE8njlPlNFHfxqtruMRf3jxJQQgWW2G1FP0LzYvcn8dIi4L6Ova1zWuudB703KTkvlo0p2D5lYAtJSAI5xZCpmzB0BMZAYn9UD4smlf4TX5pj7h27uQvUgLaQeGSFmWO6JBjrOTVtrl9Yms0mTR4j1RkvnpyhwtTDj5plj7AdPYRZCfVkSSglk2lF3WgVeElOZASULa'
+  const videoUrl =
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
+  const imageUrl =
+    'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1759092307709.png'
+  const caption = 'Reels 1:47 instagram'
+  const scheduledAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+  console.log({ scheduledAt })
+
+  // const containerId = await createInstagramMedia({
+  //   igUserId: igBusinessId,
+  //   accessToken: pageAccessToken,
+  //   mediaUrl: videoUrl,
+  //   caption: '🔥 My new reel',
+  //   type: 'reel',
+  // })
+
+
+
+  // console.log(containerId)
+
+  const containerId = '18057275471446277'
+  // // Step 2: Publish
+  const published = await publishInstagramMedia({
+    igUserId: igBusinessId,
+    accessToken: pageAccessToken,
+    containerId,
+    type: 'post',
+  })
+
+  console.log({ published })
 
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =

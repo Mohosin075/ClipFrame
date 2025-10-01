@@ -1,4 +1,4 @@
-import { Model, Schema } from 'mongoose'
+import { Model, Schema, Types } from 'mongoose'
 
 export interface IContentFilterables {
   searchTerm?: string
@@ -43,6 +43,8 @@ export interface IClips {
 }
 
 export interface IContent {
+  _id? : Types.ObjectId
+  contentId?: string
   caption?: string
   // description?: string
   mediaUrls?: string[]

@@ -11,7 +11,7 @@ import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
-  scheduleInstagramContent,
+  createInstagramMedia,
   uploadFacebookCarouselScheduled,
   uploadFacebookPageStory,
   uploadFacebookPhotoScheduled,
@@ -76,6 +76,8 @@ export const createContent = async (
 
     // Create content inside the same session
     const result = await Content.create([payload], { session }) // note the array form
+
+    console.log(result)
 
     if (!result || result.length === 0) {
       throw new ApiError(
@@ -192,20 +194,29 @@ export const createContent = async (
         instagramAccount.accounts[0].pageAccessToken!
 
       if (payload.contentType === 'reels') {
-        const reelPublished = await scheduleInstagramContent(
-          instagramId!,
-          instagramAccessToken!,
-          payload.mediaUrls![0],
-          caption,
-          publishedDate
-        )
-        console.log('Published to Instagram:', reelPublished)
-        if (!reelPublished) {
-          throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            'Failed to schedule Instagram reel, please try again.',
+        const containerId = await createInstagramMedia({
+          igUserId: instagramId,
+          accessToken: instagramAccessToken,
+          mediaUrl: payload.mediaUrls[0],
+          caption: '🔥 My new reel',
+          type: 'reel',
+        })
+        console.log({ containerId })
+        if (containerId) {
+          const update = await Content.findOneAndUpdate(
+            { _id: result[0]._id },
+            { contentId: containerId },
+            { new: true, session },
           )
         }
+
+        // console.log('Published to Instagram:', reelPublished)
+        // if (!reelPublished) {
+        //   throw new ApiError(
+        //     StatusCodes.BAD_REQUEST,
+        //     'Failed to schedule Instagram reel, please try again.',
+        //   )
+        // }
       }
     }
 

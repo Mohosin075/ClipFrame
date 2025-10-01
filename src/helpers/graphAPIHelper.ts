@@ -499,19 +499,99 @@ export async function getInstagramAccounts(accessToken: string) {
   }
 }
 
+const IG_GRAPH_URL = 'https://graph.facebook.com/v21.0'
 
+interface CreateOptions {
+  igUserId: string
+  accessToken: string
+  mediaUrl: string
+  caption?: string
+  type: 'post' | 'reel'
+}
 
+interface PublishOptions {
+  igUserId: string
+  accessToken: string
+  containerId: string
+  type: 'post' | 'reel'
+}
 
-
-// not completed
-export async function getInstagramPostInsights(
-  igMediaId: string,
-  pageAccessToken: string,
+// --- Helper for video processing check ---
+async function waitForVideoProcessing(
+  containerId: string,
+  accessToken: string,
 ) {
-  const res = await fetch(
-    `https://graph.facebook.com/v23.0/${igMediaId}?fields=like_count,comments_count,impressions,reach,engagement&access_token=${pageAccessToken}`,
-  )
-  const data = await res.json()
-  if (data.error) throw new Error(data.error.message)
-  return data
+  let attempts = 0
+  const maxAttempts = 30 // ~60s max wait
+  while (attempts < maxAttempts) {
+    const res = await axios.get(`${IG_GRAPH_URL}/${containerId}`, {
+      params: { fields: 'status_code', access_token: accessToken },
+    })
+
+    if (res.data.status_code === 'FINISHED') {
+      return true
+    } else if (res.data.status_code === 'ERROR') {
+      throw new Error('Video processing failed ❌')
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    attempts++
+  }
+  throw new Error('Video processing timeout ⏳')
+}
+
+// Perfect working without scheduling --- Step 1: Create Media Container ---
+export async function createInstagramMedia({
+  igUserId,
+  accessToken,
+  mediaUrl,
+  caption,
+  type,
+}: CreateOptions): Promise<string> {
+  try {
+    let payload: any = {}
+
+    if (type === 'post') {
+      payload = { image_url: mediaUrl, caption }
+    } else if (type === 'reel') {
+      payload = { video_url: mediaUrl, caption, media_type: 'REELS' }
+    }
+
+    const containerRes = await axios.post(
+      `${IG_GRAPH_URL}/${igUserId}/media`,
+      payload,
+      { params: { access_token: accessToken } },
+    )
+
+    return containerRes.data.id // return containerId
+  } catch (err: any) {
+    console.error('Instagram Create Error:', err.response?.data || err)
+    throw err
+  }
+}
+
+// Perfect working without scheduling  --- Step 2: Publish Media ---
+export async function publishInstagramMedia({
+  igUserId,
+  accessToken,
+  containerId,
+  type,
+}: PublishOptions) {
+  try {
+    // wait if reel (video must be processed first)
+    if (type === 'reel') {
+      await waitForVideoProcessing(containerId, accessToken)
+    }
+
+    const publishRes = await axios.post(
+      `${IG_GRAPH_URL}/${igUserId}/media_publish`,
+      { creation_id: containerId },
+      { params: { access_token: accessToken } },
+    )
+
+    return publishRes.data
+  } catch (err: any) {
+    console.error('Instagram Publish Error:', err.response?.data || err)
+    throw err
+  }
 }

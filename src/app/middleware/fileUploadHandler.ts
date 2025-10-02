@@ -112,7 +112,7 @@ const fileUploadHandler = () => {
 
           // Resize and optimize the image
           const optimizedBuffer = await sharp(file.buffer)
-            .resize(1024) // Resize to max width of 800px (maintain aspect ratio)
+            .resize({ width: 1080, height: 1350 })
             .jpeg({ quality: 80 }) // Compress with 80% quality
             .png({ quality: 80 }) // Compress with 80% quality
             .jpeg({ quality: 80 }) // Compress with 80% quality

@@ -11,8 +11,7 @@ import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
-  createInstagramMedia,
-  publishInstagramMedia,
+  uploadAndQueueInstagramContent,
   uploadFacebookCarouselScheduled,
   uploadFacebookPhotoScheduled,
   uploadFacebookReelScheduled,
@@ -24,9 +23,9 @@ export const createContent = async (
 ): Promise<IContent> => {
   const session = await mongoose.startSession()
   session.startTransaction()
-  const contentUrl =
-    'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
-  payload.mediaUrls = [contentUrl]
+  // const contentUrl =
+  //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
+  // payload.mediaUrls = [contentUrl]
 
   if (!payload.mediaUrls || payload.mediaUrls.length === 0) {
     throw new ApiError(
@@ -75,9 +74,8 @@ export const createContent = async (
     )
 
     // Create content inside the same session
-    const result = await Content.create([payload], { session }) // note the array form
-
-    console.log(result)
+    // const result = await Content.create(payload) // note the array form
+    const result = await Content.create([payload]) // note the array form
 
     if (!result || result.length === 0) {
       throw new ApiError(
@@ -101,6 +99,7 @@ export const createContent = async (
     }
 
     if (facebook) {
+      console.log('hit facebook')
       const facebookAccount = await Socialintegration.findOne({
         user: user.authId,
         platform: 'facebook',
@@ -171,6 +170,7 @@ export const createContent = async (
     }
 
     if (instagram) {
+      console.log('hit instagram')
       const instagramAccount = await Socialintegration.findOne({
         user: user.authId,
         platform: 'instagram',
@@ -193,58 +193,12 @@ export const createContent = async (
         instagramAccount.accounts &&
         instagramAccount.accounts[0].pageAccessToken!
 
-      if (payload.contentType === 'reels') {
-        const containerId = await createInstagramMedia({
-          igUserId: instagramId,
-          accessToken: instagramAccessToken,
-          mediaUrl: payload.mediaUrls[0],
-          caption: payload.caption,
-          type: 'reel',
-        })
-        if (containerId) {
-          const update = await Content.findOneAndUpdate(
-            { _id: result[0]._id },
-            { contentId: containerId },
-            { new: true, session },
-          )
-          await publishInstagramMedia({
-            igUserId: instagramId,
-            accessToken: instagramAccessToken,
-            containerId,
-            type: 'reel',
-          })
-        }
-
-        // console.log('Published to Instagram:', reelPublished)
-        // if (!reelPublished) {
-        //   throw new ApiError(
-        //     StatusCodes.BAD_REQUEST,
-        //     'Failed to schedule Instagram reel, please try again.',
-        //   )
-        // }
-      } else if (payload.contentType === 'post') {
-        const containerId = await createInstagramMedia({
-          igUserId: instagramId,
-          accessToken: instagramAccessToken,
-          mediaUrl: payload.mediaUrls[0],
-          caption: payload.caption,
-          type: 'post',
-        })
-        console.log({ containerId })
-        if (containerId) {
-          await Content.findOneAndUpdate(
-            { _id: result[0]._id },
-            { contentId: containerId },
-            { new: true, session },
-          )
-
-          await publishInstagramMedia({
-            igUserId: instagramId,
-            accessToken: instagramAccessToken,
-            containerId,
-            type: 'post',
-          })
-        }
+      if (payload.contentType === 'post' || payload.contentType === 'reels') {
+        console.log('hit post')
+        const containerId = await uploadAndQueueInstagramContent(
+          result[0]._id.toString(),
+        )
+        console.log(containerId)
       }
     }
 
@@ -252,6 +206,7 @@ export const createContent = async (
     session.endSession()
 
     return result[0]
+    // return result[0]
   } catch (error: any) {
     await session.abortTransaction()
     session.endSession()

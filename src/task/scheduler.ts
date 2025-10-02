@@ -5,7 +5,7 @@ import { logger } from '../shared/logger'
 import { sendNotification } from '../helpers/notificationHelper'
 import config from '../config'
 import { User } from '../app/modules/user/user.model'
-import { publisheReels } from '../helpers/graphAPIHelper'
+// import { publisheReels } from '../helpers/graphAPIHelper'
 
 // Run every minute
 cron.schedule('* * * * *', async () => {

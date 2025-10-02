@@ -43,7 +43,7 @@ export interface IClips {
 }
 
 export interface IContent {
-  _id? : Types.ObjectId
+  _id?: Types.ObjectId
   contentId?: string
   caption?: string
   // description?: string
@@ -72,6 +72,8 @@ export interface IContent {
     shares?: number
     views?: number
   }
+  instagramContainerId: string
+  platformStatus?: Map<string, 'pending' | 'published' | 'failed'>
   createdAt?: Date
   updatedAt?: Date
 }

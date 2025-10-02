@@ -57,6 +57,8 @@ const contentSchema = new Schema<IContent>(
       shares: { type: Number, default: 0 },
       views: { type: Number, default: 0 },
     },
+    instagramContainerId: { type: String },
+    platformStatus: { type: Map, of: String, default: {} },
   },
 
   { timestamps: true },

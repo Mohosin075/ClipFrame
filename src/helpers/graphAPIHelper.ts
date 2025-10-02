@@ -547,111 +547,138 @@ export async function createInstagramMedia({
   }
 }
 
-// Perfect working without scheduling  --- Step 2: Publish Media ---
-export async function publishInstagramMedia({
-  igUserId,
-  accessToken,
-  containerId,
-  type,
-}: PublishOptions) {
-  try {
-    if (type === 'reel') {
-      // Check container status before publishing
-      await checkContainerStatus(containerId, accessToken)
+async function checkContainerStatus(
+  containerId: string,
+  accessToken: string,
+  maxRetries = 20,
+) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const res = await axios.get(`${IG_GRAPH_URL}/${containerId}`, {
+      params: { access_token: accessToken, fields: 'status_code,status' },
+    })
 
-      const publishRes = await axios.post(
-        `${IG_GRAPH_URL}/${igUserId}/media_publish`,
-        {
-          creation_id: containerId,
-          media_type: 'REELS',
-        },
-        { params: { access_token: accessToken } },
-      )
+    const { status_code, status } = res.data
 
-      return publishRes.data
+    if (status_code === 'FINISHED') return
+    if (status_code === 'ERROR' || status === 'ERROR') {
+      throw new Error(`Container processing failed: ${status}`)
     }
 
-    if (type === 'post') {
-      const publishRes = await axios.post(
+    const waitTime = Math.min(attempt * 5, 30) * 1000
+    console.log(
+      `Container not ready. Retry ${attempt}, wait ${waitTime / 1000}s`,
+    )
+    await new Promise(res => setTimeout(res, waitTime))
+  }
+
+  throw new Error(`Container not ready after ${maxRetries} attempts`)
+}
+
+async function tryPublish(
+  igUserId: string,
+  accessToken: string,
+  containerId: string,
+  type: 'post' | 'reel',
+) {
+  const retries = 5
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await axios.post(
         `${IG_GRAPH_URL}/${igUserId}/media_publish`,
         { creation_id: containerId },
         { params: { access_token: accessToken } },
       )
-      return publishRes.data
-    }
+      console.log(`✅ Published ${type}:`, containerId)
+      return res.data
+    } catch (err: any) {
+      const code = err.response?.data?.code
+      const subcode = err.response?.data?.error_subcode
 
-    throw new Error(`Unsupported media type: ${type}`)
-  } catch (err: any) {
-    console.error('Instagram Publish Error:', err.response?.data || err)
-    throw err
+      if (code === 9007 && subcode === 2207027) {
+        console.log(`⏳ Media not ready, retrying in 5s...`)
+        await new Promise(res => setTimeout(res, 5000))
+        continue
+      }
+      throw err
+    }
   }
+  throw new Error(
+    `Failed to publish ${type}: ${containerId} after ${retries} retries`,
+  )
 }
 
-async function checkContainerStatus(
-  containerId: string,
-  accessToken: string,
-  maxRetries = 10,
-): Promise<void> {
-  const STATUS_URL = `${IG_GRAPH_URL}/${containerId}`
+const accessToken =
+  'EAATItxj1TL8BPtE8njlPlNFHfxqtruMRf3jxJQQgWW2G1FP0LzYvcn8dIi4L6Ova1zWuudB703KTkvlo0p2D5lYAtJSAI5xZCpmzB0BMZAYn9UD4smlf4TX5pj7h27uQvUgLaQeGSFmWO6JBjrOTVtrl9Yms0mTR4j1RkvnpyhwtTDj5plj7AdPYRZCfVkSSglk2lF3WgVeElOZASULa'
+async function instagramPublishWorker() {
+  const pendingContents = await Content.find({
+    'platformStatus.instagram': 'pending',
+  })
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  for (const content of pendingContents) {
     try {
-      const statusRes = await axios.get(STATUS_URL, {
-        params: {
-          access_token: accessToken,
-          fields: 'status_code,status',
-        },
-      })
+      if (!content.instagramContainerId) continue
 
-      const { status_code, status } = statusRes.data
-
-      console.log(`Container status check ${attempt}:`, { status_code, status })
-
-      // If container is ready for publishing
-      if (status_code === 'FINISHED') {
-        console.log('Container is ready for publishing')
-        return
+      // If it's a reel, check container status first
+      if (content.contentType === 'reels') {
+        await checkContainerStatus(content.instagramContainerId, accessToken)
+        await new Promise(res => setTimeout(res, 5000)) // small buffer
       }
 
-      // If there's an error with the container
-      if (status_code === 'ERROR' || status === 'ERROR') {
-        throw new Error(`Container processing failed: ${status}`)
-      }
-
-      // If still processing, wait and retry
-      if (attempt < maxRetries) {
-        const waitTime = Math.min(attempt * 5, 30) * 1000 // Exponential backoff: 5, 10, 15... up to 30 seconds
-        console.log(
-          `Container not ready. Waiting ${waitTime / 1000} seconds before retry...`,
-        )
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-      }
-    } catch (error: any) {
-      console.error(
-        `Status check attempt ${attempt} failed:`,
-        error.response?.data || error.message,
+      await tryPublish(
+        '17841443388295568',
+        accessToken,
+        content.instagramContainerId,
+        'reel',
       )
 
-      if (attempt === maxRetries) {
-        throw new Error(
-          `Failed to verify container status after ${maxRetries} attempts: ${error.message}`,
-        )
-      }
-
-      const waitTime = Math.min(attempt * 5, 30) * 1000
-      await new Promise(resolve => setTimeout(resolve, waitTime))
+      content?.platformStatus!.set('instagram', 'published')
+      await content.save()
+      console.log('✅ Instagram content published:', content._id)
+    } catch (err: any) {
+      console.log('Will retry later:', content._id, err.message)
     }
   }
-
-  throw new Error(`Container not ready after ${maxRetries} status checks`)
 }
 
-// export const publisheReels = async () => {
-//   console.log('hit')
-//   const allContent = await Content.find({ status: 'draft' })
+// run every 5s
+setInterval(() => {
+  instagramPublishWorker().catch(console.error)
+}, 5000)
 
-//   for (const content of allContent) {
-//     const social = await Socialintegration.findOne({ user: content.user })
-//     console.log({ social })
-//   }
-// }
+export async function uploadAndQueueInstagramContent(contentId: string) {
+  console.log({ contentId })
+  const content = await Content.findOne({ _id: contentId }).populate('user')
+
+  if (!content) throw new Error('Content not found')
+
+  const social = await Socialintegration.findOne({
+    user: content.user,
+    platform: 'instagram',
+  })
+
+  if (!social) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Token not found!')
+  }
+
+  let contentType: 'post' | 'reel' = 'post'
+
+  if (content.contentType === 'reels') {
+    contentType = 'reel'
+  } else {
+    contentType = 'post'
+  }
+
+  const containerId = await createInstagramMedia({
+    igUserId: '17841443388295568',
+    accessToken,
+    mediaUrl: (content.mediaUrls && content.mediaUrls[0]) || '',
+    caption: content.caption || '',
+    type: contentType,
+  })
+
+  content.instagramContainerId = containerId
+  content?.platformStatus?.set('instagram', 'pending')
+  await content.save()
+
+  return containerId
+}

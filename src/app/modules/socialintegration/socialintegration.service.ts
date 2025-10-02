@@ -13,8 +13,7 @@ import { Types } from 'mongoose'
 import {
   createInstagramMedia,
   getFacebookPages,
-  getInstagramAccounts,
-  publishInstagramMedia,
+  getInstagramAccounts
 } from '../../../helpers/graphAPIHelper'
 import { IUser } from '../user/user.interface'
 
@@ -62,28 +61,6 @@ const getAllSocialintegrations = async (
   const scheduledAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
   console.log({ scheduledAt })
 
-  // const containerId = await createInstagramMedia({
-  //   igUserId: igBusinessId,
-  //   accessToken: pageAccessToken,
-  //   mediaUrl: videoUrl,
-  //   caption: '🔥 My new reel',
-  //   type: 'reel',
-  // })
-
-
-
-  // console.log(containerId)
-
-  const containerId = '18057275471446277'
-  // // Step 2: Publish
-  const published = await publishInstagramMedia({
-    igUserId: igBusinessId,
-    accessToken: pageAccessToken,
-    containerId,
-    type: 'post',
-  })
-
-  console.log({ published })
 
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =

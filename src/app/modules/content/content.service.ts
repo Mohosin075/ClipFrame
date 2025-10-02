@@ -12,8 +12,8 @@ import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
   createInstagramMedia,
+  publishInstagramMedia,
   uploadFacebookCarouselScheduled,
-  uploadFacebookPageStory,
   uploadFacebookPhotoScheduled,
   uploadFacebookReelScheduled,
 } from '../../../helpers/graphAPIHelper'
@@ -198,16 +198,21 @@ export const createContent = async (
           igUserId: instagramId,
           accessToken: instagramAccessToken,
           mediaUrl: payload.mediaUrls[0],
-          caption: '🔥 My new reel',
+          caption: payload.caption,
           type: 'reel',
         })
-        console.log({ containerId })
         if (containerId) {
           const update = await Content.findOneAndUpdate(
             { _id: result[0]._id },
             { contentId: containerId },
             { new: true, session },
           )
+          await publishInstagramMedia({
+            igUserId: instagramId,
+            accessToken: instagramAccessToken,
+            containerId,
+            type: 'reel',
+          })
         }
 
         // console.log('Published to Instagram:', reelPublished)
@@ -217,6 +222,29 @@ export const createContent = async (
         //     'Failed to schedule Instagram reel, please try again.',
         //   )
         // }
+      } else if (payload.contentType === 'post') {
+        const containerId = await createInstagramMedia({
+          igUserId: instagramId,
+          accessToken: instagramAccessToken,
+          mediaUrl: payload.mediaUrls[0],
+          caption: payload.caption,
+          type: 'post',
+        })
+        console.log({ containerId })
+        if (containerId) {
+          await Content.findOneAndUpdate(
+            { _id: result[0]._id },
+            { contentId: containerId },
+            { new: true, session },
+          )
+
+          await publishInstagramMedia({
+            igUserId: instagramId,
+            accessToken: instagramAccessToken,
+            containerId,
+            type: 'post',
+          })
+        }
       }
     }
 

@@ -5,6 +5,7 @@ import { logger } from '../shared/logger'
 import { sendNotification } from '../helpers/notificationHelper'
 import config from '../config'
 import { User } from '../app/modules/user/user.model'
+import { publisheReels } from '../helpers/graphAPIHelper'
 
 // Run every minute
 cron.schedule('* * * * *', async () => {
@@ -28,7 +29,7 @@ cron.schedule('* * * * *', async () => {
     })
 
     for (const content of contentsToPublish) {
-      if(!content.user) continue; // Skip if no user associated
+      if (!content.user) continue // Skip if no user associated
       try {
         // You can call your publish function here
         // await publishToPlatforms(content)
@@ -61,4 +62,8 @@ cron.schedule('* * * * *', async () => {
   } catch (err) {
     logger.error('Error fetching scheduled contents:', err)
   }
+})
+
+cron.schedule('* * * * *', async () => {
+  // await publisheReels()
 })

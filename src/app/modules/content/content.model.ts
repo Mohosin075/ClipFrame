@@ -24,7 +24,7 @@ const contentSchema = new Schema<IContent>(
     status: {
       type: String,
       enum: Object.values(CONTENT_STATUS),
-      default: CONTENT_STATUS.SCHEDULED,
+      default: CONTENT_STATUS.DRAFT,
     },
     user: { type: Schema.Types.ObjectId, ref: 'User' },
     platform: {

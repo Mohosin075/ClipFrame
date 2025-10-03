@@ -6,6 +6,7 @@ import { VideoStats } from '../app/modules/content/content.interface'
 import axios from 'axios'
 import { Socialintegration } from '../app/modules/socialintegration/socialintegration.model'
 import { Content } from '../app/modules/content/content.model'
+import { JwtPayload } from 'jsonwebtoken'
 
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,
@@ -442,7 +443,32 @@ export async function getAllPageVideoStats(
 // Instagram Functions
 // ----------------------
 
-// Get instagram User Profile
+// Get Instagram Util for get db token
+
+export const getInstagramTokenAndIdFromDB = async (user: string) => {
+  const instagramAccount = await Socialintegration.findOne({
+    user,
+    platform: 'instagram',
+  })
+
+  if (
+    !instagramAccount ||
+    !instagramAccount.accessToken ||
+    instagramAccount.accounts?.length === 0
+  ) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'No Instagram social account found, please connect your Instagram account first.',
+    )
+  }
+
+  const instagramId =
+    instagramAccount.accounts && instagramAccount.accounts[0].igUserId
+  const instagramAccessToken =
+    instagramAccount.accounts && instagramAccount.accounts[0].pageAccessToken!
+
+  return { instagramId, instagramAccessToken }
+}
 
 // perfect working function
 export async function getInstagramAccounts(accessToken: string) {
@@ -547,6 +573,7 @@ export async function createInstagramMedia({
   }
 }
 
+// perfect working
 async function checkContainerStatus(
   containerId: string,
   accessToken: string,
@@ -574,6 +601,7 @@ async function checkContainerStatus(
   throw new Error(`Container not ready after ${maxRetries} attempts`)
 }
 
+// perfect working
 async function tryPublish(
   igUserId: string,
   accessToken: string,
@@ -607,8 +635,6 @@ async function tryPublish(
   )
 }
 
-const accessToken =
-  'EAATItxj1TL8BPtE8njlPlNFHfxqtruMRf3jxJQQgWW2G1FP0LzYvcn8dIi4L6Ova1zWuudB703KTkvlo0p2D5lYAtJSAI5xZCpmzB0BMZAYn9UD4smlf4TX5pj7h27uQvUgLaQeGSFmWO6JBjrOTVtrl9Yms0mTR4j1RkvnpyhwtTDj5plj7AdPYRZCfVkSSglk2lF3WgVeElOZASULa'
 async function instagramPublishWorker() {
   const pendingContents = await Content.find({
     'platformStatus.instagram': 'pending',
@@ -618,15 +644,21 @@ async function instagramPublishWorker() {
     try {
       if (!content.instagramContainerId) continue
 
+      const { instagramId, instagramAccessToken } =
+        await getInstagramTokenAndIdFromDB(content.user?.toString() || '')
+
       // If it's a reel, check container status first
       if (content.contentType === 'reels') {
-        await checkContainerStatus(content.instagramContainerId, accessToken)
+        await checkContainerStatus(
+          content.instagramContainerId,
+          instagramAccessToken,
+        )
         await new Promise(res => setTimeout(res, 5000)) // small buffer
       }
 
       await tryPublish(
-        '17841443388295568',
-        accessToken,
+        instagramId,
+        instagramAccessToken,
         content.instagramContainerId,
         'reel',
       )
@@ -645,20 +677,15 @@ setInterval(() => {
   instagramPublishWorker().catch(console.error)
 }, 5000)
 
-export async function uploadAndQueueInstagramContent(contentId: string) {
+export async function uploadAndQueueInstagramContent(
+  contentId: string,
+  igUserId: string,
+  accessToken: string,
+) {
   console.log({ contentId })
   const content = await Content.findOne({ _id: contentId }).populate('user')
 
   if (!content) throw new Error('Content not found')
-
-  const social = await Socialintegration.findOne({
-    user: content.user,
-    platform: 'instagram',
-  })
-
-  if (!social) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Token not found!')
-  }
 
   let contentType: 'post' | 'reel' = 'post'
 
@@ -669,7 +696,7 @@ export async function uploadAndQueueInstagramContent(contentId: string) {
   }
 
   const containerId = await createInstagramMedia({
-    igUserId: '17841443388295568',
+    igUserId,
     accessToken,
     mediaUrl: (content.mediaUrls && content.mediaUrls[0]) || '',
     caption: content.caption || '',

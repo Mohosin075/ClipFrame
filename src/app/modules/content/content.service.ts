@@ -11,6 +11,7 @@ import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
+  getInstagramTokenAndIdFromDB,
   uploadAndQueueInstagramContent,
   uploadFacebookCarouselScheduled,
   uploadFacebookPhotoScheduled,
@@ -171,32 +172,17 @@ export const createContent = async (
 
     if (instagram) {
       console.log('hit instagram')
-      const instagramAccount = await Socialintegration.findOne({
-        user: user.authId,
-        platform: 'instagram',
-      }).session(session)
 
-      if (
-        !instagramAccount ||
-        !instagramAccount.accessToken ||
-        instagramAccount.accounts?.length === 0
-      ) {
-        throw new ApiError(
-          StatusCodes.BAD_REQUEST,
-          'No Instagram social account found, please connect your Instagram account first.',
-        )
-      }
-
-      const instagramId =
-        instagramAccount.accounts && instagramAccount.accounts[0].igUserId
-      const instagramAccessToken =
-        instagramAccount.accounts &&
-        instagramAccount.accounts[0].pageAccessToken!
+      // get Id and token from DB
+      const { instagramId, instagramAccessToken } =
+        await getInstagramTokenAndIdFromDB(user.authId)
 
       if (payload.contentType === 'post' || payload.contentType === 'reels') {
         console.log('hit post')
         const containerId = await uploadAndQueueInstagramContent(
           result[0]._id.toString(),
+          instagramId,
+          instagramAccessToken,
         )
         console.log(containerId)
       }

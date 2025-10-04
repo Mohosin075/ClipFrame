@@ -80,7 +80,7 @@ app.get(
     console.log('✅ OAuth successful, user:', req.user)
     // send them back to frontend with a token or success msg
     res.redirect(
-      `https://slideshow-engaging-leaders-curve.trycloudflare.com/privacy-policy`,
+      `https://buying-pages-rings-porcelain.trycloudflare.com/privacy-policy`,
     )
   },
 )

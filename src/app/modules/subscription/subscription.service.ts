@@ -4,7 +4,7 @@ import { Subscription } from './subscription.model'
 import stripe from '../../../config/stripe'
 import { User } from '../user/user.model'
 import QueryBuilder from '../../builder/QueryBuilder'
-import checkUsage from './checkSubscription'
+// import checkUsage from './checkSubscription'
 
 const subscriptionDetailsFromDB = async (
   user: JwtPayload,

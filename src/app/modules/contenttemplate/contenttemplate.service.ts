@@ -1,58 +1,62 @@
-import { StatusCodes } from 'http-status-codes';
-import ApiError from '../../../errors/ApiError';
-import { IContenttemplateFilterables, IContenttemplate } from './contenttemplate.interface';
-import { Contenttemplate } from './contenttemplate.model';
-import { JwtPayload } from 'jsonwebtoken';
-import { IPaginationOptions } from '../../../interfaces/pagination';
-import { paginationHelper } from '../../../helpers/paginationHelper';
-import { contenttemplateSearchableFields } from './contenttemplate.constants';
-import { Types } from 'mongoose';
+import { StatusCodes } from 'http-status-codes'
+import ApiError from '../../../errors/ApiError'
+import {
+  IContenttemplate,
+  IContenttemplateFilterables,
+} from './contenttemplate.interface'
+import { JwtPayload } from 'jsonwebtoken'
+import { IPaginationOptions } from '../../../interfaces/pagination'
+import { paginationHelper } from '../../../helpers/paginationHelper'
+import { contenttemplateSearchableFields } from './contenttemplate.constants'
+import { Types } from 'mongoose'
+import { ContentTemplate } from './contenttemplate.model'
 
-
-const createContenttemplate = async (
+const createContentTemplate = async (
   user: JwtPayload,
-  payload: IContenttemplate
+  payload: IContenttemplate,
 ): Promise<IContenttemplate> => {
   try {
-    const result = await Contenttemplate.create(payload);
+    const result = await ContentTemplate.create({
+      ...payload,
+      user: user.authId,
+    })
     if (!result) {
-      
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
-        'Failed to create Contenttemplate, please try again with valid data.'
-      );
+        'Failed to create ContentTemplate, please try again with valid data.',
+      )
     }
 
-    return result;
+    return result
   } catch (error: any) {
-    
     if (error.code === 11000) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found');
+      throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found')
     }
-    throw error;
+    throw error
   }
-};
+}
 
-const getAllContenttemplates = async (
+const getAllContentTemplates = async (
   user: JwtPayload,
   filterables: IContenttemplateFilterables,
-  pagination: IPaginationOptions
+  pagination: IPaginationOptions,
 ) => {
-  const { searchTerm, ...filterData } = filterables;
-  const { page, skip, limit, sortBy, sortOrder } = paginationHelper.calculatePagination(pagination);
+  const { searchTerm, ...filterData } = filterables
+  const { page, skip, limit, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(pagination)
 
-  const andConditions = [];
+  const andConditions = []
 
   // Search functionality
   if (searchTerm) {
     andConditions.push({
-      $or: contenttemplateSearchableFields.map((field) => ({
+      $or: contenttemplateSearchableFields.map(field => ({
         [field]: {
           $regex: searchTerm,
           $options: 'i',
         },
       })),
-    });
+    })
   }
 
   // Filter functionality
@@ -61,19 +65,19 @@ const getAllContenttemplates = async (
       $and: Object.entries(filterData).map(([key, value]) => ({
         [key]: value,
       })),
-    });
+    })
   }
 
-  const whereConditions = andConditions.length ? { $and: andConditions } : {};
+  const whereConditions = andConditions.length ? { $and: andConditions } : {}
 
   const [result, total] = await Promise.all([
-    Contenttemplate
-      .find(whereConditions)
+    ContentTemplate.find(whereConditions)
       .skip(skip)
       .limit(limit)
-      .sort({ [sortBy]: sortOrder }).populate('createdBy'),
-    Contenttemplate.countDocuments(whereConditions),
-  ]);
+      .sort({ [sortBy]: sortOrder })
+      .populate('createdBy'),
+    ContentTemplate.countDocuments(whereConditions),
+  ])
 
   return {
     meta: {
@@ -83,72 +87,74 @@ const getAllContenttemplates = async (
       totalPages: Math.ceil(total / limit),
     },
     data: result,
-  };
-};
+  }
+}
 
-const getSingleContenttemplate = async (id: string): Promise<IContenttemplate> => {
+const getSingleContentTemplate = async (
+  id: string,
+): Promise<IContenttemplate> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Contenttemplate ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ContentTemplate ID')
   }
 
-  const result = await Contenttemplate.findById(id).populate('createdBy');
+  const result = await ContentTemplate.findById(id).populate('createdBy')
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Requested contenttemplate not found, please try again with valid id'
-    );
+      'Requested contenttemplate not found, please try again with valid id',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
-const updateContenttemplate = async (
+const updateContentTemplate = async (
   id: string,
-  payload: Partial<IContenttemplate>
+  payload: Partial<IContenttemplate>,
 ): Promise<IContenttemplate | null> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Contenttemplate ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ContentTemplate ID')
   }
 
-  const result = await Contenttemplate.findByIdAndUpdate(
+  const result = await ContentTemplate.findByIdAndUpdate(
     new Types.ObjectId(id),
     { $set: payload },
     {
       new: true,
       runValidators: true,
-    }
-  ).populate('createdBy');
+    },
+  ).populate('createdBy')
 
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Requested contenttemplate not found, please try again with valid id'
-    );
+      'Requested contenttemplate not found, please try again with valid id',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
-const deleteContenttemplate = async (id: string): Promise<IContenttemplate> => {
+const deleteContentTemplate = async (id: string): Promise<IContenttemplate> => {
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Contenttemplate ID');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ContentTemplate ID')
   }
 
-  const result = await Contenttemplate.findByIdAndDelete(id);
+  const result = await ContentTemplate.findByIdAndDelete(id)
   if (!result) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      'Something went wrong while deleting contenttemplate, please try again with valid id.'
-    );
+      'Something went wrong while deleting contenttemplate, please try again with valid id.',
+    )
   }
 
-  return result;
-};
+  return result
+}
 
 export const ContenttemplateServices = {
-  createContenttemplate,
-  getAllContenttemplates,
-  getSingleContenttemplate,
-  updateContenttemplate,
-  deleteContenttemplate,
-};
+  createContentTemplate,
+  getAllContentTemplates,
+  getSingleContentTemplate,
+  updateContentTemplate,
+  deleteContentTemplate,
+}

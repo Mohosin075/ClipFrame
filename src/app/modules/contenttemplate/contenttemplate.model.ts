@@ -1,41 +1,38 @@
-import { Schema, model } from 'mongoose'
-import {
-  IContenttemplate,
-  ContenttemplateModel,
-} from './contenttemplate.interface'
+import { Schema, model, Types } from 'mongoose'
+import { IContenttemplate } from './contenttemplate.interface'
 
-const stepsItemSchema = new Schema(
-  {
-    title: { type: String },
-    description: { type: String },
-    mediaType: { type: String },
-    shotType: { type: String },
-    duration: { type: Number },
+// Step schema based on StepsItem interface
+const stepSchema = new Schema({
+  title: { type: String, required: true },
+  description: { type: String },
+  mediaType: { type: String, enum: ['video', 'image'], required: true },
+  url: { type: String, required: true },
+  shotType: {
+    type: String,
+    enum: ['wide', 'mid-shot', 'close-up'],
+    required: true,
   },
-  { _id: false },
-)
+  duration: { type: Number, default: 5 },
+})
 
-const contenttemplateSchema = new Schema<
-  IContenttemplate,
-  ContenttemplateModel
->(
+// Main ContentTemplate schema
+const contentTemplateSchema = new Schema<IContenttemplate>(
   {
-    title: { type: String },
+    title: { type: String, required: true },
     description: { type: String },
-    type: { type: String },
+    type: { type: String, enum: ['reel', 'post', 'story'], default: 'reel' },
     category: { type: String },
     thumbnail: { type: String },
-    steps: [stepsItemSchema],
-    hashtags: { type: [String] },
-    isActive: { type: Boolean },
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    steps: { type: [stepSchema], default: [] },
+    hashtags: { type: [String], default: [] },
+    isActive: { type: Boolean, default: true },
+    createdBy: { type: Types.ObjectId, ref: 'User'},
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 )
 
-export const Contenttemplate = model<IContenttemplate, ContenttemplateModel>(
-  'Contenttemplate',
-  contenttemplateSchema,
+// Export typed model
+export const ContentTemplate = model<IContenttemplate>(
+  'ContentTemplate',
+  contentTemplateSchema,
 )

@@ -12,7 +12,7 @@ const getUserStats = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'Socialintegration retrieved successfully',
+    message: 'User Stats retrieved successfully',
     data: result,
   })
 })

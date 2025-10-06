@@ -114,6 +114,7 @@ const getAllMyContents = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+
 export const ContentController = {
   createContent,
   updateContent,

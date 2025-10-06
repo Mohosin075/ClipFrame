@@ -80,7 +80,6 @@ export const getUserContentStats = async (user: JwtPayload) => {
 
   // Fill engagement data
   if (engagementStats.length > 0) {
-    console.log({ engagementStats })
     const { totalViews, totalEngagement } = engagementStats[0]
     result.weeklyViews = totalViews || 0
 

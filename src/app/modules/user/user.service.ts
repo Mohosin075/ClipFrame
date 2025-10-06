@@ -254,7 +254,8 @@ export const getProfile = async (user: JwtPayload) => {
     platforms: socialPlatforms,
     membership: subscriber?.plan?.title ?? '',
     preferredLanguages: isOnboarded?.preferredLanguages ?? [],
-    businessType: isOnboarded?.businessType ?? 'General'
+    businessType: isOnboarded?.businessType ?? 'General',
+    businessDescription: isOnboarded?.businessDescription,
   }
 }
 

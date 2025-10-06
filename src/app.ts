@@ -80,7 +80,7 @@ app.get(
     console.log('✅ OAuth successful, user:', req.user)
     // send them back to frontend with a token or success msg
     res.redirect(
-      `https://buying-pages-rings-porcelain.trycloudflare.com/privacy-policy`,
+      `https://nights-residence-flickr-motel.trycloudflare.com/privacy-policy`,
     )
   },
 )
@@ -98,8 +98,8 @@ app.get(
 //   (req: any, res) => {
 //     const userData = req.user
 
-//     // const redirectUrl = `https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
-//     // res.redirect(redirectUrl)
+//     const redirectUrl = `https://stephen-solved-kidney-instantly.trycloudflare.com/privacy-policy?accessToken=${userData.accessToken}&refreshToken=${userData.refreshToken}&email=${userData.email}&name=${userData.name}`
+//     res.redirect(redirectUrl)
 
 //     res.json({
 //       success: true,

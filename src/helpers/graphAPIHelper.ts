@@ -6,7 +6,6 @@ import { VideoStats } from '../app/modules/content/content.interface'
 import axios from 'axios'
 import { Socialintegration } from '../app/modules/socialintegration/socialintegration.model'
 import { Content } from '../app/modules/content/content.model'
-import { JwtPayload } from 'jsonwebtoken'
 
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,

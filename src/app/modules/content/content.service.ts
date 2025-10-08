@@ -17,6 +17,7 @@ import {
   uploadFacebookPhotoScheduled,
   uploadFacebookReelScheduled,
 } from '../../../helpers/graphAPIHelper'
+import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
 
 export const createContent = async (
   user: JwtPayload,
@@ -186,6 +187,15 @@ export const createContent = async (
         )
         console.log(containerId)
       }
+    }
+    console.log({ tempId: result[0].templateId })
+    if (result[0].templateId) {
+      const updateTEmp = await ContentTemplate.findByIdAndUpdate(
+        result[0].templateId,
+        { $inc: { 'stats.reuseCount': 1 } },
+        { new: true },
+      )
+      console.log({ updateTEmp })
     }
 
     await session.commitTransaction()

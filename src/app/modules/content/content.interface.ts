@@ -44,6 +44,7 @@ export interface IClips {
 
 export interface IContent {
   _id?: Types.ObjectId
+  templateId: Types.ObjectId
   contentId?: string
   caption?: string
   // description?: string

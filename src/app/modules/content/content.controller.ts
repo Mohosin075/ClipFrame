@@ -9,9 +9,10 @@ import { paginationFields } from '../../../interfaces/pagination'
 import { JwtPayload } from 'jsonwebtoken'
 
 const createContent = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params
   const userId = req.user as JwtPayload
 
-  const contentData = { ...req.body, user: userId.authId }
+  const contentData = { ...req.body, user: userId.authId, templateId: id }
 
   const result = await ContentServices.createContent(req.user!, contentData)
 
@@ -113,7 +114,6 @@ const getAllMyContents = catchAsync(async (req: Request, res: Response) => {
     data: result,
   })
 })
-
 
 export const ContentController = {
   createContent,

@@ -16,6 +16,8 @@ router
     auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
     ContentController.getAllContents,
   )
+router
+  .route('/create/:id')
   .post(
     auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
     fileUploadHandler(),

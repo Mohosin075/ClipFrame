@@ -114,7 +114,7 @@ const getRecentTemplates = catchAsync(async (req: Request, res: Response) => {
 
   const pagination = pick(req.query, paginationFields)
 
-  const result = await ContenttemplateServices.getAllContentTemplates(
+  const result = await ContenttemplateServices.getRecentTemplates(
     req.user!,
     filterables,
     pagination,

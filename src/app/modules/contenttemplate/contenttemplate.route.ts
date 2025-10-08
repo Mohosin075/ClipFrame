@@ -7,7 +7,9 @@ import { USER_ROLES } from '../../../enum/user'
 
 const router = express.Router()
 
-router.route('/recent').get(ContenttemplateController.getRecentTemplates)
+router
+  .route('/recent')
+  .get(auth(USER_ROLES.ADMIN), ContenttemplateController.getRecentTemplates)
 
 // Base route: '/'
 router

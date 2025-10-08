@@ -186,6 +186,63 @@ const toggleTemplateLove = async (templateId: string, userId: string) => {
   return updatedTemplate
 }
 
+const getRecentTemplates = async (
+  user: JwtPayload,
+  filterables: IContenttemplateFilterables,
+  pagination: IPaginationOptions,
+) => {
+  const { searchTerm, ...filterData } = filterables
+  const { page, skip, limit, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(pagination)
+
+  const andConditions = []
+
+  // Search functionality
+  if (searchTerm) {
+    andConditions.push({
+      $or: contenttemplateSearchableFields.map(field => ({
+        [field]: {
+          $regex: searchTerm,
+          $options: 'i',
+        },
+      })),
+    })
+  }
+
+  // Filter functionality
+  if (Object.keys(filterData).length) {
+    andConditions.push({
+      $and: Object.entries(filterData).map(([key, value]) => ({
+        [key]: value,
+      })),
+    })
+  }
+
+  const whereConditions = andConditions.length ? { $and: andConditions } : {}
+
+  const [result, total] = await Promise.all([
+    ContentTemplate.find(whereConditions)
+      .skip(skip)
+      .limit(limit)
+      .sort({ [sortBy]: sortOrder })
+      .populate({
+        path: 'createdBy',
+        select: 'email profile name',
+      }),
+    ContentTemplate.countDocuments(whereConditions),
+  ])
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: result,
+  }
+}
+
 export const ContenttemplateServices = {
   createContentTemplate,
   getAllContentTemplates,
@@ -193,4 +250,5 @@ export const ContenttemplateServices = {
   updateContentTemplate,
   deleteContentTemplate,
   toggleTemplateLove,
+  getRecentTemplates,
 }

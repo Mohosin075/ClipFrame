@@ -109,6 +109,25 @@ const toggleTemplateLove = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const getRecentTemplates = catchAsync(async (req: Request, res: Response) => {
+  const filterables = pick(req.query, contenttemplateFilterables)
+
+  const pagination = pick(req.query, paginationFields)
+
+  const result = await ContenttemplateServices.getAllContentTemplates(
+    req.user!,
+    filterables,
+    pagination,
+  )
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Contenttemplates retrieved successfully',
+    data: result,
+  })
+})
+
 export const ContenttemplateController = {
   createContenttemplate,
   updateContenttemplate,
@@ -116,4 +135,5 @@ export const ContenttemplateController = {
   getAllContenttemplates,
   deleteContenttemplate,
   toggleTemplateLove,
+  getRecentTemplates,
 }

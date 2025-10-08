@@ -10,6 +10,7 @@ import { paginationHelper } from '../../../helpers/paginationHelper'
 import { contenttemplateSearchableFields } from './contenttemplate.constants'
 import { Types } from 'mongoose'
 import { ContentTemplate } from './contenttemplate.model'
+import { User } from '../user/user.model'
 
 const createContentTemplate = async (
   user: JwtPayload,
@@ -18,7 +19,7 @@ const createContentTemplate = async (
   try {
     const result = await ContentTemplate.create({
       ...payload,
-      user: user.authId,
+      createdBy: user.authId,
     })
     if (!result) {
       throw new ApiError(
@@ -75,7 +76,10 @@ const getAllContentTemplates = async (
       .skip(skip)
       .limit(limit)
       .sort({ [sortBy]: sortOrder })
-      .populate('createdBy'),
+      .populate({
+        path: 'createdBy',
+        select: 'email profile name',
+      }),
     ContentTemplate.countDocuments(whereConditions),
   ])
 
@@ -151,10 +155,42 @@ const deleteContentTemplate = async (id: string): Promise<IContenttemplate> => {
   return result
 }
 
+const toggleTemplateLove = async (templateId: string, userId: string) => {
+  const template = await ContentTemplate.findById(templateId)
+
+  if (!template) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Content template not found.')
+  }
+
+  const userObjectId = new Types.ObjectId(userId)
+  const alreadyLoved = template.stats.lovedBy
+    .map(id => id.toString())
+    .includes(userId.toString())
+
+  const updateQuery = alreadyLoved
+    ? {
+        $pull: { 'stats.lovedBy': userObjectId },
+        $inc: { 'stats.loveCount': -1 },
+      }
+    : {
+        $addToSet: { 'stats.lovedBy': userObjectId },
+        $inc: { 'stats.loveCount': 1 },
+      }
+
+  const updatedTemplate = await ContentTemplate.findByIdAndUpdate(
+    templateId,
+    updateQuery,
+    { new: true },
+  )
+
+  return updatedTemplate
+}
+
 export const ContenttemplateServices = {
   createContentTemplate,
   getAllContentTemplates,
   getSingleContentTemplate,
   updateContentTemplate,
   deleteContentTemplate,
+  toggleTemplateLove,
 }

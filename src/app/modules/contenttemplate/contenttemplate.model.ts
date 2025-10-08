@@ -26,7 +26,12 @@ const contentTemplateSchema = new Schema<IContenttemplate>(
     steps: { type: [stepSchema], default: [] },
     hashtags: { type: [String], default: [] },
     isActive: { type: Boolean, default: true },
-    createdBy: { type: Types.ObjectId, ref: 'User'},
+    createdBy: { type: Types.ObjectId, ref: 'User' },
+    stats: {
+      reuseCount: { type: Number, default: 0 },
+      loveCount: { type: Number, default: 0 },
+      lovedBy: [{ type: Types.ObjectId, ref: 'User' }],
+    },
   },
   { timestamps: true },
 )

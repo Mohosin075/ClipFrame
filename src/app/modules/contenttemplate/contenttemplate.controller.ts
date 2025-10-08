@@ -6,6 +6,7 @@ import pick from '../../../shared/pick'
 import { contenttemplateFilterables } from './contenttemplate.constants'
 import { paginationFields } from '../../../interfaces/pagination'
 import { ContenttemplateServices } from './contenttemplate.service'
+import { JwtPayload } from 'jsonwebtoken'
 
 const createContenttemplate = catchAsync(
   async (req: Request, res: Response) => {
@@ -92,10 +93,27 @@ const deleteContenttemplate = catchAsync(
   },
 )
 
+const toggleTemplateLove = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params
+  const user = req.user as JwtPayload
+  const result = await ContenttemplateServices.toggleTemplateLove(
+    id,
+    user.authId,
+  )
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Updated Love successfully',
+    data: result,
+  })
+})
+
 export const ContenttemplateController = {
   createContenttemplate,
   updateContenttemplate,
   getSingleContenttemplate,
   getAllContenttemplates,
   deleteContenttemplate,
+  toggleTemplateLove,
 }

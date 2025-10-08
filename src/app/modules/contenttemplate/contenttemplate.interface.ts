@@ -28,6 +28,12 @@ export interface IContenttemplate {
   hashtags: string[]
   isActive?: boolean
   createdBy?: Types.ObjectId
+
+  stats: {
+    reuseCount: number
+    loveCount: number
+    lovedBy: Types.ObjectId[]
+  }
 }
 
 export type ContenttemplateModel = Model<IContenttemplate, {}, {}>

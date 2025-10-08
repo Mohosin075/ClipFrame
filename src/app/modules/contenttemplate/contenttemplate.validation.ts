@@ -19,7 +19,6 @@ export const ContenttemplateValidations = {
       steps: z.array(stepsItemSchema),
       hashtags: z.array(z.string()),
       isActive: z.boolean().optional(),
-      createdBy: z.string(),
     }),
   }),
 
@@ -33,7 +32,6 @@ export const ContenttemplateValidations = {
       steps: z.array(stepsItemSchema).optional(),
       hashtags: z.array(z.string()).optional(),
       isActive: z.boolean().optional(),
-      createdBy: z.string().optional(),
     }),
   }),
 }

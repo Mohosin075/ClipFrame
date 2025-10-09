@@ -69,15 +69,15 @@ export const createContent = async (
 
   try {
     // Check and increment usage inside the session
-    const checkLimit = await checkAndIncrementUsage(
+    await checkAndIncrementUsage(
       user,
       payload.contentType as ContentType,
+      session,
     )
-    console.log({ checkLimit })
 
     // Create content inside the same session
     // const result = await Content.create(payload) // note the array form
-    const result = await Content.create([payload]) // note the array form
+    const result = await Content.create([payload], { session }) // note the array form
 
     if (!result || result.length === 0) {
       throw new ApiError(

@@ -3,14 +3,15 @@ import { JwtPayload } from 'jsonwebtoken'
 import { IPlan } from '../plan/plan.interface'
 import { ContentType } from '../content/content.interface'
 import { Plan } from '../plan/plan.model'
-import { ISubscription } from './subscription.interface'
-import { v4 as uuidv4 } from 'uuid'
 import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
-import mongoose from 'mongoose'
 import { createNewSubscription } from '../../../stripe/handleSubscriptionCreated'
+import mongoose from 'mongoose'
 
-export const handleFreeSubscriptionCreate = async (user: JwtPayload) => {
+export const handleFreeSubscriptionCreate = async (
+  user: JwtPayload,
+  session?: mongoose.ClientSession,
+) => {
   const plan = await Plan.findOne({ price: 0, status: 'active' })
   if (!plan) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Free Plan not found!')
@@ -30,7 +31,7 @@ export const handleFreeSubscriptionCreate = async (user: JwtPayload) => {
   const payload = {
     price: 0,
     user: user.authId,
-    plan: plan && plan._id,
+    plan: plan._id,
     status: 'active',
     currentPeriodStart,
     currentPeriodEnd,
@@ -42,7 +43,7 @@ export const handleFreeSubscriptionCreate = async (user: JwtPayload) => {
   })
 
   if (!subscription) {
-    await createNewSubscription(payload)
+    await createNewSubscription(payload) // external operation, not part of DB session
   }
 
   return subscription
@@ -51,13 +52,16 @@ export const handleFreeSubscriptionCreate = async (user: JwtPayload) => {
 export const checkAndIncrementUsage = async (
   user: JwtPayload,
   type: ContentType,
-  session: mongoose.ClientSession | null = null, // default to null
+  session?: mongoose.ClientSession,
 ) => {
-  await handleFreeSubscriptionCreate(user)
+  await handleFreeSubscriptionCreate(user, session)
+
   const subscription = await Subscription.findOne({
     user: user.authId,
     status: 'active',
-  }).populate<{ plan: IPlan }>('plan')
+  })
+    .populate<{ plan: IPlan }>('plan')
+    .lean()
 
   if (!subscription) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Subscription not found!')
@@ -84,20 +88,19 @@ export const checkAndIncrementUsage = async (
   const limit = subscription.plan.limits[limitKey]
 
   if (used >= limit) {
-    throw new Error(`Limit reached for ${type}. Please upgrade.`)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `Limit reached for ${type}. Please upgrade.`,
+    )
   }
 
-  // Atomic increment using findByIdAndUpdate
+  const usageKeyField = `usage.${usageKey}`
+
   await Subscription.findByIdAndUpdate(
     subscription._id,
-    { $inc: { [usageKey]: 1 } },
-    { session },
-  )
+    { $inc: { [usageKeyField]: 1 } },
+    { new: true, session },
+  ).orFail()
 
-  return {
-    subscriptionId: subscription._id,
-    type,
-    used: used + 1,
-    limit,
-  }
+  return { subscriptionId: subscription._id, type, used: used + 1, limit }
 }

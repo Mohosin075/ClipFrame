@@ -1,4 +1,4 @@
-import { Model, Types } from 'mongoose'
+import { Date, Model, Types } from 'mongoose'
 
 export type ISubscription = {
   _id?: string
@@ -19,6 +19,7 @@ export type ISubscription = {
     businessesUsed: number
     carouselUsed: number
   }
+  lastReset: Date
 }
 
 export type SubscriptionModel = Model<ISubscription, Record<string, unknown>>

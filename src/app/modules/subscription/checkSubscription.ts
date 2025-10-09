@@ -7,8 +7,32 @@ import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { createNewSubscription } from '../../../stripe/handleSubscriptionCreated'
 import mongoose from 'mongoose'
+import { ISubscription } from './subscription.interface'
 
-export const handleFreeSubscriptionCreate = async (
+export const resetWeeklyUsageIfNeeded = async (subscription: any) => {
+  const now = new Date()
+  const lastReset = subscription.lastReset
+    ? new Date(subscription.lastReset)
+    : now
+  const diffInMs = now.getTime() - lastReset.getTime()
+  const diffInDays = diffInMs / (1000 * 60 * 60 * 24)
+  console.log({ diffInDays, diffInMs })
+
+  if (diffInDays >= 7) {
+    subscription.usage = {
+      reelsUsed: 0,
+      postsUsed: 0,
+      storiesUsed: 0,
+      businessesUsed: 0,
+      carouselUsed: 0,
+    }
+    subscription.lastReset = now
+    console.log(now)
+    await subscription.save()
+  }
+}
+
+const handleFreeSubscriptionCreate = async (
   user: JwtPayload,
   session?: mongoose.ClientSession,
 ) => {
@@ -54,18 +78,18 @@ export const checkAndIncrementUsage = async (
   type: ContentType,
   session?: mongoose.ClientSession,
 ) => {
-  await handleFreeSubscriptionCreate(user, session)
-
+  await handleFreeSubscriptionCreate(user)
   const subscription = await Subscription.findOne({
     user: user.authId,
     status: 'active',
-  })
-    .populate<{ plan: IPlan }>('plan')
-    .lean()
+  }).populate<{ plan: IPlan }>('plan')
 
   if (!subscription) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Subscription not found!')
   }
+
+  // Reset weekly usage if 1 week passed
+  await resetWeeklyUsageIfNeeded(subscription)
 
   const usageMap: Record<ContentType, keyof typeof subscription.usage> = {
     reels: 'reelsUsed',
@@ -73,7 +97,6 @@ export const checkAndIncrementUsage = async (
     story: 'storiesUsed',
     carousel: 'carouselUsed',
   }
-
   const limitMap: Record<ContentType, keyof IPlan['limits']> = {
     reels: 'reelsPerWeek',
     post: 'postsPerWeek',

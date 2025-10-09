@@ -49,7 +49,12 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
       default: 'active',
       required: true,
     },
+    lastReset: {
+      type: Date,
+      default: Date.now,
+    },
   },
+
   {
     timestamps: true,
   },

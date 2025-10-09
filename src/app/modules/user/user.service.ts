@@ -15,26 +15,6 @@ import config from '../../../config'
 import { IUseronboarding } from '../useronboarding/useronboarding.interface'
 import { Subscription } from '../subscription/subscription.model'
 import { IPlan } from '../plan/plan.interface'
-import {
-  createFacebookMultiPhotoPost,
-  createInstagramReel,
-  deleteFacebookPost,
-  editFacebookPostCaption,
-  getAllPageVideoStats,
-  getFacebookPages,
-  getFacebookPostDetails,
-  getFacebookUser,
-  getFacebookVideoFullDetails,
-  getInstagramAccountDetails,
-  postInstagramPhoto,
-  postToFacebookPage,
-  postVideoToFacebookPage,
-  publishInstagramReel,
-  publishInstagramStory,
-  uploadFacebookPhoto,
-} from '../../../utils/facebookTokenVerify'
-import { Socialintegration } from '../socialintegration/socialintegration.model'
-import { validateFacebookToken } from '../../../helpers/graphAPIHelper'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({

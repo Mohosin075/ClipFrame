@@ -42,12 +42,12 @@ export const createContent = async (
     instagram = payload.platform.includes('instagram')
   }
 
-  if (!facebook && !instagram) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Please select at least one platform (Facebook or Instagram) to publish the content.',
-    )
-  }
+  // if (!facebook && !instagram) {
+  //   throw new ApiError(
+  //     StatusCodes.BAD_REQUEST,
+  //     'Please select at least one platform (Facebook or Instagram) to publish the content.',
+  //   )
+  // }
 
   if (
     (payload.contentType === 'post' ||
@@ -69,11 +69,11 @@ export const createContent = async (
 
   try {
     // Check and increment usage inside the session
-    await checkAndIncrementUsage(
+    const checkLimit = await checkAndIncrementUsage(
       user,
       payload.contentType as ContentType,
-      session,
     )
+    console.log({ checkLimit })
 
     // Create content inside the same session
     // const result = await Content.create(payload) // note the array form

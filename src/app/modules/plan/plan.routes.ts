@@ -13,7 +13,10 @@ router
     validateRequest(createPlanZodValidationSchema),
     PlanController.createPlan,
   )
-  .get(auth(USER_ROLES.ADMIN), PlanController.getPlan)
+  .get(
+    auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+    PlanController.getPlan,
+  )
 
 router
   .route('/:id')

@@ -87,6 +87,8 @@ export const tempAuth =
           // Set user to header
           req.user = verifyUser
 
+        
+
           // Guard user
           if (roles.length && !roles.includes(verifyUser.role)) {
             throw new ApiError(

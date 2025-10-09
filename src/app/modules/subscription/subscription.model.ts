@@ -5,7 +5,6 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
   {
     customerId: {
       type: String,
-      required: true,
     },
     price: {
       type: Number,
@@ -15,7 +14,6 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
     plan: {
       type: Schema.Types.ObjectId,
       ref: 'Plan',
-      required: true,
     },
     user: {
       type: Schema.Types.ObjectId,
@@ -27,7 +25,6 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
     },
     subscriptionId: {
       type: String,
-      required: true,
     },
     currentPeriodStart: {
       type: String,

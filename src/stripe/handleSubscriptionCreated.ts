@@ -8,7 +8,7 @@ import ApiError from '../errors/ApiError'
 import { Types } from 'mongoose'
 
 // Helper function to create new subscription in database
-const createNewSubscription = async (payload: any) => {
+export const createNewSubscription = async (payload: any) => {
   const isExistSubscription = await Subscription.findOne({
     user: payload.user,
   })

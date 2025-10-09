@@ -8,28 +8,12 @@ import { v4 as uuidv4 } from 'uuid'
 import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import mongoose from 'mongoose'
+import { createNewSubscription } from '../../../stripe/handleSubscriptionCreated'
 
-export const checkAndIncrementUsage = async (
-  user: JwtPayload,
-  type: ContentType,
-  session: mongoose.ClientSession | null = null, // default to null
-) => {
-  const paid_subscription = await Subscription.findOne({
-    user: user.authId,
-    status: 'active',
-  })
-    .populate<{ plan: IPlan }>('plan')
-    .session(session) // session can be null
-
-  const plan = await Plan.findOne({ price: 0, status: 'active' }).session(
-    session,
-  )
-
+export const handleFreeSubscriptionCreate = async (user: JwtPayload) => {
+  const plan = await Plan.findOne({ price: 0, status: 'active' })
   if (!plan) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'No Free Plan is currently available. Please consider upgrading to a Pro Plan to continue.',
-    )
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Free Plan not found!')
   }
 
   const now = new Date()
@@ -43,29 +27,40 @@ export const checkAndIncrementUsage = async (
     now.getSeconds(),
   ).toISOString()
 
-  const subscriptionPayload: Partial<ISubscription> = {
-    customerId: `cus_${uuidv4()}`,
-    subscriptionId: `sub_${uuidv4()}`,
+  const payload = {
     price: 0,
-    plan: plan?._id,
     user: user.authId,
+    plan: plan && plan._id,
+    status: 'active',
     currentPeriodStart,
     currentPeriodEnd,
-  }
-
-  if (!paid_subscription || !paid_subscription.plan) {
-    await Subscription.create([subscriptionPayload], { session })
   }
 
   const subscription = await Subscription.findOne({
     user: user.authId,
     status: 'active',
   })
-    .populate<{ plan: IPlan }>('plan')
-    .session(session)
 
-  if (!subscription || !subscription.plan) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'No Subscription found.')
+  if (!subscription) {
+    await createNewSubscription(payload)
+  }
+
+  return subscription
+}
+
+export const checkAndIncrementUsage = async (
+  user: JwtPayload,
+  type: ContentType,
+  session: mongoose.ClientSession | null = null, // default to null
+) => {
+  await handleFreeSubscriptionCreate(user)
+  const subscription = await Subscription.findOne({
+    user: user.authId,
+    status: 'active',
+  }).populate<{ plan: IPlan }>('plan')
+
+  if (!subscription) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Subscription not found!')
   }
 
   const usageMap: Record<ContentType, keyof typeof subscription.usage> = {

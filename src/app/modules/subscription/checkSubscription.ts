@@ -7,7 +7,32 @@ import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { createNewSubscription } from '../../../stripe/handleSubscriptionCreated'
 import mongoose from 'mongoose'
-import { ISubscription } from './subscription.interface'
+import { User } from '../user/user.model'
+
+export const checkBusinessManage = async (user: JwtPayload) => {
+  const isUserExist = await User.findById(user.authId!)
+
+  if (!isUserExist) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'User not found!')
+  }
+  await handleFreeSubscriptionCreate(user)
+  const subscription = await Subscription.findOne({
+    user: user.authId,
+    status: 'active',
+  }).populate<{ plan: IPlan }>('plan', 'limits name price')
+
+  if (subscription) {
+    const businessUsed = subscription.usage?.businessesUsed ?? 0
+    const businessLimit = subscription.plan?.limits?.businessesManageable ?? 0
+
+    if (businessUsed >= businessLimit) {
+      throw new ApiError(
+        400,
+        `You have reached the maximum businesses you can manage (${businessLimit}). Please upgrade your plan to manage more.`,
+      )
+    }
+  }
+}
 
 export const resetWeeklyUsageIfNeeded = async (subscription: any) => {
   const now = new Date()
@@ -32,7 +57,7 @@ export const resetWeeklyUsageIfNeeded = async (subscription: any) => {
   }
 }
 
-const handleFreeSubscriptionCreate = async (
+export const handleFreeSubscriptionCreate = async (
   user: JwtPayload,
   session?: mongoose.ClientSession,
 ) => {

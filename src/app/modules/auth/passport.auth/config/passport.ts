@@ -74,140 +74,6 @@ passport.use(
   ),
 )
 
-// passport.use(
-//   new FacebookStrategy(
-//     {
-//       clientID: config.facebook.app_id!,
-//       clientSecret: config.facebook.app_secret!,
-//       callbackURL: config.facebook.callback_url,
-//       profileFields: ['id', 'emails', 'name', 'displayName', 'photos'],
-//       passReqToCallback: true,
-//     },
-//     async (
-//       req: any,
-//       accessToken: string,
-//       refreshToken: string,
-//       profile: any,
-//       done: any,
-//     ) => {
-//       try {
-//         // Check if user exists
-//         let user = await User.findOne({
-//           $or: [{ email: profile.emails[0].value }, { appId: profile.id }],
-//         })
-
-//         const longLiveToken = await exchangeForLongLivedToken(
-//           accessToken,
-//           config.facebook.app_id!,
-//           config.facebook.app_secret!,
-//         )
-
-//         // console.log({tokenInfo})
-
-//         const payload = {
-//           platform: 'facebook',
-//           appId: profile.id,
-//           accessToken: longLiveToken?.accessToken,
-//           refreshToken,
-//         }
-//         let localAccessToken
-//         let localRefreshToken
-
-//         if (!user) {
-//           // Create new user
-//           user = new User({
-//             appId: profile.id,
-//             email: profile.emails?.[0]?.value,
-//             name: profile.displayName,
-//             profilePhoto: profile.photos?.[0]?.value,
-//             accessToken,
-//             refreshToken,
-//             verified: true,
-//           })
-//           const savedUser = (await user.save())._id.toString()
-
-//           await Socialintegration.create({
-//             ...payload,
-//             user: savedUser,
-//           })
-
-//           const localToken = await CustomAuthServices.socialLogin(
-//             profile.id,
-//             '',
-//           )
-//           localAccessToken = localToken.accessToken
-//           localRefreshToken = localToken.refreshToken
-//         } else {
-//           // Update existing user
-//           // user.accessToken = accessToken
-//           // user.refreshToken = refreshToken
-//           user.email = profile.emails?.[0]?.value || user.email
-//           user.name = profile.displayName || user.name
-//           user.appId = profile.id
-//           // user.profilePhoto = profile.photos?.[0]?.value || user.profilePhoto
-//           const savedUser = (await user.save())._id.toString()
-
-//           const isSocialInegrationExist = await Socialintegration.findOne({
-//             appId: profile.id,
-//           })
-//           if (!isSocialInegrationExist) {
-//             await Socialintegration.create({
-//               ...payload,
-//               user: savedUser,
-//             })
-//           }
-
-//           await Socialintegration.findOneAndUpdate(
-//             {
-//               appId: profile.id,
-//             },
-//             {
-//               accessToken: longLiveToken?.accessToken,
-//             },
-//             {
-//               new: true,
-//             },
-//           )
-
-//           const localToken = await CustomAuthServices.socialLogin(
-//             profile.id,
-//             '',
-//           )
-//           localAccessToken = localToken.accessToken
-//           localRefreshToken = localToken.refreshToken
-//         }
-
-//         const socialintegration = await Socialintegration.findOne({
-//           appId: profile.id,
-//         })
-
-//         if (socialintegration) {
-//           const accounts = await getFacebookPages(socialintegration.accessToken)
-
-//           if (accounts.length > 0) {
-//             await Socialintegration.findOneAndUpdate(
-//               { appId: profile.id },
-//               { accounts },
-//               { new: true },
-//             )
-//           }
-//         }
-
-//         return done(null, {
-//           _id: user._id,
-//           email: user.email,
-//           name: user.name,
-//           accessToken: localAccessToken, // add
-//           refreshToken: localRefreshToken, // add
-//         })
-//       } catch (error) {
-//         console.error('❌ Facebook strategy error:', error)
-//         return done(error, null)
-//       }
-//     },
-//   ),
-// )
-
 passport.use(
   new FacebookStrategy(
     {
@@ -227,7 +93,7 @@ passport.use(
       try {
         const userId = req.user?.authId
         const user = await User.findOne({
-          _id: '68b1fd9e3a485a0f4fc4b527',
+          _id: userId,
         }).select('email name role')
 
         const flow = req.session.connectType // 'facebook' or 'instagram'

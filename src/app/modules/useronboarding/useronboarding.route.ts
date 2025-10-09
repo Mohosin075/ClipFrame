@@ -51,7 +51,7 @@ router.get(
 
 router.post(
   '/',
-  auth(USER_ROLES.ADMIN, USER_ROLES.STUDENT),
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
 
   validateRequest(UserOnboardingSchema),
   UseronboardingController.createUseronboarding,
@@ -59,7 +59,7 @@ router.post(
 
 router.post(
   '/branding',
-  auth(USER_ROLES.ADMIN, USER_ROLES.STUDENT),
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
 
   fileUploadHandler(),
 

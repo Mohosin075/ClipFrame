@@ -6,7 +6,8 @@ import validateRequest from '../../middleware/validateRequest'
 import { AuthValidations } from './auth.validation'
 import { USER_ROLES } from '../../../enum/user'
 import auth, { tempAuth } from '../../middleware/auth'
-import { AuthHelper } from './auth.helper'
+import { JwtPayload } from 'jsonwebtoken'
+import { checkBusinessManage } from '../subscription/checkSubscription'
 
 const router = express.Router()
 
@@ -97,31 +98,19 @@ router.post(
 
 // -------------------- Facebook Login Routes --------------------
 
-// Old route
-// router.get(
-//   '/facebook',
-//   passport.authenticate('facebook', {
-//     scope: [
-//       'email',
-//       'public_profile',
-//       'pages_show_list',
-//       'pages_read_engagement',
-//       'pages_manage_posts',
-//       'pages_read_user_content',
-//       'instagram_basic',
-//       'instagram_content_publish',
-//       'instagram_manage_insights',
-//       'instagram_manage_comments',
-//       'business_management',
-//       'read_insights',
-//     ],
-//   }),
-// )
-
 // 👉 Connect Facebook only
 router.get(
   '/facebook',
-  (req, res, next) => {
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  async (req, res, next) => {
+    const user = req.user as JwtPayload
+
+    // check how many business connected
+
+    if (user) {
+      await checkBusinessManage(user)
+    }
+
     // flag the flow
     req.session.connectType = 'facebook'
     next()
@@ -141,7 +130,15 @@ router.get(
 // 👉 Connect Instagram (uses FB login w/ IG scopes)
 router.get(
   '/instagram',
-  (req, res, next) => {
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  async (req, res, next) => {
+    const user = req.user as JwtPayload
+
+    // check how many business connected
+
+    if (user) {
+      await checkBusinessManage(user)
+    }
     req.session.connectType = 'instagram'
     next()
   },

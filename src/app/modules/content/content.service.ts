@@ -168,14 +168,23 @@ export const createContent = async (
         )
         console.log(containerId)
       }
+      if (payload.contentType === 'carousel') {
+        console.log('hit post')
+        const containerId = await uploadAndQueueInstagramContent(
+          result[0]._id.toString(),
+          instagramId,
+          instagramAccessToken,
+        )
+        console.log(containerId)
+      }
     }
+
     if (result[0].templateId) {
       const updateTEmp = await ContentTemplate.findByIdAndUpdate(
         result[0].templateId,
         { $inc: { 'stats.reuseCount': 1 } },
         { new: true },
       )
-      console.log({ updateTEmp })
     }
 
     return result[0]

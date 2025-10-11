@@ -114,7 +114,7 @@ export async function uploadFacebookPhotoScheduled(
   pageId: string,
   pageAccessToken: string,
   imageUrl: string,
-  caption: string
+  caption: string,
 ) {
   const body: any = {
     caption,
@@ -598,13 +598,14 @@ async function tryPublish(
   accessToken: string,
   containerId: string,
   type: 'post' | 'reel',
+  caption: string,
 ) {
   const retries = 5
   for (let i = 0; i < retries; i++) {
     try {
       const res = await axios.post(
         `${IG_GRAPH_URL}/${igUserId}/media_publish`,
-        { creation_id: containerId },
+        { creation_id: containerId, caption },
         { params: { access_token: accessToken } },
       )
       console.log(`✅ Published ${type}:`, containerId)
@@ -652,6 +653,7 @@ async function instagramPublishWorker() {
         instagramAccessToken,
         content.instagramContainerId,
         'reel',
+        content.caption!,
       )
 
       content?.platformStatus!.set('instagram', 'published')
@@ -685,7 +687,6 @@ export async function uploadAndQueueInstagramContent(
   } else {
     contentType = 'post'
   }
-
   const containerId = await createInstagramMedia({
     igUserId,
     accessToken,

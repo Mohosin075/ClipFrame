@@ -18,21 +18,46 @@ const createUseronboarding = async (
   const data = { ...payload, userId: user.authId }
 
   try {
-    const existing = await Useronboarding.aggregate([
-      { $match: { userId: new Types.ObjectId(user.authId) } },
-      { $limit: 1 },
-    ])
+    const existing = await Useronboarding.findOne({
+      userId: user.authId,
+    })
 
-    if (!existing || existing.length === 0) {
-      // First time: create new document
+    // 🧩 If user onboarding doesn’t exist, create it
+    if (!existing) {
       const created = await Useronboarding.create(data)
       return created
     }
 
+    // 🔧 Prepare update fields
     const updateFields: Record<string, any> = {}
+
     Object.keys(payload).forEach(key => {
       updateFields[key] = (payload as any)[key]
     })
+
+    // Handle all other fields normally
+    // Object.keys(payload).forEach(key => {
+    //   if (key !== 'socialHandles') {
+    //     updateFields[key] = (payload as any)[key]
+    //   }
+    // })
+
+    // // ⚙️ Handle socialHandles logic
+    // if (payload.socialHandles && payload.socialHandles.length > 0) {
+    //   const existingHandles = existing.socialHandles || []
+
+    //   for (const handle of payload.socialHandles) {
+    //     const alreadyExists = existingHandles.some(
+    //       h => h.platform === handle.platform,
+    //     )
+
+    //     if (!alreadyExists) {
+    //       existingHandles.push(handle)
+    //     }
+    //   }
+
+    //   updateFields.socialHandles = existingHandles
+    // }
 
     const updated = await Useronboarding.findOneAndUpdate(
       { userId: user.authId },

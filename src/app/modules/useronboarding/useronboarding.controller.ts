@@ -10,8 +10,6 @@ import { paginationFields } from '../../../interfaces/pagination'
 const createUseronboarding = catchAsync(async (req: Request, res: Response) => {
   const useronboardingData = req.body
 
-  console.log({ useronboardingData })
-
   const result = await UseronboardingServices.createUseronboarding(
     req.user!,
     useronboardingData,

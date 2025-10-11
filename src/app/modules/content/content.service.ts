@@ -23,8 +23,6 @@ export const createContent = async (
   user: JwtPayload,
   payload: IContent,
 ): Promise<IContent> => {
-  const session = await mongoose.startSession()
-  session.startTransaction()
   // const contentUrl =
   //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
   // payload.mediaUrls = [contentUrl]
@@ -69,15 +67,11 @@ export const createContent = async (
 
   try {
     // Check and increment usage inside the session
-    await checkAndIncrementUsage(
-      user,
-      payload.contentType as ContentType,
-      session,
-    )
+    await checkAndIncrementUsage(user, payload.contentType as ContentType)
 
     // Create content inside the same session
     // const result = await Content.create(payload) // note the array form
-    const result = await Content.create([payload], { session }) // note the array form
+    const result = await Content.create([payload]) // note the array form
 
     if (!result || result.length === 0) {
       throw new ApiError(
@@ -88,24 +82,14 @@ export const createContent = async (
 
     const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
 
-    let publishedDate: Date
-
-    if (payload.scheduledAt?.date && payload.scheduledAt?.time) {
-      // Merge date + time
-      const dateObj = new Date(payload.scheduledAt.date) // convert string → Date
-      const dateStr = dateObj.toISOString().split('T')[0] // "YYYY-MM-DD"
-      publishedDate = new Date(`${dateStr}T${payload.scheduledAt.time}:00.000Z`)
-    } else {
-      // Default: current time + 15 minutes
-      publishedDate = new Date(Date.now() + 15 * 60 * 1000)
-    }
+    // }
 
     if (facebook) {
       console.log('hit facebook')
       const facebookAccount = await Socialintegration.findOne({
         user: user.authId,
         platform: 'facebook',
-      }).session(session)
+      })
 
       if (
         !facebookAccount ||
@@ -128,7 +112,6 @@ export const createContent = async (
             pageAccessToken,
             payload.mediaUrls![0],
             caption,
-            publishedDate,
           )
           console.log('Published to Facebook Page:', published)
           if (!published) {
@@ -143,7 +126,6 @@ export const createContent = async (
             pageAccessToken,
             payload.mediaUrls![0],
             caption,
-            publishedDate,
           )
           console.log('Published to Facebook Page:', reelsPublished)
           if (!reelsPublished) {
@@ -158,7 +140,6 @@ export const createContent = async (
             pageAccessToken,
             payload.mediaUrls!,
             caption,
-            publishedDate,
           )
           console.log('Published to Facebook Page:', carouselPublished)
           if (!carouselPublished) {
@@ -188,7 +169,6 @@ export const createContent = async (
         console.log(containerId)
       }
     }
-    console.log({ tempId: result[0].templateId })
     if (result[0].templateId) {
       const updateTEmp = await ContentTemplate.findByIdAndUpdate(
         result[0].templateId,
@@ -198,15 +178,9 @@ export const createContent = async (
       console.log({ updateTEmp })
     }
 
-    await session.commitTransaction()
-    session.endSession()
-
     return result[0]
     // return result[0]
   } catch (error: any) {
-    await session.abortTransaction()
-    session.endSession()
-
     if (error.code === 11000) {
       throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found')
     }

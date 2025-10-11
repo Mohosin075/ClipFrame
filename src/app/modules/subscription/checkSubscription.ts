@@ -10,7 +10,10 @@ import mongoose from 'mongoose'
 import { User } from '../user/user.model'
 
 export const checkBusinessManage = async (user: JwtPayload) => {
-  const isUserExist = await User.findById(user.authId!)
+  // TODO ---> Remove static Id
+  const isUserExist = await User.findById(
+    user.authId! || '68b1fd9e3a485a0f4fc4b527',
+  )
 
   if (!isUserExist) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'User not found!')
@@ -100,8 +103,7 @@ export const handleFreeSubscriptionCreate = async (
 
 export const checkAndIncrementUsage = async (
   user: JwtPayload,
-  type: ContentType,
-  session?: mongoose.ClientSession,
+  type: ContentType
 ) => {
   await handleFreeSubscriptionCreate(user)
   const subscription = await Subscription.findOne({
@@ -135,6 +137,8 @@ export const checkAndIncrementUsage = async (
   const used = subscription.usage[usageKey]
   const limit = subscription.plan.limits[limitKey]
 
+  console.log({used, limitKey})
+
   if (used >= limit) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -147,7 +151,7 @@ export const checkAndIncrementUsage = async (
   await Subscription.findByIdAndUpdate(
     subscription._id,
     { $inc: { [usageKeyField]: 1 } },
-    { new: true, session },
+    { new: true },
   ).orFail()
 
   return { subscriptionId: subscription._id, type, used: used + 1, limit }

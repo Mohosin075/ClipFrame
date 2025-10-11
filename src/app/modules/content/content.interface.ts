@@ -74,6 +74,7 @@ export interface IContent {
     views?: number
   }
   instagramContainerId: string
+  facebookContainerId: string
   platformStatus?: Map<string, 'pending' | 'published' | 'failed'>
   createdAt?: Date
   updatedAt?: Date

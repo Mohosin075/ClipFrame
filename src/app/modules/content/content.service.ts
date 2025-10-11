@@ -11,6 +11,7 @@ import { checkAndIncrementUsage } from '../subscription/checkSubscription'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
+  createInstagramCarousel,
   getInstagramTokenAndIdFromDB,
   uploadAndQueueInstagramContent,
   uploadFacebookCarouselScheduled,
@@ -169,13 +170,16 @@ export const createContent = async (
         console.log(containerId)
       }
       if (payload.contentType === 'carousel') {
-        console.log('hit post')
-        const containerId = await uploadAndQueueInstagramContent(
-          result[0]._id.toString(),
-          instagramId,
-          instagramAccessToken,
-        )
-        console.log(containerId)
+        console.log('hit carousel')
+        const carouselContainerId = await createInstagramCarousel({
+          igUserId: instagramId,
+          accessToken: instagramAccessToken,
+          imageUrls: result[0].mediaUrls!,
+          caption: result[0].caption,
+          contentId: result[0]._id,
+        })
+
+        console.log('Carousel Container ID:', carouselContainerId)
       }
     }
 

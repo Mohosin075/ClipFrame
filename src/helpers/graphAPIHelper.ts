@@ -6,6 +6,7 @@ import { VideoStats } from '../app/modules/content/content.interface'
 import axios from 'axios'
 import { Socialintegration } from '../app/modules/socialintegration/socialintegration.model'
 import { Content } from '../app/modules/content/content.model'
+import { Types } from 'mongoose'
 
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,
@@ -597,7 +598,7 @@ async function tryPublish(
   igUserId: string,
   accessToken: string,
   containerId: string,
-  type: 'post' | 'reel',
+  type: 'post' | 'reel' | 'carousel',
   caption: string,
 ) {
   const retries = 5
@@ -700,4 +701,91 @@ export async function uploadAndQueueInstagramContent(
   await content.save()
 
   return containerId
+}
+
+interface CreateCarouselOptions {
+  igUserId: string
+  accessToken: string
+  imageUrls: string[] // array of image URLs
+  caption?: string
+  contentId: Types.ObjectId
+}
+
+/**
+ * Create an Instagram carousel container (multiple images)
+ * Returns the container ID which can later be published
+ */
+export async function createInstagramCarousel({
+  igUserId,
+  accessToken,
+  contentId,
+  imageUrls,
+  caption,
+}: CreateCarouselOptions): Promise<string> {
+  if (!Array.isArray(imageUrls) || imageUrls.length < 2) {
+    throw new Error('Instagram carousel requires at least 2 images')
+  }
+
+  try {
+    const childrenContainerIds: string[] = []
+
+    // Step 1: Create unpublished media containers for each image
+    for (const imageUrl of imageUrls) {
+      const res = await axios.post(
+        `${IG_GRAPH_URL}/${igUserId}/media`,
+        {
+          image_url: imageUrl,
+          published: false, // MUST be false
+        },
+        {
+          params: { access_token: accessToken },
+        },
+      )
+
+      if (!res.data.id) {
+        throw new Error(
+          'Failed to create media container for image: ' + imageUrl,
+        )
+      }
+
+      childrenContainerIds.push(res.data.id)
+    }
+
+    // Step 2: Create the carousel container
+    const carouselRes = await axios.post(
+      `${IG_GRAPH_URL}/${igUserId}/media`,
+      {
+        media_type: 'CAROUSEL', // MUST set media_type
+        children: childrenContainerIds, // ARRAY of IDs, NOT string
+        caption,
+        published: false, // MUST be false
+      },
+      {
+        params: { access_token: accessToken },
+      },
+    )
+
+    if (!carouselRes.data.id) {
+      throw new Error('Failed to create carousel container')
+    }
+
+    await Content.findOneAndUpdate(
+      { _id: contentId },
+      {
+        $set: {
+          instagramContainerId: carouselRes.data.id,
+          'platformStatus.instagram': 'pending',
+        },
+      },
+      { new: true },
+    )
+
+    return carouselRes.data.id
+  } catch (err: any) {
+    console.error(
+      'Instagram Carousel Creation Error:',
+      err.response?.data || err.message,
+    )
+    throw err
+  }
 }

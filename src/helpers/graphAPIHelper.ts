@@ -243,7 +243,7 @@ export async function uploadFacebookPageStory(
   mediaUrl: string, // photo or video URL
   type: 'photo' | 'video', // media type
   caption?: string, // optional caption
-  scheduledAt?: Date, // optional: schedule reel
+  contentid?: Types.ObjectId,
 ) {
   const body: any = {
     access_token: pageAccessToken,
@@ -260,13 +260,6 @@ export async function uploadFacebookPageStory(
   }
 
   // Schedule if provided
-  if (scheduledAt) {
-    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000)
-    body.published = false
-    body.scheduled_publish_time = unixTimestamp
-  } else {
-    body.published = true // publish immediately
-  }
 
   const endpoint =
     type === 'video'
@@ -281,6 +274,15 @@ export async function uploadFacebookPageStory(
 
   const data = await res.json()
   if (data.error) throw new Error(data.error.message)
+  const containerId = data.id
+
+  console.log('Story Facebook Container id : ', containerId)
+
+  await Content.findOneAndUpdate(
+    { _id: contentid },
+    { $set: { facebookContainerId: containerId } },
+    { new: true },
+  )
 
   return {
     id: data.id,
@@ -784,6 +786,66 @@ export async function createInstagramCarousel({
   } catch (err: any) {
     console.error(
       'Instagram Carousel Creation Error:',
+      err.response?.data || err.message,
+    )
+    throw err
+  }
+}
+
+interface UploadInstagramStoryOptions {
+  igUserId: string
+  accessToken: string
+  mediaUrl: string // photo or video
+  type: 'photo' | 'video'
+  caption?: string
+  contentId?: Types.ObjectId
+}
+
+export async function uploadInstagramStory({
+  igUserId,
+  accessToken,
+  mediaUrl,
+  type,
+  caption,
+  contentId,
+}: UploadInstagramStoryOptions) {
+  try {
+    const payload: any = {}
+
+    if (type === 'photo') {
+      payload.image_url = mediaUrl
+      if (caption) payload.caption = caption
+    } else if (type === 'video') {
+      payload.video_url = mediaUrl
+      if (caption) payload.caption = caption
+    } else {
+      throw new Error('Invalid type: must be photo or video')
+    }
+
+    // Stories are always published immediately
+    payload.published = true
+
+    const res = await axios.post(`${IG_GRAPH_URL}/${igUserId}/media`, payload, {
+      params: { access_token: accessToken },
+    })
+
+    if (!res.data.id) {
+      throw new Error('Failed to create story media container')
+    }
+
+    const containerId = res.data.id
+
+    await Content.findOneAndUpdate(
+      { _id: contentId },
+      { $set: { instagramContainerId: containerId } },
+      { new: true },
+    )
+
+    console.log(`✅ Instagram Story Container Id: ${containerId}`)
+    return containerId
+  } catch (err: any) {
+    console.error(
+      'Instagram Story Upload Error:',
       err.response?.data || err.message,
     )
     throw err

@@ -15,8 +15,10 @@ import {
   getInstagramTokenAndIdFromDB,
   uploadAndQueueInstagramContent,
   uploadFacebookCarouselScheduled,
+  uploadFacebookPageStory,
   uploadFacebookPhotoScheduled,
   uploadFacebookReelScheduled,
+  uploadInstagramStory,
 } from '../../../helpers/graphAPIHelper'
 import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
 
@@ -149,6 +151,22 @@ export const createContent = async (
               'Failed to schedule Facebook carousel, please try again.',
             )
           }
+        } else if (payload.contentType === 'story') {
+          const carouselPublished = await uploadFacebookPageStory(
+            pageId,
+            pageAccessToken,
+            payload.mediaUrls![0],
+            'photo',
+            caption,
+            result[0]._id
+          )
+          console.log('Published to Facebook Page:', carouselPublished)
+          if (!carouselPublished) {
+            throw new ApiError(
+              StatusCodes.BAD_REQUEST,
+              'Failed to schedule Facebook carousel, please try again.',
+            )
+          }
         }
       }
     }
@@ -168,14 +186,26 @@ export const createContent = async (
           instagramAccessToken,
         )
         console.log(containerId)
-      }
-      if (payload.contentType === 'carousel') {
+      } else if (payload.contentType === 'carousel') {
         console.log('hit carousel')
         const carouselContainerId = await createInstagramCarousel({
           igUserId: instagramId,
           accessToken: instagramAccessToken,
           imageUrls: result[0].mediaUrls!,
           caption: result[0].caption,
+          contentId: result[0]._id,
+        })
+
+        console.log('Carousel Container ID:', carouselContainerId)
+      } else if (payload.contentType === 'story') {
+        console.log('hit carousel')
+        const carouselContainerId = await uploadInstagramStory({
+          igUserId: instagramId,
+          accessToken: instagramAccessToken,
+          mediaUrl:
+            (result[0] && result[0].mediaUrls && result[0].mediaUrls[0]) || '',
+          caption: result[0].caption,
+          type: 'photo',
           contentId: result[0]._id,
         })
 

@@ -13,7 +13,7 @@ import { Types } from 'mongoose'
 import {
   createInstagramMedia,
   getFacebookPages,
-  getInstagramAccounts
+  getInstagramAccounts,
 } from '../../../helpers/graphAPIHelper'
 import { IUser } from '../user/user.interface'
 
@@ -44,24 +44,6 @@ const getAllSocialintegrations = async (
   filterables: ISocialintegrationFilterables,
   pagination: IPaginationOptions,
 ) => {
-  console.log({ user })
-  const social = await Socialintegration.findOne({
-    user: user.authId,
-    platform: 'instagram',
-  })
-
-  const igBusinessId = '17841443388295568'
-  const pageAccessToken =
-    'EAATItxj1TL8BPtE8njlPlNFHfxqtruMRf3jxJQQgWW2G1FP0LzYvcn8dIi4L6Ova1zWuudB703KTkvlo0p2D5lYAtJSAI5xZCpmzB0BMZAYn9UD4smlf4TX5pj7h27uQvUgLaQeGSFmWO6JBjrOTVtrl9Yms0mTR4j1RkvnpyhwtTDj5plj7AdPYRZCfVkSSglk2lF3WgVeElOZASULa'
-  const videoUrl =
-    'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
-  const imageUrl =
-    'https://clipframe.s3.ap-southeast-1.amazonaws.com/image/1759092307709.png'
-  const caption = 'Reels 1:47 instagram'
-  const scheduledAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
-  console.log({ scheduledAt })
-
-
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =
     paginationHelper.calculatePagination(pagination)

@@ -158,7 +158,7 @@ export const createContent = async (
             payload.mediaUrls![0],
             'photo',
             caption,
-            result[0]._id
+            result[0]._id,
           )
           console.log('Published to Facebook Page:', carouselPublished)
           if (!carouselPublished) {
@@ -236,11 +236,6 @@ const getAllContents = async (
   filterables: IContentFilterables,
   pagination: IPaginationOptions,
 ) => {
-  const photoId = '122105534763022104'
-  const pageId = '823267804193695'
-  const pageAccessToken =
-    'EAATItxj1TL8BPplgyghpsxBaKrxukEkmWvNVKaE2EsnbkLDeQ8QBwYpPyc1wD7e1JZB12CI8kX31LBXEz7XblgEr5SYzr10zIcJ2ffdTr9uypBXKoC7HT0azEs83onsQV9CVon6H92YYEsVS4rgCYXUUPB2WslctJ0eXsPqJQHZCzwn2qmMiJADrl7D9mp81AffoFZCp4lFrhk5frZB6'
-
   const { searchTerm, date, ...otherFilters } = filterables
   const { page, skip, limit, sortBy, sortOrder } =
     paginationHelper.calculatePagination(pagination)

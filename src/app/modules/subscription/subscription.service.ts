@@ -4,35 +4,64 @@ import { Subscription } from './subscription.model'
 import stripe from '../../../config/stripe'
 import { User } from '../user/user.model'
 import QueryBuilder from '../../builder/QueryBuilder'
+import { IPlan } from '../plan/plan.interface'
 // import checkUsage from './checkSubscription'
 
 const subscriptionDetailsFromDB = async (
   user: JwtPayload,
 ): Promise<ISubscription | {}> => {
   const subscription = await Subscription.findOne({ user: user.authId })
-    .populate('plan', 'title price duration ')
+    .populate<{ plan: IPlan }>('plan', 'title price duration type')
     .lean()
+
+  console.log({ subscription })
+
   if (!subscription) {
     return {} // Return empty object if no subscription found
   }
 
-  const subscriptionFromStripe = await stripe.subscriptions.retrieve(
-    subscription.subscriptionId,
-  )
+  // 🧩 If it's a free plan, skip Stripe check
+  const isFreePlan =
+    subscription?.plan?.price === 0 || !subscription.subscriptionId
 
-  // Check subscription status and update database accordingly
-  if (subscriptionFromStripe?.status !== 'active') {
-    await Promise.all([
-      User.findByIdAndUpdate(user.authId, { subscribe: false }, { new: true }),
-      Subscription.findOneAndUpdate(
-        { user: user.authId },
-        { status: 'expired' },
-        { new: true },
-      ),
-    ])
+  if (isFreePlan) {
+    return subscription
   }
 
-  return subscription
+  try {
+    const subscriptionFromStripe = await stripe.subscriptions.retrieve(
+      subscription.subscriptionId,
+    )
+
+    // Check subscription status and update database accordingly
+    if (subscriptionFromStripe?.status !== 'active') {
+      await Promise.all([
+        User.findByIdAndUpdate(
+          user.authId,
+          { subscribe: false },
+          { new: true },
+        ),
+        Subscription.findOneAndUpdate(
+          { user: user.authId },
+          { status: 'expired' },
+          { new: true },
+        ),
+      ])
+    }
+
+    return subscription
+  } catch (error: any) {
+    console.error('Stripe subscription retrieval failed:', error.message)
+
+    // If Stripe check fails, fallback to marking it as expired
+    await Subscription.findOneAndUpdate(
+      { user: user.authId },
+      { status: 'expired' },
+      { new: true },
+    )
+
+    return subscription
+  }
 }
 
 const subscriptionsFromDB = async (

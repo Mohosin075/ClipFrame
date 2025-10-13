@@ -118,12 +118,13 @@ export async function uploadFacebookPhotoScheduled(
   imageUrl: string,
   caption: string,
   contentId: Types.ObjectId,
+  isPublished: boolean,
 ) {
   const body: any = {
     caption,
     url: imageUrl,
     access_token: pageAccessToken,
-    published: false,
+    published: isPublished,
   }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/photos`, {
@@ -160,12 +161,13 @@ export async function uploadFacebookReelScheduled(
   videoUrl: string,
   caption: string,
   contentId: Types.ObjectId,
+  isPublished: boolean,
 ) {
   const body: any = {
     description: caption, // Reels use 'description' instead of 'caption'
     file_url: videoUrl, // video URL
     access_token: pageAccessToken,
-    published: false,
+    published: isPublished,
   }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/videos`, {
@@ -202,6 +204,7 @@ export async function uploadFacebookCarouselScheduled(
   imageUrls: string[], // array of image URLs
   caption: string,
   contentId: Types.ObjectId,
+  isPublished: boolean,
 ) {
   if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
     throw new Error('imageUrls must be a non-empty array')
@@ -237,7 +240,7 @@ export async function uploadFacebookCarouselScheduled(
   // Step 2: Create the carousel post (unpublished container)
   const postBody = {
     message: caption,
-    published: false, // don’t publish yet, just create container
+    published: isPublished, // don’t publish yet, just create container
     attached_media: mediaFbids.map(id => ({ media_fbid: id })),
     access_token: pageAccessToken,
   }
@@ -276,66 +279,153 @@ export async function uploadFacebookCarouselScheduled(
 }
 
 // Function to post a Facebook Story (photo or video) == not access by graph api
-export async function uploadFacebookPageStory(
-  pageId: string,
-  pageAccessToken: string,
-  mediaUrl: string, // photo or video URL
-  type: 'photo' | 'video', // media type
-  caption?: string, // optional caption
-  contentId?: Types.ObjectId,
-) {
-  const body: any = {
-    access_token: pageAccessToken,
-    published: false,
-  }
 
+interface UploadStoryOptions {
+  pageId: string
+  pageAccessToken: string
+  type: 'photo' | 'video'
+  mediaUrl: string // public URL of photo or video
+  contentId?: Types.ObjectId
+  caption?: string // optional caption for video
+}
+
+export async function uploadFacebookStory({
+  pageId,
+  pageAccessToken,
+  type,
+  mediaUrl,
+  contentId,
+  caption,
+}: UploadStoryOptions) {
   if (type === 'photo') {
-    body.url = mediaUrl // photo URL
-    if (caption) body.description = caption
-  } else if (type === 'video') {
-    body.file_url = mediaUrl // video URL
-    if (caption) body.description = caption
-  } else {
-    throw new Error('Invalid type: must be photo or video')
-  }
-
-  // Schedule if provided
-
-  const endpoint =
-    type === 'video'
-      ? `https://graph.facebook.com/v23.0/${pageId}/videos`
-      : `https://graph.facebook.com/v23.0/${pageId}/photos`
-
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  const data = await res.json()
-  if (data.error) throw new Error(data.error.message)
-  const containerId = data.id
-
-  console.log('Story Facebook Container id : ', containerId)
-
-  if (containerId) {
-    await Content.findOneAndUpdate(
-      { _id: contentId },
+    // --- PHOTO STORY ---
+    // Step 1: Upload photo as unpublished
+    const uploadRes = await fetch(
+      `https://graph.facebook.com/v24.0/${pageId}/photos`,
       {
-        $set: {
-          facebookContainerId: containerId,
-          status: CONTENT_STATUS.SCHEDULED,
-          'platformStatus.facebook': 'pending',
-        },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: mediaUrl,
+          published: false,
+          access_token: pageAccessToken,
+        }),
       },
-      { new: true },
     )
-  }
 
-  return {
-    id: data.id,
-    simulatedStory: true,
-    type,
+    const uploadData = await uploadRes.json()
+    if (!uploadRes.ok || uploadData.error) {
+      throw new Error(uploadData.error?.message || 'Failed to upload photo')
+    }
+
+    const photoId = uploadData.id
+    console.log('✅ Uploaded photo ID:', photoId)
+
+    // Step 2: Publish photo as story
+    const storyRes = await fetch(
+      `https://graph.facebook.com/v24.0/${pageId}/photo_stories`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photo_id: photoId,
+          access_token: pageAccessToken,
+        }),
+      },
+    )
+
+    const storyData = await storyRes.json()
+    if (!storyRes.ok || storyData.error || !storyData.success) {
+      throw new Error(
+        storyData.error?.message || 'Failed to publish photo story',
+      )
+    }
+
+    const postId = storyData.post_id
+    console.log('✅ Published Facebook photo story:', postId)
+
+    if (contentId) {
+      await Content.findOneAndUpdate(
+        { _id: contentId },
+        {
+          $set: {
+            facebookContainerId: postId,
+            status: CONTENT_STATUS.SCHEDULED,
+            'platformStatus.facebook': 'published',
+          },
+        },
+        { new: true },
+      )
+    }
+
+    return postId
+  }
+  if (type === 'video') {
+    // Step 1: Initialize video story session
+    const initRes = await fetch(
+      `https://graph.facebook.com/v24.0/${pageId}/video_stories`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          upload_phase: 'start',
+          access_token: pageAccessToken,
+        }),
+      },
+    )
+    const initData = await initRes.json()
+    if (!initRes.ok || initData.error)
+      throw new Error(
+        initData.error?.message || 'Failed to initialize video story',
+      )
+    const { video_id, upload_url } = initData
+
+    console.log({ video_id, upload_url })
+
+    // Step 2: Upload hosted video
+    const uploadRes = await fetch(upload_url, {
+      method: 'POST',
+      headers: { file_url: mediaUrl },
+    })
+    const uploadData = await uploadRes.json()
+    console.log({ uploadError: uploadData })
+    if (!uploadRes.ok || uploadData.error || !uploadData.success)
+      throw new Error(uploadData.error?.message || 'Failed to upload video')
+
+    console.log({ uploadData })
+
+    // Step 3: Finish upload and publish story
+    const finishRes = await fetch(
+      `https://graph.facebook.com/v24.0/${pageId}/video_stories`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          upload_phase: 'finish',
+          video_id,
+          access_token: pageAccessToken,
+          description: caption,
+        }),
+      },
+    )
+    const finishData = await finishRes.json()
+    console.log({ finishData })
+    console.log({ error: finishData.error })
+    if (!finishRes.ok || finishData.error || !finishData.success)
+      throw new Error(
+        finishData.error?.message || 'Failed to publish video story',
+      )
+
+    const postId = finishData.post_id
+
+    if (contentId) {
+      await Content.findByIdAndUpdate(contentId, {
+        facebookContainerId: postId,
+        status: CONTENT_STATUS.SCHEDULED,
+        'platformStatus.facebook': 'published',
+      })
+    }
+    return postId
   }
 }
 
@@ -512,6 +602,31 @@ export const getInstagramTokenAndIdFromDB = async (user: string) => {
   return { instagramId, instagramAccessToken }
 }
 
+export const getFacebookTokenAndIdFromDB = async (user: string) => {
+  const facebookAccount = await Socialintegration.findOne({
+    user,
+    platform: 'facebook',
+  })
+
+  if (
+    !facebookAccount ||
+    !facebookAccount.accessToken ||
+    facebookAccount.accounts?.length === 0
+  ) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'No facebook social account found, please connect your facebook account first.',
+    )
+  }
+
+  const facebookPageId =
+    facebookAccount.accounts && facebookAccount.accounts[0].pageId
+  const facebookAccessToken =
+    facebookAccount.accounts && facebookAccount.accounts[0].pageAccessToken!
+
+  return { facebookPageId, facebookAccessToken }
+}
+
 // perfect working function
 export async function getInstagramAccounts(accessToken: string) {
   try {
@@ -680,6 +795,7 @@ async function tryPublish(
 
 async function instagramPublishWorker() {
   const pendingContents = await Content.find({
+    status: CONTENT_STATUS.SCHEDULED,
     'platformStatus.instagram': 'pending',
   })
 
@@ -717,9 +833,9 @@ async function instagramPublishWorker() {
 }
 
 // run every 5s
-// setInterval(() => {
-//   instagramPublishWorker().catch(console.error)
-// }, 5000)
+setInterval(() => {
+  instagramPublishWorker().catch(console.error)
+}, 5000)
 
 export async function uploadAndQueueInstagramContent(
   contentId: string,

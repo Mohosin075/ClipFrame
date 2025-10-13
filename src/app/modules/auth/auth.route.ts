@@ -103,7 +103,7 @@ router.get(
   '/facebook',
   // auth(USER_ROLES.ADMIN, USER_ROLES.USER),
   async (req, res, next) => {
-    const user = req.user as JwtPayload 
+    const user = req.user as JwtPayload
 
     // check how many business connected
 
@@ -123,6 +123,7 @@ router.get(
       'pages_read_engagement',
       'pages_manage_posts',
       'pages_read_user_content',
+      'business_management',
     ],
   }),
 )

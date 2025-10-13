@@ -15,9 +15,9 @@ import {
   getInstagramTokenAndIdFromDB,
   uploadAndQueueInstagramContent,
   uploadFacebookCarouselScheduled,
-  uploadFacebookPageStory,
   uploadFacebookPhotoScheduled,
   uploadFacebookReelScheduled,
+  uploadFacebookStory,
   uploadInstagramStory,
 } from '../../../helpers/graphAPIHelper'
 import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
@@ -112,6 +112,7 @@ export const createContent = async (
             payload.mediaUrls![0],
             caption,
             result[0]._id,
+            true,
           )
           console.log('Published to Facebook Page:', published)
           if (!published) {
@@ -127,6 +128,7 @@ export const createContent = async (
             payload.mediaUrls![0],
             caption,
             result[0]._id,
+            true,
           )
           console.log('Published to Facebook Page:', reelsPublished)
           if (!reelsPublished) {
@@ -142,6 +144,7 @@ export const createContent = async (
             payload.mediaUrls!,
             caption,
             result[0]._id,
+            true,
           )
           console.log('Published to Facebook Page:', carouselPublished)
           if (!carouselPublished) {
@@ -151,19 +154,20 @@ export const createContent = async (
             )
           }
         } else if (payload.contentType === 'story') {
-          const carouselPublished = await uploadFacebookPageStory(
+          const storyPostId = await uploadFacebookStory({
             pageId,
             pageAccessToken,
-            payload.mediaUrls![0],
-            'photo',
-            caption,
-            result[0]._id,
-          )
-          console.log('Published to Facebook Page:', carouselPublished)
-          if (!carouselPublished) {
+            mediaUrl: payload.mediaUrls![0],
+            type: 'video',
+            caption: 'Check this video!',
+            contentId: result[0]._id,
+          })
+
+          console.log('Published to Facebook Page:', storyPostId)
+          if (!storyPostId) {
             throw new ApiError(
               StatusCodes.BAD_REQUEST,
-              'Failed to schedule Facebook carousel, please try again.',
+              'Failed to schedule Facebook story, please try again.',
             )
           }
         }

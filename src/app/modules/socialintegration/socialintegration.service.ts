@@ -160,8 +160,10 @@ export async function upsertFacebookPages(
   profile: any,
   user: IUser,
 ) {
+  console.log({accessToken, profile, user})
   // 1️⃣ Pull the list of FB Pages the user manages
   const pages = await getFacebookPages(accessToken)
+  console.log({pages})
 
   // 2️⃣ Upsert into your Socialintegration collection
   return Socialintegration.findOneAndUpdate(

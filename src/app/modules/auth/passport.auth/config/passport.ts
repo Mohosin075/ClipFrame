@@ -91,12 +91,14 @@ passport.use(
       done: any,
     ) => {
       try {
-        const userId = req.user?.authId
+        // TODO : REMOVE USERiD
+        const userId = req.user?.authId || '68b1fd9e3a485a0f4fc4b527'
         const user = await User.findOne({
           _id: userId,
         }).select('email name role')
 
         const flow = req.session.connectType // 'facebook' or 'instagram'
+        console.log({flow})
         const longLiveToken = await exchangeForLongLivedToken(
           accessToken,
           config.facebook.app_id!,

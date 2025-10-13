@@ -59,6 +59,7 @@ const contentSchema = new Schema<IContent>(
       views: { type: Number, default: 0 },
     },
     instagramContainerId: { type: String },
+    facebookContainerId: { type: String },
     platformStatus: { type: Map, of: String, default: {} },
   },
 

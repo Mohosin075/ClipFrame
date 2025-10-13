@@ -26,10 +26,6 @@ export const createContent = async (
   user: JwtPayload,
   payload: IContent,
 ): Promise<IContent> => {
-  // const contentUrl =
-  //   'https://clipframe.s3.ap-southeast-1.amazonaws.com/videos/1757808619430-7clmu0rg4wo.mp4'
-  // payload.mediaUrls = [contentUrl]
-
   if (!payload.mediaUrls || payload.mediaUrls.length === 0) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -43,12 +39,12 @@ export const createContent = async (
     instagram = payload.platform.includes('instagram')
   }
 
-  // if (!facebook && !instagram) {
-  //   throw new ApiError(
-  //     StatusCodes.BAD_REQUEST,
-  //     'Please select at least one platform (Facebook or Instagram) to publish the content.',
-  //   )
-  // }
+  if (!facebook && !instagram) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Please select at least one platform (Facebook or Instagram) to publish the content.',
+    )
+  }
 
   if (
     (payload.contentType === 'post' ||
@@ -85,8 +81,7 @@ export const createContent = async (
 
     const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
 
-    // }
-
+    // implement facebook content posting
     if (facebook) {
       console.log('hit facebook')
       const facebookAccount = await Socialintegration.findOne({
@@ -109,12 +104,14 @@ export const createContent = async (
         const pageId = facebookAccount.accounts[0].pageId
         const pageAccessToken = facebookAccount.accounts[0].pageAccessToken!
 
+        // For Post
         if (payload.contentType === 'post') {
           const published = await uploadFacebookPhotoScheduled(
             pageId,
             pageAccessToken,
             payload.mediaUrls![0],
             caption,
+            result[0]._id,
           )
           console.log('Published to Facebook Page:', published)
           if (!published) {
@@ -129,6 +126,7 @@ export const createContent = async (
             pageAccessToken,
             payload.mediaUrls![0],
             caption,
+            result[0]._id,
           )
           console.log('Published to Facebook Page:', reelsPublished)
           if (!reelsPublished) {
@@ -143,6 +141,7 @@ export const createContent = async (
             pageAccessToken,
             payload.mediaUrls!,
             caption,
+            result[0]._id,
           )
           console.log('Published to Facebook Page:', carouselPublished)
           if (!carouselPublished) {
@@ -171,6 +170,7 @@ export const createContent = async (
       }
     }
 
+    // implementing instagram content posing
     if (instagram) {
       console.log('hit instagram')
 
@@ -198,7 +198,7 @@ export const createContent = async (
 
         console.log('Carousel Container ID:', carouselContainerId)
       } else if (payload.contentType === 'story') {
-        console.log('hit carousel')
+        console.log('hit story')
         const carouselContainerId = await uploadInstagramStory({
           igUserId: instagramId,
           accessToken: instagramAccessToken,
@@ -214,7 +214,7 @@ export const createContent = async (
     }
 
     if (result[0].templateId) {
-      const updateTEmp = await ContentTemplate.findByIdAndUpdate(
+      await ContentTemplate.findByIdAndUpdate(
         result[0].templateId,
         { $inc: { 'stats.reuseCount': 1 } },
         { new: true },

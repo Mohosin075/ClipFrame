@@ -7,6 +7,7 @@ import axios from 'axios'
 import { Socialintegration } from '../app/modules/socialintegration/socialintegration.model'
 import { Content } from '../app/modules/content/content.model'
 import { Types } from 'mongoose'
+import { CONTENT_STATUS } from '../app/modules/content/content.constants'
 
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,
@@ -116,12 +117,13 @@ export async function uploadFacebookPhotoScheduled(
   pageAccessToken: string,
   imageUrl: string,
   caption: string,
+  contentId: Types.ObjectId,
 ) {
   const body: any = {
     caption,
     url: imageUrl,
     access_token: pageAccessToken,
-    published: true,
+    published: false,
   }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/photos`, {
@@ -132,6 +134,22 @@ export async function uploadFacebookPhotoScheduled(
 
   const data = await res.json()
   if (data.error) throw new Error(data.error.message)
+  const containerId = data.id
+
+  if (containerId) {
+    await Content.findOneAndUpdate(
+      { _id: contentId },
+      {
+        $set: {
+          facebookContainerId: containerId,
+          status: CONTENT_STATUS.SCHEDULED,
+          'platformStatus.facebook': 'pending',
+        },
+      },
+      { new: true },
+    )
+  }
+
   return data.id
 }
 
@@ -141,20 +159,13 @@ export async function uploadFacebookReelScheduled(
   pageAccessToken: string,
   videoUrl: string,
   caption: string,
-  scheduledAt?: Date, // optional: if not provided, post immediately
+  contentId: Types.ObjectId,
 ) {
   const body: any = {
     description: caption, // Reels use 'description' instead of 'caption'
     file_url: videoUrl, // video URL
     access_token: pageAccessToken,
-  }
-
-  if (scheduledAt) {
-    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000)
-    body.published = false // must be false to schedule
-    body.scheduled_publish_time = unixTimestamp
-  } else {
-    body.published = true // publish immediately
+    published: false,
   }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/videos`, {
@@ -165,6 +176,22 @@ export async function uploadFacebookReelScheduled(
 
   const data = await res.json()
   if (data.error) throw new Error(data.error.message)
+
+  const containerId = data.id
+
+  if (containerId) {
+    await Content.findOneAndUpdate(
+      { _id: contentId },
+      {
+        $set: {
+          facebookContainerId: containerId,
+          status: CONTENT_STATUS.SCHEDULED,
+          'platformStatus.facebook': 'pending',
+        },
+      },
+      { new: true },
+    )
+  }
   return data.id
 }
 
@@ -174,19 +201,19 @@ export async function uploadFacebookCarouselScheduled(
   pageAccessToken: string,
   imageUrls: string[], // array of image URLs
   caption: string,
-  scheduledAt?: Date, // optional: if not provided, post immediately
+  contentId: Types.ObjectId,
 ) {
   if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
     throw new Error('imageUrls must be a non-empty array')
   }
 
-  // Step 1: Upload each photo as unpublished to get media_fbid
   const mediaFbids: string[] = []
 
+  // Step 1: Upload each photo as unpublished to get media_fbid
   for (const url of imageUrls) {
-    const photoBody: any = {
+    const photoBody = {
       url,
-      published: false, // must be false for carousel
+      published: false, // important — upload as unpublished
       access_token: pageAccessToken,
     }
 
@@ -200,25 +227,19 @@ export async function uploadFacebookCarouselScheduled(
     )
 
     const photoData = await photoRes.json()
-    if (photoData.error) throw new Error(photoData.error.message)
+    if (!photoRes.ok || photoData.error) {
+      throw new Error(photoData.error?.message || 'Failed to upload image')
+    }
 
     mediaFbids.push(photoData.id)
   }
 
-  // Step 2: Create the carousel post
-  const postBody: any = {
+  // Step 2: Create the carousel post (unpublished container)
+  const postBody = {
     message: caption,
+    published: false, // don’t publish yet, just create container
     attached_media: mediaFbids.map(id => ({ media_fbid: id })),
     access_token: pageAccessToken,
-  }
-
-  // Schedule if needed
-  if (scheduledAt) {
-    const unixTimestamp = Math.floor(scheduledAt.getTime() / 1000)
-    postBody.published = false
-    postBody.scheduled_publish_time = unixTimestamp
-  } else {
-    postBody.published = true
   }
 
   const postRes = await fetch(
@@ -231,9 +252,27 @@ export async function uploadFacebookCarouselScheduled(
   )
 
   const postData = await postRes.json()
-  if (postData.error) throw new Error(postData.error.message)
+  if (!postRes.ok || postData.error) {
+    throw new Error(postData.error?.message || 'Failed to create carousel post')
+  }
 
-  return postData.id
+  const containerId = postData.id
+
+  if (containerId) {
+    await Content.findOneAndUpdate(
+      { _id: contentId },
+      {
+        $set: {
+          facebookContainerId: containerId,
+          status: CONTENT_STATUS.SCHEDULED, // you can change this if needed
+          'platformStatus.facebook': 'pending',
+        },
+      },
+      { new: true },
+    )
+  }
+
+  return containerId
 }
 
 // Function to post a Facebook Story (photo or video) == not access by graph api
@@ -243,10 +282,11 @@ export async function uploadFacebookPageStory(
   mediaUrl: string, // photo or video URL
   type: 'photo' | 'video', // media type
   caption?: string, // optional caption
-  contentid?: Types.ObjectId,
+  contentId?: Types.ObjectId,
 ) {
   const body: any = {
     access_token: pageAccessToken,
+    published: false,
   }
 
   if (type === 'photo') {
@@ -278,11 +318,19 @@ export async function uploadFacebookPageStory(
 
   console.log('Story Facebook Container id : ', containerId)
 
-  await Content.findOneAndUpdate(
-    { _id: contentid },
-    { $set: { facebookContainerId: containerId } },
-    { new: true },
-  )
+  if (containerId) {
+    await Content.findOneAndUpdate(
+      { _id: contentId },
+      {
+        $set: {
+          facebookContainerId: containerId,
+          status: CONTENT_STATUS.SCHEDULED,
+          'platformStatus.facebook': 'pending',
+        },
+      },
+      { new: true },
+    )
+  }
 
   return {
     id: data.id,
@@ -669,9 +717,9 @@ async function instagramPublishWorker() {
 }
 
 // run every 5s
-setInterval(() => {
-  instagramPublishWorker().catch(console.error)
-}, 5000)
+// setInterval(() => {
+//   instagramPublishWorker().catch(console.error)
+// }, 5000)
 
 export async function uploadAndQueueInstagramContent(
   contentId: string,
@@ -700,6 +748,7 @@ export async function uploadAndQueueInstagramContent(
 
   content.instagramContainerId = containerId
   content?.platformStatus?.set('instagram', 'pending')
+  content.status = CONTENT_STATUS.SCHEDULED
   await content.save()
 
   return containerId
@@ -776,6 +825,7 @@ export async function createInstagramCarousel({
       {
         $set: {
           instagramContainerId: carouselRes.data.id,
+          status: CONTENT_STATUS.SCHEDULED,
           'platformStatus.instagram': 'pending',
         },
       },
@@ -837,7 +887,13 @@ export async function uploadInstagramStory({
 
     await Content.findOneAndUpdate(
       { _id: contentId },
-      { $set: { instagramContainerId: containerId } },
+      {
+        $set: {
+          instagramContainerId: containerId,
+          status: CONTENT_STATUS.SCHEDULED,
+          'platformStatus.instagram': 'pending',
+        },
+      },
       { new: true },
     )
 

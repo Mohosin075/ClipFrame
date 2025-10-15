@@ -209,7 +209,7 @@ export const createContent = async (
           mediaUrl:
             (result[0] && result[0].mediaUrls && result[0].mediaUrls[0]) || '',
           caption: result[0].caption,
-          type: 'photo',
+          type: 'video',
           contentId: result[0]._id,
         })
 

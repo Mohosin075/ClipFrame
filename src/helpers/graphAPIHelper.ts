@@ -976,36 +976,53 @@ export async function uploadInstagramStory({
   contentId,
 }: UploadInstagramStoryOptions) {
   try {
-    // Step 1: Create story media container (UNPUBLISHED)
+    console.log(`📱 Starting Instagram ${type} Story Upload...`)
+
     const payload: any = {
       media_type: 'STORIES',
     }
 
     if (type === 'photo') {
       payload.image_url = mediaUrl
+      console.log('🖼️ Uploading photo story...')
     } else if (type === 'video') {
-      payload.video_url = mediaUrl
+      payload.video_url = mediaUrl // ✅ Just use video_url directly
+      console.log('🎥 Uploading video story...')
     }
 
-    if (caption) payload.caption = caption
+    if (caption) {
+      payload.caption = caption
+    }
 
-    // ⚠️ Important: Create as UNPUBLISHED first
+    // For videos, use longer timeout and larger payload limits
+    const config = {
+      params: { access_token: accessToken },
+      timeout: type === 'video' ? 60000 : 15000, // 60s for videos
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+
+    console.log('📤 Sending request to Instagram API...')
     const createRes = await axios.post(
       `${IG_GRAPH_URL}/${igUserId}/media`,
       payload,
-      {
-        params: { access_token: accessToken },
-      },
+      config,
     )
 
     if (!createRes.data.id) {
-      throw new Error('Failed to create story media container')
+      throw new Error(`Failed to create ${type} story container`)
     }
 
     const containerId = createRes.data.id
-    console.log(`📦 Story Container Created: ${containerId}`)
+    console.log(
+      `✅ ${type === 'video' ? 'Video' : 'Photo'} Story Container Created: ${containerId}`,
+    )
 
-    if (containerId) {
+    // Update database
+    if (contentId) {
       await Content.findOneAndUpdate(
         { _id: contentId },
         {
@@ -1022,9 +1039,30 @@ export async function uploadInstagramStory({
     return containerId
   } catch (err: any) {
     console.error(
-      'Instagram Story Upload Error:',
+      `❌ Instagram ${type} Story Upload Error:`,
       err.response?.data || err.message,
     )
+
+    // Provide specific error messages
+    if (err.response?.data?.error) {
+      const igError = err.response.data.error
+      if (igError.code === 100) {
+        if (type === 'video') {
+          throw new Error(
+            'Video URL is invalid or not accessible. Make sure the URL is publicly accessible and the video is in MP4 format.',
+          )
+        } else {
+          throw new Error('Image URL is invalid or not accessible.')
+        }
+      } else if (igError.code === 10) {
+        throw new Error('App does not have permission to publish stories.')
+      } else if (igError.message?.includes('permission')) {
+        throw new Error(
+          'Your Instagram account or app lacks permission to publish stories.',
+        )
+      }
+    }
+
     throw err
   }
 }

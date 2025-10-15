@@ -23,6 +23,232 @@ import {
 import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
 import { detectMediaType } from '../../../helpers/detectMedia'
 
+// export const createContent = async (
+//   user: JwtPayload,
+//   payload: IContent,
+// ): Promise<IContent> => {
+//   if (!payload.mediaUrls || payload.mediaUrls.length === 0) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Media URLs are required to create content.',
+//     )
+//   }
+
+//   let facebook, instagram
+//   if (payload.platform) {
+//     facebook = payload.platform.includes('facebook')
+//     instagram = payload.platform.includes('instagram')
+//   }
+
+//   if (!facebook && !instagram) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Please select at least one platform (Facebook or Instagram) to publish the content.',
+//     )
+//   }
+
+//   if (
+//     (payload.contentType === 'post' ||
+//       payload.contentType === 'reel' ||
+//       payload.contentType === 'story') &&
+//     Array.isArray(payload.mediaUrls)
+//   ) {
+//     payload.mediaUrls = payload.mediaUrls.slice(0, 1)
+//   }
+
+//   if (payload.contentType === 'carousel') {
+//     if (payload.mediaUrls.length < 2) {
+//       throw new ApiError(
+//         StatusCodes.BAD_REQUEST,
+//         'At least 2 media URLs are required for carousel content.',
+//       )
+//     }
+//   }
+
+//   try {
+//     // Check and increment usage inside the session
+//     await checkAndIncrementUsage(user, payload.contentType as ContentType)
+
+//     // Create content inside the same session
+//     // const result = await Content.create(payload) // note the array form
+//     const result = await Content.create([payload]) // note the array form
+
+//     if (!result || result.length === 0) {
+//       throw new ApiError(
+//         StatusCodes.BAD_REQUEST,
+//         'Failed to create Content, please try again with valid data.',
+//       )
+//     }
+
+//     const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
+
+//     // implement facebook content posting
+//     if (facebook) {
+//       console.log('hit facebook')
+//       const facebookAccount = await Socialintegration.findOne({
+//         user: user.authId,
+//         platform: 'facebook',
+//       })
+
+//       if (
+//         !facebookAccount ||
+//         !facebookAccount.accounts ||
+//         facebookAccount.accounts.length === 0
+//       ) {
+//         throw new ApiError(
+//           StatusCodes.BAD_REQUEST,
+//           'No Facebook social account found, please connect your Facebook account first.',
+//         )
+//       }
+
+//       if (facebookAccount && facebookAccount?.accounts?.length > 0) {
+//         const pageId = facebookAccount.accounts[0].pageId
+//         const pageAccessToken = facebookAccount.accounts[0].pageAccessToken!
+
+//         // For Post
+//         if (payload.contentType === 'post') {
+//           const published = await uploadFacebookPhotoScheduled(
+//             pageId,
+//             pageAccessToken,
+//             payload.mediaUrls![0],
+//             caption,
+//             result[0]._id,
+//             true,
+//           )
+//           console.log('Published to Facebook Page:', published)
+//           if (!published) {
+//             throw new ApiError(
+//               StatusCodes.BAD_REQUEST,
+//               'Failed to schedule Facebook post, please try again.',
+//             )
+//           }
+//         } else if (payload.contentType === 'reel') {
+//           const reelsPublished = await uploadFacebookReelScheduled(
+//             pageId,
+//             pageAccessToken,
+//             payload.mediaUrls![0],
+//             caption,
+//             result[0]._id,
+//             true,
+//           )
+//           console.log('Published to Facebook Page:', reelsPublished)
+//           if (!reelsPublished) {
+//             throw new ApiError(
+//               StatusCodes.BAD_REQUEST,
+//               'Failed to schedule Facebook reel, please try again.',
+//             )
+//           }
+//         } else if (payload.contentType === 'carousel') {
+//           const carouselPublished = await uploadFacebookCarouselScheduled(
+//             pageId,
+//             pageAccessToken,
+//             payload.mediaUrls!,
+//             caption,
+//             result[0]._id,
+//             true,
+//           )
+//           console.log('Published to Facebook Page:', carouselPublished)
+//           if (!carouselPublished) {
+//             throw new ApiError(
+//               StatusCodes.BAD_REQUEST,
+//               'Failed to schedule Facebook carousel, please try again.',
+//             )
+//           }
+//         } else if (payload.contentType === 'story') {
+//           const type = await detectMediaType(payload.mediaUrls![0])
+
+//           if (type === 'video') {
+//             throw new ApiError(
+//               StatusCodes.BAD_REQUEST,
+//               'Facebook Stories support images only. Videos are not allowed.',
+//             )
+//           }
+
+//           const storyPostId = await uploadFacebookStory({
+//             pageId,
+//             pageAccessToken,
+//             mediaUrl: payload.mediaUrls![0],
+//             type: type,
+//             caption: 'Check this video!',
+//             contentId: result[0]._id,
+//           })
+
+//           console.log('Published to Facebook Page:', storyPostId)
+//           if (!storyPostId) {
+//             throw new ApiError(
+//               StatusCodes.BAD_REQUEST,
+//               'Failed to schedule Facebook story, please try again.',
+//             )
+//           }
+//         }
+//       }
+//     }
+
+//     // implementing instagram content posing
+//     if (instagram) {
+//       console.log('hit instagram')
+
+//       // get Id and token from DB
+//       const { instagramId, instagramAccessToken } =
+//         await getInstagramTokenAndIdFromDB(user.authId)
+
+//       if (payload.contentType === 'post' || payload.contentType === 'reel') {
+//         console.log('hit post')
+//         const containerId = await uploadAndQueueInstagramContent(
+//           result[0]._id.toString(),
+//           instagramId,
+//           instagramAccessToken,
+//         )
+//         console.log(containerId)
+//       } else if (payload.contentType === 'carousel') {
+//         console.log('hit carousel')
+//         const carouselContainerId = await createInstagramCarousel({
+//           igUserId: instagramId,
+//           accessToken: instagramAccessToken,
+//           imageUrls: result[0].mediaUrls!,
+//           caption: result[0].caption,
+//           contentId: result[0]._id,
+//         })
+
+//         console.log('Carousel Container ID:', carouselContainerId)
+//       } else if (payload.contentType === 'story') {
+//         const type = await detectMediaType(payload.mediaUrls![0])
+//         console.log('hit story')
+//         const carouselContainerId = await uploadInstagramStory({
+//           igUserId: instagramId,
+//           accessToken: instagramAccessToken,
+//           mediaUrl:
+//             (result[0] && result[0].mediaUrls && result[0].mediaUrls[0]) || '',
+//           caption: result[0].caption,
+//           type: type,
+//           contentId: result[0]._id,
+//         })
+
+//         console.log('Carousel Container ID:', carouselContainerId)
+//       }
+//     }
+
+//     if (result[0].templateId) {
+//       await ContentTemplate.findByIdAndUpdate(
+//         result[0].templateId,
+//         { $inc: { 'stats.reuseCount': 1 } },
+//         { new: true },
+//       )
+//     }
+
+//     return result[0]
+//     // return result[0]
+//   } catch (error: any) {
+//     if (error.code === 11000) {
+//       throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found')
+//     }
+//     throw error
+//   }
+// }
+
+const CONTENT_TYPES = ['post', 'reel', 'carousel', 'story'] as const
+type ContentTypeKeys = (typeof CONTENT_TYPES)[number]
+
 export const createContent = async (
   user: JwtPayload,
   payload: IContent,
@@ -34,215 +260,158 @@ export const createContent = async (
     )
   }
 
-  let facebook, instagram
-  if (payload.platform) {
-    facebook = payload.platform.includes('facebook')
-    instagram = payload.platform.includes('instagram')
-  }
+  const platforms = payload.platform || []
+  const facebook = platforms.includes('facebook')
+  const instagram = platforms.includes('instagram')
 
   if (!facebook && !instagram) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Please select at least one platform (Facebook or Instagram) to publish the content.',
+      'Please select at least one platform (Facebook or Instagram).',
     )
   }
 
-  if (
-    (payload.contentType === 'post' ||
-      payload.contentType === 'reel' ||
-      payload.contentType === 'story') &&
-    Array.isArray(payload.mediaUrls)
-  ) {
+  // Restrict mediaUrls for single media content
+  if (['post', 'reel', 'story'].includes(payload.contentType!)) {
     payload.mediaUrls = payload.mediaUrls.slice(0, 1)
   }
 
-  if (payload.contentType === 'carousel') {
-    if (payload.mediaUrls.length < 2) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        'At least 2 media URLs are required for carousel content.',
-      )
-    }
+  if (payload.contentType === 'carousel' && payload.mediaUrls.length < 2) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'At least 2 media URLs are required for carousel content.',
+    )
   }
 
   try {
-    // Check and increment usage inside the session
-    await checkAndIncrementUsage(user, payload.contentType as ContentType)
+    await checkAndIncrementUsage(user, payload.contentType as ContentTypeKeys)
+    const [createdContent] = await Content.create([payload])
 
-    // Create content inside the same session
-    // const result = await Content.create(payload) // note the array form
-    const result = await Content.create([payload]) // note the array form
-
-    if (!result || result.length === 0) {
+    if (!createdContent) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
-        'Failed to create Content, please try again with valid data.',
+        'Failed to create content, try again.',
       )
     }
 
-    const caption = buildCaptionWithTags(payload?.caption, payload?.tags)
+    const caption = buildCaptionWithTags(payload.caption, payload.tags)
 
-    // implement facebook content posting
-    if (facebook) {
-      console.log('hit facebook')
-      const facebookAccount = await Socialintegration.findOne({
-        user: user.authId,
-        platform: 'facebook',
-      })
+    const tasks: Promise<any>[] = []
 
-      if (
-        !facebookAccount ||
-        !facebookAccount.accounts ||
-        facebookAccount.accounts.length === 0
-      ) {
-        throw new ApiError(
-          StatusCodes.BAD_REQUEST,
-          'No Facebook social account found, please connect your Facebook account first.',
-        )
-      }
+    if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
+    if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
 
-      if (facebookAccount && facebookAccount?.accounts?.length > 0) {
-        const pageId = facebookAccount.accounts[0].pageId
-        const pageAccessToken = facebookAccount.accounts[0].pageAccessToken!
+    await Promise.all(tasks)
 
-        // For Post
-        if (payload.contentType === 'post') {
-          const published = await uploadFacebookPhotoScheduled(
-            pageId,
-            pageAccessToken,
-            payload.mediaUrls![0],
-            caption,
-            result[0]._id,
-            true,
-          )
-          console.log('Published to Facebook Page:', published)
-          if (!published) {
-            throw new ApiError(
-              StatusCodes.BAD_REQUEST,
-              'Failed to schedule Facebook post, please try again.',
-            )
-          }
-        } else if (payload.contentType === 'reel') {
-          const reelsPublished = await uploadFacebookReelScheduled(
-            pageId,
-            pageAccessToken,
-            payload.mediaUrls![0],
-            caption,
-            result[0]._id,
-            true,
-          )
-          console.log('Published to Facebook Page:', reelsPublished)
-          if (!reelsPublished) {
-            throw new ApiError(
-              StatusCodes.BAD_REQUEST,
-              'Failed to schedule Facebook reel, please try again.',
-            )
-          }
-        } else if (payload.contentType === 'carousel') {
-          const carouselPublished = await uploadFacebookCarouselScheduled(
-            pageId,
-            pageAccessToken,
-            payload.mediaUrls!,
-            caption,
-            result[0]._id,
-            true,
-          )
-          console.log('Published to Facebook Page:', carouselPublished)
-          if (!carouselPublished) {
-            throw new ApiError(
-              StatusCodes.BAD_REQUEST,
-              'Failed to schedule Facebook carousel, please try again.',
-            )
-          }
-        } else if (payload.contentType === 'story') {
-          const type = await detectMediaType(payload.mediaUrls![0])
-
-          if (type === 'video') {
-            throw new ApiError(
-              StatusCodes.BAD_REQUEST,
-              'Facebook Stories support images only. Videos are not allowed.',
-            )
-          }
-
-          const storyPostId = await uploadFacebookStory({
-            pageId,
-            pageAccessToken,
-            mediaUrl: payload.mediaUrls![0],
-            type: type,
-            caption: 'Check this video!',
-            contentId: result[0]._id,
-          })
-
-          console.log('Published to Facebook Page:', storyPostId)
-          if (!storyPostId) {
-            throw new ApiError(
-              StatusCodes.BAD_REQUEST,
-              'Failed to schedule Facebook story, please try again.',
-            )
-          }
-        }
-      }
-    }
-
-    // implementing instagram content posing
-    if (instagram) {
-      console.log('hit instagram')
-
-      // get Id and token from DB
-      const { instagramId, instagramAccessToken } =
-        await getInstagramTokenAndIdFromDB(user.authId)
-
-      if (payload.contentType === 'post' || payload.contentType === 'reel') {
-        console.log('hit post')
-        const containerId = await uploadAndQueueInstagramContent(
-          result[0]._id.toString(),
-          instagramId,
-          instagramAccessToken,
-        )
-        console.log(containerId)
-      } else if (payload.contentType === 'carousel') {
-        console.log('hit carousel')
-        const carouselContainerId = await createInstagramCarousel({
-          igUserId: instagramId,
-          accessToken: instagramAccessToken,
-          imageUrls: result[0].mediaUrls!,
-          caption: result[0].caption,
-          contentId: result[0]._id,
-        })
-
-        console.log('Carousel Container ID:', carouselContainerId)
-      } else if (payload.contentType === 'story') {
-        const type = await detectMediaType(payload.mediaUrls![0])
-        console.log('hit story')
-        const carouselContainerId = await uploadInstagramStory({
-          igUserId: instagramId,
-          accessToken: instagramAccessToken,
-          mediaUrl:
-            (result[0] && result[0].mediaUrls && result[0].mediaUrls[0]) || '',
-          caption: result[0].caption,
-          type: type,
-          contentId: result[0]._id,
-        })
-
-        console.log('Carousel Container ID:', carouselContainerId)
-      }
-    }
-
-    if (result[0].templateId) {
+    if (createdContent.templateId) {
       await ContentTemplate.findByIdAndUpdate(
-        result[0].templateId,
+        createdContent.templateId,
         { $inc: { 'stats.reuseCount': 1 } },
         { new: true },
       )
     }
 
-    return result[0]
-    // return result[0]
+    return createdContent
   } catch (error: any) {
     if (error.code === 11000) {
       throw new ApiError(StatusCodes.CONFLICT, 'Duplicate entry found')
     }
     throw error
+  }
+}
+
+// Facebook posting
+const postToFacebook = async (userId: string, content: IContent) => {
+  const fbAccount = await Socialintegration.findOne({
+    user: userId,
+    platform: 'facebook',
+  })
+  if (!fbAccount?.accounts?.length) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'No Facebook account connected.',
+    )
+  }
+
+  const { pageId, pageAccessToken } = fbAccount.accounts[0]
+
+  switch (content.contentType) {
+    case 'post':
+      return uploadFacebookPhotoScheduled(
+        pageId,
+        pageAccessToken,
+        content.mediaUrls![0],
+        content.caption!,
+        content._id!,
+        true,
+      )
+    case 'reel':
+      return uploadFacebookReelScheduled(
+        pageId,
+        pageAccessToken,
+        content.mediaUrls![0],
+        content.caption!,
+        content._id!,
+        true,
+      )
+    case 'carousel':
+      return uploadFacebookCarouselScheduled(
+        pageId,
+        pageAccessToken,
+        content.mediaUrls!,
+        content.caption!,
+        content._id!,
+        true,
+      )
+    case 'story':
+      const type = await detectMediaType(content.mediaUrls![0])
+      if (type === 'video')
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          'Facebook stories support images only.',
+        )
+      return uploadFacebookStory({
+        pageId,
+        pageAccessToken,
+        mediaUrl: content.mediaUrls![0],
+        type,
+        caption: content.caption!,
+        contentId: content._id,
+      })
+  }
+}
+
+// Instagram posting
+const postToInstagram = async (userId: string, content: IContent) => {
+  const { instagramId, instagramAccessToken } =
+    await getInstagramTokenAndIdFromDB(userId)
+
+  switch (content.contentType) {
+    case 'post':
+    case 'reel':
+      return uploadAndQueueInstagramContent(
+        content._id!.toString(),
+        instagramId,
+        instagramAccessToken,
+      )
+    case 'carousel':
+      return createInstagramCarousel({
+        igUserId: instagramId,
+        accessToken: instagramAccessToken,
+        imageUrls: content.mediaUrls!,
+        caption: content.caption!,
+        contentId: content._id!,
+      })
+    case 'story':
+      const type = await detectMediaType(content.mediaUrls![0])
+      return uploadInstagramStory({
+        igUserId: instagramId,
+        accessToken: instagramAccessToken,
+        mediaUrl: content.mediaUrls![0],
+        caption: content.caption!,
+        type,
+        contentId: content._id,
+      })
   }
 }
 

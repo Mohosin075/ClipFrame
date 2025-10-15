@@ -8,6 +8,7 @@ import { Socialintegration } from '../app/modules/socialintegration/socialintegr
 import { Content } from '../app/modules/content/content.model'
 import { Types } from 'mongoose'
 import { CONTENT_STATUS } from '../app/modules/content/content.constants'
+import { detectMediaType } from './detectMedia'
 
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,
@@ -120,38 +121,55 @@ export async function uploadFacebookPhotoScheduled(
   contentId: Types.ObjectId,
   isPublished: boolean,
 ) {
-  const body: any = {
-    caption,
-    url: imageUrl,
-    access_token: pageAccessToken,
-    published: isPublished,
-  }
+  const type = await detectMediaType(imageUrl)
 
-  const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/photos`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  const data = await res.json()
-  if (data.error) throw new Error(data.error.message)
-  const containerId = data.id
-
-  if (containerId) {
-    await Content.findOneAndUpdate(
-      { _id: contentId },
-      {
-        $set: {
-          facebookContainerId: containerId,
-          status: CONTENT_STATUS.SCHEDULED,
-          'platformStatus.facebook': 'pending',
-        },
-      },
-      { new: true },
+  if (type === 'video') {
+    await uploadFacebookReelScheduled(
+      pageId,
+      pageAccessToken,
+      imageUrl,
+      caption!,
+      contentId!,
+      true,
     )
   }
+  if (type === 'photo') {
+    const body: any = {
+      caption,
+      url: imageUrl,
+      access_token: pageAccessToken,
+      published: isPublished,
+    }
 
-  return data.id
+    const res = await fetch(
+      `https://graph.facebook.com/v23.0/${pageId}/photos`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+    )
+
+    const data = await res.json()
+    if (data.error) throw new Error(data.error.message)
+    const containerId = data.id
+
+    if (containerId) {
+      await Content.findOneAndUpdate(
+        { _id: contentId },
+        {
+          $set: {
+            facebookContainerId: containerId,
+            status: CONTENT_STATUS.SCHEDULED,
+            'platformStatus.facebook': 'published',
+          },
+        },
+        { new: true },
+      )
+    }
+
+    return data.id
+  }
 }
 
 // perfect working function for reel
@@ -188,7 +206,7 @@ export async function uploadFacebookReelScheduled(
         $set: {
           facebookContainerId: containerId,
           status: CONTENT_STATUS.SCHEDULED,
-          'platformStatus.facebook': 'pending',
+          'platformStatus.facebook': 'published',
         },
       },
       { new: true },
@@ -268,7 +286,7 @@ export async function uploadFacebookCarouselScheduled(
         $set: {
           facebookContainerId: containerId,
           status: CONTENT_STATUS.SCHEDULED, // you can change this if needed
-          'platformStatus.facebook': 'pending',
+          'platformStatus.facebook': 'published',
         },
       },
       { new: true },
@@ -712,9 +730,14 @@ export async function createInstagramMedia({
   try {
     let payload: any = {}
 
-    if (type === 'post') {
+    const mediaTypeByURL = await detectMediaType(mediaUrl)
+
+    if (type === 'post' && mediaTypeByURL !== 'video') {
       payload = { image_url: mediaUrl, caption }
-    } else if (type === 'reel') {
+    } else if (
+      type === 'reel' ||
+      (type === 'post' && mediaTypeByURL == 'video')
+    ) {
       payload = { video_url: mediaUrl, caption, media_type: 'REELS' }
     }
 

@@ -976,44 +976,49 @@ export async function uploadInstagramStory({
   contentId,
 }: UploadInstagramStoryOptions) {
   try {
-    const payload: any = {}
+    // Step 1: Create story media container (UNPUBLISHED)
+    const payload: any = {
+      media_type: 'STORIES',
+    }
 
     if (type === 'photo') {
       payload.image_url = mediaUrl
-      if (caption) payload.caption = caption
     } else if (type === 'video') {
       payload.video_url = mediaUrl
-      if (caption) payload.caption = caption
-    } else {
-      throw new Error('Invalid type: must be photo or video')
     }
 
-    // Stories are always published immediately
-    payload.published = true
+    if (caption) payload.caption = caption
 
-    const res = await axios.post(`${IG_GRAPH_URL}/${igUserId}/media`, payload, {
-      params: { access_token: accessToken },
-    })
+    // ⚠️ Important: Create as UNPUBLISHED first
+    const createRes = await axios.post(
+      `${IG_GRAPH_URL}/${igUserId}/media`,
+      payload,
+      {
+        params: { access_token: accessToken },
+      },
+    )
 
-    if (!res.data.id) {
+    if (!createRes.data.id) {
       throw new Error('Failed to create story media container')
     }
 
-    const containerId = res.data.id
+    const containerId = createRes.data.id
+    console.log(`📦 Story Container Created: ${containerId}`)
 
-    await Content.findOneAndUpdate(
-      { _id: contentId },
-      {
-        $set: {
-          instagramContainerId: containerId,
-          status: CONTENT_STATUS.SCHEDULED,
-          'platformStatus.instagram': 'pending',
+    if (containerId) {
+      await Content.findOneAndUpdate(
+        { _id: contentId },
+        {
+          $set: {
+            instagramContainerId: containerId,
+            status: CONTENT_STATUS.SCHEDULED,
+            'platformStatus.instagram': 'pending',
+          },
         },
-      },
-      { new: true },
-    )
+        { new: true },
+      )
+    }
 
-    console.log(`✅ Instagram Story Container Id: ${containerId}`)
     return containerId
   } catch (err: any) {
     console.error(

@@ -158,7 +158,7 @@ export const createContent = async (
             pageId,
             pageAccessToken,
             mediaUrl: payload.mediaUrls![0],
-            type: 'video',
+            type: 'photo',
             caption: 'Check this video!',
             contentId: result[0]._id,
           })

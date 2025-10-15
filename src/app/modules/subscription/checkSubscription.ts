@@ -103,7 +103,7 @@ export const handleFreeSubscriptionCreate = async (
 
 export const checkAndIncrementUsage = async (
   user: JwtPayload,
-  type: ContentType
+  type: ContentType,
 ) => {
   await handleFreeSubscriptionCreate(user)
   const subscription = await Subscription.findOne({
@@ -119,13 +119,13 @@ export const checkAndIncrementUsage = async (
   await resetWeeklyUsageIfNeeded(subscription)
 
   const usageMap: Record<ContentType, keyof typeof subscription.usage> = {
-    reels: 'reelsUsed',
+    reel: 'reelsUsed',
     post: 'postsUsed',
     story: 'storiesUsed',
     carousel: 'carouselUsed',
   }
   const limitMap: Record<ContentType, keyof IPlan['limits']> = {
-    reels: 'reelsPerWeek',
+    reel: 'reelsPerWeek',
     post: 'postsPerWeek',
     story: 'storiesPerWeek',
     carousel: 'carouselPerWeek',
@@ -137,7 +137,7 @@ export const checkAndIncrementUsage = async (
   const used = subscription.usage[usageKey]
   const limit = subscription.plan.limits[limitKey]
 
-  console.log({used, limitKey})
+  console.log({ used, limitKey })
 
   if (used >= limit) {
     throw new ApiError(

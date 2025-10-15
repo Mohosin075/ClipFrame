@@ -9,7 +9,7 @@ export interface IContentFilterables {
   date?: Date
 }
 
-export type ContentType = 'post' | 'reels' | 'story' | 'carousel'
+export type ContentType = 'post' | 'reel' | 'story' | 'carousel'
 
 enum ScheduledAtType {
   ANY = 'any',

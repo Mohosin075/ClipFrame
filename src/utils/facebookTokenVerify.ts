@@ -465,7 +465,7 @@ export async function postInstagramPhoto(
   return publishData // returns the IG media ID
 }
 
-// instagram reels
+// instagram reel
 
 export async function createInstagramReel(
   igBusinessId: string,

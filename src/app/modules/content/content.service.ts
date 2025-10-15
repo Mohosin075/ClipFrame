@@ -21,6 +21,7 @@ import {
   uploadInstagramStory,
 } from '../../../helpers/graphAPIHelper'
 import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
+import { detectMediaType } from '../../../helpers/detectMedia'
 
 export const createContent = async (
   user: JwtPayload,
@@ -48,7 +49,7 @@ export const createContent = async (
 
   if (
     (payload.contentType === 'post' ||
-      payload.contentType === 'reels' ||
+      payload.contentType === 'reel' ||
       payload.contentType === 'story') &&
     Array.isArray(payload.mediaUrls)
   ) {
@@ -121,7 +122,7 @@ export const createContent = async (
               'Failed to schedule Facebook post, please try again.',
             )
           }
-        } else if (payload.contentType === 'reels') {
+        } else if (payload.contentType === 'reel') {
           const reelsPublished = await uploadFacebookReelScheduled(
             pageId,
             pageAccessToken,
@@ -154,11 +155,20 @@ export const createContent = async (
             )
           }
         } else if (payload.contentType === 'story') {
+          const type = await detectMediaType(payload.mediaUrls![0])
+
+          if (type === 'video') {
+            throw new ApiError(
+              StatusCodes.BAD_REQUEST,
+              'Facebook Stories support images only. Videos are not allowed.',
+            )
+          }
+
           const storyPostId = await uploadFacebookStory({
             pageId,
             pageAccessToken,
             mediaUrl: payload.mediaUrls![0],
-            type: 'photo',
+            type: type,
             caption: 'Check this video!',
             contentId: result[0]._id,
           })
@@ -182,7 +192,7 @@ export const createContent = async (
       const { instagramId, instagramAccessToken } =
         await getInstagramTokenAndIdFromDB(user.authId)
 
-      if (payload.contentType === 'post' || payload.contentType === 'reels') {
+      if (payload.contentType === 'post' || payload.contentType === 'reel') {
         console.log('hit post')
         const containerId = await uploadAndQueueInstagramContent(
           result[0]._id.toString(),
@@ -202,6 +212,7 @@ export const createContent = async (
 
         console.log('Carousel Container ID:', carouselContainerId)
       } else if (payload.contentType === 'story') {
+        const type = await detectMediaType(payload.mediaUrls![0])
         console.log('hit story')
         const carouselContainerId = await uploadInstagramStory({
           igUserId: instagramId,
@@ -209,7 +220,7 @@ export const createContent = async (
           mediaUrl:
             (result[0] && result[0].mediaUrls && result[0].mediaUrls[0]) || '',
           caption: result[0].caption,
-          type: 'video',
+          type: type,
           contentId: result[0]._id,
         })
 

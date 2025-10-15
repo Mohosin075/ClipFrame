@@ -9,7 +9,7 @@ const contentSchema = new Schema<IContent>(
     caption: { type: String },
     // description: { type: String },
     mediaUrls: { type: [String] },
-    contentType: { type: String, enum: ['post', 'reels', 'story', 'carousel'] },
+    contentType: { type: String, enum: ['post', 'reel', 'story', 'carousel'] },
     scheduledAt: {
       type: {
         type: String,

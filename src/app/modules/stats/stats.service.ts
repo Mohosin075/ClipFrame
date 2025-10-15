@@ -74,7 +74,7 @@ export const getUserContentStats = async (user: JwtPayload) => {
   // Fill counts
   for (const item of stats) {
     if (item._id === 'post') result.postsPublished = item.total
-    if (item._id === 'reels') result.reelsPublished = item.total
+    if (item._id === 'reel') result.reelsPublished = item.total
     if (item._id === 'story') result.storiesCreated = item.total
   }
 

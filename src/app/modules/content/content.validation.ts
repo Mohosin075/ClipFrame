@@ -51,7 +51,7 @@ export const ContentValidations = {
       caption: z.string(),
       // description: z.string().optional(),
       mediaUrls: z.array(z.string()),
-      contentType: z.enum(['post', 'reels', 'story', 'carousel']),
+      contentType: z.enum(['post', 'reel', 'story', 'carousel']),
       scheduledAt: ScheduledAtSchema.optional(),
       remindMe: z.boolean().optional(),
       platform: z.array(z.enum(['facebook', 'instagram', 'tiktok'])).optional(),

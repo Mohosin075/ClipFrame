@@ -154,7 +154,7 @@ export async function uploadFacebookPhotoScheduled(
   return data.id
 }
 
-// perfect working function for reels
+// perfect working function for reel
 export async function uploadFacebookReelScheduled(
   pageId: string,
   pageAccessToken: string,
@@ -360,6 +360,7 @@ export async function uploadFacebookStory({
 
     return postId
   }
+  // For video , meta not allow published vidoe story
   if (type === 'video') {
     // Step 1: Initialize video story session
     const initRes = await fetch(
@@ -807,7 +808,7 @@ async function instagramPublishWorker() {
         await getInstagramTokenAndIdFromDB(content.user?.toString() || '')
 
       // If it's a reel, check container status first
-      if (content.contentType === 'reels') {
+      if (content.contentType === 'reel') {
         await checkContainerStatus(
           content.instagramContainerId,
           instagramAccessToken,
@@ -849,7 +850,7 @@ export async function uploadAndQueueInstagramContent(
 
   let contentType: 'post' | 'reel' = 'post'
 
-  if (content.contentType === 'reels') {
+  if (content.contentType === 'reel') {
     contentType = 'reel'
   } else {
     contentType = 'post'

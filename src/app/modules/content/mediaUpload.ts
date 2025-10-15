@@ -10,7 +10,7 @@ export const handleMediaUpload = async (req: any, res: any, next: any) => {
     const payload = req.body
 
     if (!payload.data) {
-      return next(new ApiError(StatusCodes.BAD_REQUEST, 'Data is required'))
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Data is required')
     }
 
     // Parse JSON payload
@@ -30,16 +30,22 @@ export const handleMediaUpload = async (req: any, res: any, next: any) => {
     // Upload videos
     // ===============================
     if (videoFiles?.length > 0) {
+      if (payload.data.contentType === 'carousel') {
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          'Carousel posts support images only. Videos are not allowed. Please upload images instead.',
+        )
+      }
+
       uploadedVideoUrls = await S3Helper.uploadMultipleVideosToS3(
         videoFiles,
         'videos',
       )
+
       if (uploadedVideoUrls.length === 0) {
-        return next(
-          new ApiError(
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            'Failed to upload media',
-          ),
+        throw new ApiError(
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          'Failed to upload video files. Please try again.',
         )
       }
     }
@@ -55,20 +61,17 @@ export const handleMediaUpload = async (req: any, res: any, next: any) => {
       )
 
       if (uploadedClipsUrls.length === 0) {
-        return next(
-          new ApiError(
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            'Failed to upload clips',
-          ),
+        throw new ApiError(
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          'Failed to upload clips. Please try again.',
         )
       }
 
-      // build clip metadata
+      // Build clip metadata
       for (let i = 0; i < clipsFiles.length; i++) {
         const file = clipsFiles[i]
         const url = uploadedClipsUrls[i]
 
-        // Duration (in seconds)
         let duration = 0
         try {
           const fileStream = Readable.from(file.buffer)
@@ -95,12 +98,11 @@ export const handleMediaUpload = async (req: any, res: any, next: any) => {
         imageFiles,
         'image',
       )
+
       if (uploadedImageUrls.length === 0) {
-        return next(
-          new ApiError(
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            'Failed to upload media',
-          ),
+        throw new ApiError(
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          'Failed to upload image files. Please try again.',
         )
       }
     }
@@ -117,12 +119,9 @@ export const handleMediaUpload = async (req: any, res: any, next: any) => {
     // ===============================
     req.body = { ...payload.data, mediaUrls, clips }
 
-
     next()
   } catch (error) {
     console.error('❌ Error in handleMediaUpload:', error)
-    return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: 'Failed to upload media' })
+    next(error) // Pass error to your globalErrorHandler
   }
 }

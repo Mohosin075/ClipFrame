@@ -23,6 +23,7 @@ import {
 import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
 import { detectMediaType } from '../../../helpers/detectMedia'
 
+// Old version
 // export const createContent = async (
 //   user: JwtPayload,
 //   payload: IContent,
@@ -246,6 +247,7 @@ import { detectMediaType } from '../../../helpers/detectMedia'
 //   }
 // }
 
+// new version
 const CONTENT_TYPES = ['post', 'reel', 'carousel', 'story'] as const
 type ContentTypeKeys = (typeof CONTENT_TYPES)[number]
 

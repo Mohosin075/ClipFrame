@@ -97,6 +97,8 @@ passport.use(
           _id: userId,
         }).select('email name role')
 
+        console.log({user})
+
         const flow = req.session.connectType // 'facebook' or 'instagram'
         console.log({flow})
         const longLiveToken = await exchangeForLongLivedToken(

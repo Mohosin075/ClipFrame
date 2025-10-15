@@ -107,9 +107,9 @@ router.get(
 
     // check how many business connected
 
-    if (user) {
-      await checkBusinessManage(user)
-    }
+    // if (user) {
+    //   await checkBusinessManage(user)
+    // }
 
     // flag the flow
     req.session.connectType = 'facebook'
@@ -121,8 +121,10 @@ router.get(
       'public_profile',
       'pages_show_list',
       'pages_read_engagement',
-      'pages_manage_posts',
       'pages_read_user_content',
+      'pages_manage_posts',
+      'pages_manage_metadata',
+      'pages_manage_engagement',
       'business_management',
     ],
   }),

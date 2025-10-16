@@ -16,6 +16,8 @@ import {
   getInstagramAccounts,
 } from '../../../helpers/graphAPIHelper'
 import { IUser } from '../user/user.interface'
+import axios from 'axios'
+import { getTikTokAccounts } from '../../../helpers/tiktokAPIHelper'
 
 const createSocialintegration = async (
   user: JwtPayload,
@@ -160,10 +162,10 @@ export async function upsertFacebookPages(
   profile: any,
   user: IUser,
 ) {
-  console.log({accessToken, profile, user})
+  console.log({ accessToken, profile, user })
   // 1️⃣ Pull the list of FB Pages the user manages
   const pages = await getFacebookPages(accessToken)
-  console.log({pages})
+  console.log({ pages })
 
   // 2️⃣ Upsert into your Socialintegration collection
   return Socialintegration.findOneAndUpdate(
@@ -208,6 +210,39 @@ export async function upsertInstagramAccounts(
         name: profile.displayName,
         photo: profile.photos?.[0]?.value,
       },
+    },
+    { upsert: true, new: true },
+  )
+}
+
+export async function upsertTikTokAccounts(
+  accessToken: string,
+  userId: string,
+) {
+  console.log({ accessToken, userId })
+
+  // 1️⃣ Get TikTok accounts tied to this accessToken
+  const tiktokAccounts = await getTikTokAccounts(accessToken)
+  console.log('Found TikTok Accounts:', tiktokAccounts)
+
+  // 2️⃣ Prepare metaProfile from TikTok account (first account)
+  const firstAccount = tiktokAccounts[0] || {}
+  const metaProfile = {
+    email: '', // TikTok usually does not provide email
+    name: firstAccount.username || '',
+    photo: firstAccount.profilePicture || '',
+  }
+
+  // 3️⃣ Upsert into Socialintegration
+  return Socialintegration.findOneAndUpdate(
+    { appId: userId, platform: 'tiktok' }, // use TikTok userId as appId
+    {
+      user: userId,
+      platform: 'tiktok',
+      appId: firstAccount.id,
+      accessToken,
+      accounts: tiktokAccounts,
+      metaProfile,
     },
     { upsert: true, new: true },
   )

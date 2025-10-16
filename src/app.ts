@@ -12,6 +12,11 @@ import globalErrorHandler from './app/middleware/globalErrorHandler'
 import './task/scheduler'
 import handleStripeWebhook from './stripe/handleStripeWebhook'
 import config from './config'
+import { Socialintegration } from './app/modules/socialintegration/socialintegration.model'
+import axios from 'axios'
+import { User } from './app/modules/user/user.model'
+import { upsertTikTokAccounts } from './app/modules/socialintegration/socialintegration.service'
+import { getTiktokToken } from './helpers/tiktokAPIHelper'
 
 const app = express()
 
@@ -37,7 +42,7 @@ app.use(
 app.use(passport.initialize())
 app.use(passport.session())
 
-// CORS 
+// CORS
 app.use(
   cors({
     origin: '*',
@@ -74,10 +79,35 @@ app.get(
     console.log('✅ OAuth successful, user:', req.user)
     // send them back to frontend with a token or success msg
     res.redirect(
-      `https://col-preview-saves-dolls.trycloudflare.com/privacy-policy`,
+      `https://departure-values-incorporated-flexible.trycloudflare.com/privacy-policy`,
     )
   },
 )
+
+//
+
+app.get('/tiktok/callback', async (req, res) => {
+  console.log('hit callback tiktok')
+  const { code, state } = req.query
+
+  try {
+    const token = await getTiktokToken(code as string, state as string)
+    console.log({ token })
+
+ 
+      return res.redirect(
+        `https://departure-values-incorporated-flexible.trycloudflare.com/privacy-policy?connected=true`,
+      )
+
+
+  } catch (err) {
+    console.error('TikTok OAuth Error:', err)
+
+    if (!res.headersSent) {
+      return res.redirect(`yourapp://tiktok-auth-failed?connected=false`)
+    }
+  }
+})
 
 // -------------------- API Routes --------------------
 

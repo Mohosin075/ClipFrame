@@ -1,8 +1,7 @@
 import axios from 'axios'
 import config from '../config'
-import { upsertTikTokAccounts } from '../app/modules/socialintegration/socialintegration.service'
 
-export async function getTiktokToken(code: string, state: string) {
+export async function getTiktokToken(code: string) {
   try {
     const tokenRes = await axios.post(
       'https://open.tiktokapis.com/v2/oauth/token/',
@@ -17,11 +16,9 @@ export async function getTiktokToken(code: string, state: string) {
     )
 
     const shortTokenData = tokenRes.data.access_token
-    const userId = state
 
-    if (shortTokenData && userId) {
-      await upsertTikTokAccounts(shortTokenData, userId)
-      return { accessToken: shortTokenData, userId }
+    if (shortTokenData) {
+      return shortTokenData
     }
 
     throw new Error('TikTok token or userId missing')

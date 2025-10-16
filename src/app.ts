@@ -87,25 +87,28 @@ app.get(
 //
 
 app.get('/tiktok/callback', async (req, res) => {
-  console.log('hit callback tiktok')
+  console.log('🎯 TikTok callback hit')
+
   const { code, state } = req.query
+  const userId = state
+
+  // Define success and failure redirect URLs
+  const successUrl = `https://departure-values-incorporated-flexible.trycloudflare.com/privacy-policy?connected=true`
+  const failureUrl = `https://departure-values-incorporated-flexible.trycloudflare.com/privacy-policy?connected=false`
 
   try {
-    const token = await getTiktokToken(code as string, state as string)
-    console.log({ token })
-
- 
-      return res.redirect(
-        `https://departure-values-incorporated-flexible.trycloudflare.com/privacy-policy?connected=true`,
-      )
-
-
-  } catch (err) {
-    console.error('TikTok OAuth Error:', err)
-
-    if (!res.headersSent) {
-      return res.redirect(`yourapp://tiktok-auth-failed?connected=false`)
+    if (!code || !userId) {
+      console.error('Missing code or userId')
+      return res.redirect(failureUrl)
     }
+
+    await upsertTikTokAccounts(code as string, userId as string)
+
+    console.log('✅ TikTok account linked successfully')
+    return res.redirect(successUrl)
+  } catch (error) {
+    console.error('❌ TikTok account linking failed:', error)
+    return res.redirect(failureUrl)
   }
 })
 

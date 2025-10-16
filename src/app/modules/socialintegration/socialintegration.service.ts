@@ -17,7 +17,11 @@ import {
 } from '../../../helpers/graphAPIHelper'
 import { IUser } from '../user/user.interface'
 import axios from 'axios'
-import { getTikTokAccounts } from '../../../helpers/tiktokAPIHelper'
+import {
+  getTikTokAccounts,
+  getTiktokToken,
+} from '../../../helpers/tiktokAPIHelper'
+import { User } from '../user/user.model'
 
 const createSocialintegration = async (
   user: JwtPayload,
@@ -215,15 +219,18 @@ export async function upsertInstagramAccounts(
   )
 }
 
-export async function upsertTikTokAccounts(
-  accessToken: string,
-  userId: string,
-) {
-  console.log({ accessToken, userId })
+export async function upsertTikTokAccounts(code: string, userId: string) {
+  const accessToken = await getTiktokToken(code as string)
 
   // 1️⃣ Get TikTok accounts tied to this accessToken
   const tiktokAccounts = await getTikTokAccounts(accessToken)
   console.log('Found TikTok Accounts:', tiktokAccounts)
+
+  const user = await User.findById(userId)
+
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found!')
+  }
 
   // 2️⃣ Prepare metaProfile from TikTok account (first account)
   const firstAccount = tiktokAccounts[0] || {}
@@ -233,13 +240,15 @@ export async function upsertTikTokAccounts(
     photo: firstAccount.profilePicture || '',
   }
 
+  const appId = firstAccount.unionId // or firstAccount.id
+
   // 3️⃣ Upsert into Socialintegration
   return Socialintegration.findOneAndUpdate(
-    { appId: userId, platform: 'tiktok' }, // use TikTok userId as appId
+    { appId, platform: 'tiktok', user: userId }, // query by the same appId
     {
       user: userId,
       platform: 'tiktok',
-      appId: firstAccount.id,
+      appId,
       accessToken,
       accounts: tiktokAccounts,
       metaProfile,

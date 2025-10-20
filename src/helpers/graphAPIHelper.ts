@@ -10,6 +10,7 @@ import { Types } from 'mongoose'
 import { CONTENT_STATUS } from '../app/modules/content/content.constants'
 import { detectMediaType } from './detectMedia'
 
+// exchange token short to long
 export async function exchangeForLongLivedToken(
   shortLivedToken: string,
   appId: string,
@@ -36,6 +37,7 @@ export async function exchangeForLongLivedToken(
   }
 }
 
+// token facebook validation
 export async function validateFacebookToken(inputToken: string) {
   const appId = config.facebook.app_id
   const appSecret = config.facebook.app_secret
@@ -59,6 +61,7 @@ export async function validateFacebookToken(inputToken: string) {
 // ----------------------
 // Facebook Functions
 // ----------------------
+// get user by token
 export async function getFacebookUser(accessToken: string) {
   const res = await fetch(
     `https://graph.facebook.com/v23.0/me?fields=id,name,email,picture&access_token=${accessToken}`,
@@ -68,6 +71,7 @@ export async function getFacebookUser(accessToken: string) {
   return data
 }
 
+// get page by token
 export async function getFacebookPages(accessToken: string) {
   const res = await fetch(
     `https://graph.facebook.com/v23.0/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${accessToken}`,
@@ -98,6 +102,7 @@ export async function postToFacebookPage(
   if (data.error) throw new Error(data.error.message)
   return data
 }
+
 // not use this time i user later
 export async function deleteFacebookPost(
   postId: string,
@@ -307,6 +312,7 @@ interface UploadStoryOptions {
   caption?: string // optional caption for video
 }
 
+// perfect working for facebook story
 export async function uploadFacebookStory({
   pageId,
   pageAccessToken,
@@ -445,6 +451,50 @@ export async function uploadFacebookStory({
       })
     }
     return postId
+  }
+}
+
+export async function getFacebookPhotoDetails(
+  photoId: string,
+  pageAccessToken: string,
+) {
+  const fields = [
+    'id',
+    'created_time',
+    'updated_time',
+    'images',
+    'likes.summary(true)',
+    'comments.summary(true)',
+    'insights.metric(post_impressions)',
+  ].join(',')
+
+  const url = `https://graph.facebook.com/v24.0/${photoId}?fields=${fields}&access_token=${pageAccessToken}`
+
+  const res = await fetch(url)
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`FB API error: ${res.status} – ${errText}`)
+  }
+
+  const data = await res.json()
+
+  // Retrieve impressions
+  const impressions =
+    data.insights?.data?.find((i: any) => i.name === 'post_impressions')
+      ?.values?.[0]?.value ?? 0
+
+  // Retrieve shares count
+  const sharesCount = data.shares?.count ?? 0
+
+  return {
+    id: data.id,
+    createdAt: data.created_time,
+    updatedAt: data.updated_time,
+    imageUrl: data.images?.[0]?.source ?? '',
+    likesCount: data.likes?.summary?.total_count ?? 0,
+    commentsCount: data.comments?.summary?.total_count ?? 0,
+    sharesCount,
+    impressions,
   }
 }
 

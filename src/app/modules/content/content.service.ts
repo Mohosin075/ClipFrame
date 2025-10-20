@@ -285,6 +285,16 @@ export const createContent = async (
     )
   }
 
+  if (payload.contentType === 'reel') {
+    const urlType = await detectMediaType(payload.mediaUrls[0])
+    if (urlType !== 'video') {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'The provided media is not a video.',
+      )
+    }
+  }
+
   try {
     await checkAndIncrementUsage(user, payload.contentType as ContentTypeKeys)
     const [createdContent] = await Content.create([payload])

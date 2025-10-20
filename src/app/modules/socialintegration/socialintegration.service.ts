@@ -12,7 +12,10 @@ import { socialintegrationSearchableFields } from './socialintegration.constants
 import { Types } from 'mongoose'
 import {
   createInstagramMedia,
+  getAllPageVideoStats,
   getFacebookPages,
+  getFacebookPhotoDetails,
+  getFacebookVideoFullDetails,
   getInstagramAccounts,
 } from '../../../helpers/graphAPIHelper'
 import { IUser } from '../user/user.interface'
@@ -50,6 +53,16 @@ const getAllSocialintegrations = async (
   filterables: ISocialintegrationFilterables,
   pagination: IPaginationOptions,
 ) => {
+  const token =
+    'EAATItxj1TL8BPiRg4FnrcZB1k7TviQRqPjUgJynUoGS8AHB3L1Ci6kDR5IvfpKw6D8aS1rovOrx9tEtTg0RZC9AeCIYhQeceCHNPAcIbLxpGHDQS0wZAIwmCVTphNOtLeI6qinxsfXjJ0kJUHnaMRKRKfoZAUJfhaNCbZCGa7wV4mjTMCdkAT3cXwE5747j9vGplIHwMd5yaZAL0fUuHwT929u'
+  const id = '823267804193695'
+  const fbContainerId = '122111981337022104'
+
+  const stats = await getFacebookPhotoDetails(fbContainerId, token)
+  // const stats = await getAllPageVideoStats(id, token)
+
+  console.log({ stats })
+
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =
     paginationHelper.calculatePagination(pagination)

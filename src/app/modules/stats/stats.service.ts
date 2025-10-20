@@ -11,7 +11,7 @@ export const getUserContentStats = async (user: JwtPayload) => {
     {
       $match: {
         user: userId,
-        status: CONTENT_STATUS.DRAFT,
+        status: CONTENT_STATUS.PUBLISHED,
       },
     },
     {
@@ -22,6 +22,7 @@ export const getUserContentStats = async (user: JwtPayload) => {
     },
   ])
 
+
   // 🟨 Step 2: Weekly views & engagement for published content
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
@@ -30,7 +31,7 @@ export const getUserContentStats = async (user: JwtPayload) => {
     {
       $match: {
         user: userId,
-        status: CONTENT_STATUS.DRAFT,
+        status: CONTENT_STATUS.PUBLISHED,
         createdAt: { $gte: oneWeekAgo },
       },
     },

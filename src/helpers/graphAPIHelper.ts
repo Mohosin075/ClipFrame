@@ -2,7 +2,7 @@ import fetch from 'node-fetch'
 import config from '../config'
 import ApiError from '../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
-import { VideoStats } from '../app/modules/content/content.interface'
+import { IContent, VideoStats } from '../app/modules/content/content.interface'
 import axios from 'axios'
 import { Socialintegration } from '../app/modules/socialintegration/socialintegration.model'
 import { Content } from '../app/modules/content/content.model'
@@ -671,6 +671,7 @@ export const getInstagramTokenAndIdFromDB = async (user: string) => {
   return { instagramId, instagramAccessToken }
 }
 
+// get DB token and page id
 export const getFacebookTokenAndIdFromDB = async (user: string) => {
   const facebookAccount = await Socialintegration.findOne({
     user,
@@ -839,6 +840,7 @@ async function tryPublish(
   containerId: string,
   type: 'post' | 'reel' | 'carousel',
   caption: string,
+  content: IContent,
 ) {
   const retries = 5
   for (let i = 0; i < retries; i++) {
@@ -849,6 +851,15 @@ async function tryPublish(
         { params: { access_token: accessToken } },
       )
       console.log(`✅ Published ${type}:`, containerId)
+      console.log({ id: res.data })
+      if (res.data) {
+        if (res.data) {
+          await Content.updateOne(
+            { _id: content._id },
+            { $set: { contentId: res.data.id } },
+          )
+        }
+      }
       return res.data
     } catch (err: any) {
       const code = err.response?.data?.code
@@ -895,6 +906,7 @@ async function instagramPublishWorker() {
         content.instagramContainerId,
         'reel',
         content.caption!,
+        content,
       )
 
       content?.platformStatus!.set('instagram', 'published')
@@ -1138,5 +1150,161 @@ export async function uploadInstagramStory({
     }
 
     throw err
+  }
+}
+
+// working fine
+export async function getInstagramPhotoDetails(
+  mediaId: string,
+  accessToken: string,
+) {
+  try {
+    // Fields for basic photo info and engagement metrics
+    const basicFields = [
+      'id',
+      'media_type',
+      'media_url',
+      'permalink',
+      'timestamp',
+      'caption',
+      'like_count', // ✅ Number of likes
+      'comments_count', // ✅ Number of comments
+    ].join(',')
+
+    const basicUrl = `https://graph.facebook.com/v18.0/${mediaId}?fields=${basicFields}&access_token=${accessToken}`
+    const basicRes = await fetch(basicUrl)
+    const basicData = await basicRes.json()
+
+    if (basicData.error) {
+      throw new Error(`Failed to get photo: ${basicData.error.message}`)
+    }
+
+    // Verify it's a photo
+    if (
+      basicData.media_type !== 'IMAGE' &&
+      basicData.media_type !== 'CAROUSEL_ALBUM'
+    ) {
+      throw new Error(`Not a photo. Media type: ${basicData.media_type}`)
+    }
+
+    // Get insights metrics
+    const insightsUrl = `https://graph.facebook.com/v18.0/${mediaId}/insights?metric=impressions,reach,engagement,saved&access_token=${accessToken}`
+    const insightsRes = await fetch(insightsUrl)
+    const insightsData = await insightsRes.json()
+
+    // Process insights
+    const insights = (insightsData.data ?? []).reduce((acc: any, item: any) => {
+      acc[item.name] = item.values?.[0]?.value || 0
+      return acc
+    }, {})
+
+    return {
+      // Basic photo info
+      id: basicData.id,
+      caption: basicData.caption ?? null,
+      type: basicData.media_type,
+      mediaUrl: basicData.media_url ?? null,
+      permalink: basicData.permalink ?? null,
+      timestamp: basicData.timestamp ?? null,
+
+      // ✅ ENGAGEMENT STATS
+      engagement: {
+        likes: basicData.like_count ?? 0, // ✅ Like count
+        comments: basicData.comments_count ?? 0, // ✅ Comment count
+        saves: insights.saved || 0, // ✅ Save count
+        totalEngagement: insights.engagement || 0, // ✅ Total engagement
+      },
+
+      // ✅ REACH & IMPRESSION STATS
+      reach: {
+        impressions: insights.impressions || 0, // ✅ Total impressions
+        reach: insights.reach || 0, // ✅ Unique reach
+      },
+
+      // Raw data for reference
+      rawData: {
+        basic: basicData,
+        insights: insightsData,
+      },
+    }
+  } catch (error) {
+    console.error('Error in getInstagramPhotoStats:', error)
+    throw error
+  }
+}
+
+// working fine
+export async function getInstagramVideoDetails(
+  mediaId: string,
+  accessToken: string,
+) {
+  try {
+    // ✅ Only include valid Reel fields
+    const basicFields = [
+      'id',
+      'media_type',
+      'media_url',
+      'permalink',
+      'timestamp',
+      'caption',
+      'like_count',
+      'comments_count',
+    ].join(',')
+
+    const basicUrl = `https://graph.facebook.com/v18.0/${mediaId}?fields=${basicFields}&access_token=${accessToken}`
+    const basicRes = await fetch(basicUrl)
+    const basicData = await basicRes.json()
+
+    if (basicData.error) {
+      throw new Error(`Failed to get reel: ${basicData.error.message}`)
+    }
+
+    // ✅ Confirm it’s a video-type reel
+    if (basicData.media_type !== 'VIDEO') {
+      throw new Error(`Not a reel. Media type: ${basicData.media_type}`)
+    }
+
+    // ✅ Fetch insights (Reels support video_views here)
+    const insightsUrl = `https://graph.facebook.com/v18.0/${mediaId}/insights?metric=impressions,reach,engagement,saved,video_views&access_token=${accessToken}`
+    const insightsRes = await fetch(insightsUrl)
+    const insightsData = await insightsRes.json()
+
+    const insights = (insightsData.data ?? []).reduce((acc: any, item: any) => {
+      acc[item.name] = item.values?.[0]?.value || 0
+      return acc
+    }, {})
+
+    return {
+      id: basicData.id,
+      caption: basicData.caption ?? null,
+      type: basicData.media_type,
+      mediaUrl: basicData.media_url ?? null,
+      permalink: basicData.permalink ?? null,
+      timestamp: basicData.timestamp ?? null,
+
+      // ✅ Engagement stats
+      engagement: {
+        likes: basicData.like_count ?? 0,
+        comments: basicData.comments_count ?? 0,
+        saves: insights.saved || 0,
+        totalEngagement: insights.engagement || 0,
+        views: insights.video_views || 0,
+      },
+
+      // ✅ Reach stats
+      reach: {
+        impressions: insights.impressions || 0,
+        reach: insights.reach || 0,
+      },
+
+      // Optional raw data
+      rawData: {
+        basic: basicData,
+        insights: insightsData,
+      },
+    }
+  } catch (error) {
+    console.error('Error in getInstagramReelDetails:', error)
+    throw error
   }
 }

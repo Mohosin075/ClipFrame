@@ -67,12 +67,7 @@ export interface IContent {
   carouselInfo?: {
     slidesCount?: number
   }
-  stats?: {
-    likes?: number
-    comments?: number
-    shares?: number
-    views?: number
-  }
+  stats?: any
   instagramContainerId: string
   facebookContainerId: string
   platformStatus?: Map<string, 'pending' | 'published' | 'failed'>

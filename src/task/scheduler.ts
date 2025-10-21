@@ -12,6 +12,9 @@ import {
   getFacebookPhotoDetails,
   getFacebookVideoFullDetails,
 } from '../helpers/graphAPIHelper'
+import { Stats } from '../app/modules/stats/stats.model'
+import { IStats } from '../app/modules/stats/stats.interface'
+import { Types } from 'mongoose'
 // import { publisheReels } from '../helpers/graphAPIHelper'
 
 // // ────────────────────────────────
@@ -50,77 +53,92 @@ cron.schedule('*/5 * * * *', async () => {
 })
 
 // Run every 1 hour
-cron.schedule('0 * * * *', async () => {
-  console.log('🕐 Running Facebook content stats update job...')
+// cron.schedule('0 * * * *', async () => {
+//   console.log('🕐 Running Facebook content stats update job...')
 
-  try {
-    // Only fetch stats for published FB videos
-    const contents = await Content.find({
-      status: CONTENT_STATUS.PUBLISHED,
-      platform: { $in: ['facebook'] }, // <-- checks if 'facebook' exists in the array
-    })
+//   try {
+//     // Only fetch stats for published FB videos
+//     const contents = await Content.find({
+//       status: CONTENT_STATUS.PUBLISHED,
+//       platform: { $in: ['facebook'] }, // <-- checks if 'facebook' exists in the array
+//     })
 
-    // console.log({ contents })
+//     // console.log({ contents })
 
-    for (const item of contents) {
-      const containerId = item.facebookContainerId
+//     for (const item of contents) {
+//       const containerId = item.facebookContainerId
 
-      const fbAccount = await Socialintegration.findOne({
-        user: item.user,
-        platform: 'facebook',
-      })
-      if (!fbAccount?.accounts?.length) continue
+//       const fbAccount = await Socialintegration.findOne({
+//         user: item.user,
+//         platform: 'facebook',
+//       })
+//       if (!fbAccount?.accounts?.length) continue
 
-      const { pageAccessToken } = fbAccount.accounts[0]
+//       const { pageAccessToken } = fbAccount.accounts[0]
 
-      if (!pageAccessToken) continue
+//       if (!pageAccessToken) continue
 
-      try {
-        if (item.contentType === 'reel') {
-          const fbData = await getFacebookVideoFullDetails(
-            containerId,
-            pageAccessToken,
-          )
+//       try {
+//         if (item.contentType === 'reel') {
+//           const fbData = await getFacebookVideoFullDetails(
+//             containerId,
+//             pageAccessToken,
+//           )
 
-          // Update stats in your model
-          item.stats = {
-            likes: fbData.likesCount ?? 0,
-            comments: fbData.commentsCount ?? 0,
-            shares: fbData.insights.total_video_shares ?? 0,
-            views: fbData.insights.total_video_views ?? 0,
-          }
+//           const payload: IStats = {
+//             user: item.user as unknown as Types.ObjectId,
+//             contentId: item._id,
+//             platform: 'facebook',
+//             likes: fbData.likesCount ?? 0,
+//             comments: fbData.commentsCount ?? 0,
+//             shares: fbData.insights?.total_video_shares ?? 0,
+//             views: fbData.insights?.total_video_views ?? 0,
+//           }
 
-          await item.save()
-        }
+//           // Upsert stats (update if exists, create if not)
+//           await Stats.findOneAndUpdate(
+//             { contentId: item._id, platform: 'facebook', user: item.user },
+//             payload,
+//             { upsert: true, new: true },
+//           )
+//         }
 
-        if (item.contentType === 'post') {
-          const fbData = await getFacebookPhotoDetails(
-            containerId,
-            pageAccessToken,
-          )
+//         if (item.contentType === 'post') {
+//           const fbData = await getFacebookPhotoDetails(
+//             containerId,
+//             pageAccessToken,
+//           )
 
-          // Update stats in your model
-          item.stats = {
-            likes: fbData.likesCount ?? 0,
-            comments: fbData.commentsCount ?? 0,
-            shares: fbData.sharesCount ?? 0,
-            views: fbData.impressions ?? 0,
-          }
+//           // Update stats in your model
+//           const payload: IStats = {
+//             user: item.user as unknown as Types.ObjectId,
+//             contentId: item._id,
+//             platform: 'facebook',
+//             likes: fbData.likesCount ?? 0,
+//             comments: fbData.commentsCount ?? 0,
+//             shares: fbData.sharesCount ?? 0,
+//             views: fbData.impressions ?? 0,
+//           }
 
-          await item.save()
-        }
+//           // Save or update the Stats document
+//           await Stats.findOneAndUpdate(
+//             { contentId: item._id, platform: 'facebook', user: item.user },
+//             payload,
+//             { upsert: true, new: true },
+//           )
+//         }
 
-        console.log(`✅ Updated stats for content: ${item._id}`)
-      } catch (err) {
-        console.error(`❌ Error fetching FB data for ${item._id}:`, err)
-      }
-    }
+//         console.log(`✅ Updated stats for content: ${item._id}`)
+//       } catch (err) {
+//         console.error(`❌ Error fetching FB data for ${item._id}:`, err)
+//       }
+//     }
 
-    console.log('✨ Facebook stats update completed.')
-  } catch (err) {
-    console.error('❌ Error running FB stats cron job:', err)
-  }
-})
+//     console.log('✨ Facebook stats update completed.')
+//   } catch (err) {
+//     console.error('❌ Error running FB stats cron job:', err)
+//   }
+// })
 
 // old code
 // Run every minute

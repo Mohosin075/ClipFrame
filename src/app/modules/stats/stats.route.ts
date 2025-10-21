@@ -8,6 +8,12 @@ const router = express.Router()
 router.get(
   '/',
   auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+  StatsController.getAllPlatformStats,
+)
+
+router.get(
+  '/user-content-stats',
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
   StatsController.getUserStats,
 )
 

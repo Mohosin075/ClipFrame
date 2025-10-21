@@ -52,12 +52,7 @@ const contentSchema = new Schema<IContent>(
     carouselInfo: {
       slidesCount: { type: Number },
     },
-    stats: {
-      likes: { type: Number, default: 0 },
-      comments: { type: Number, default: 0 },
-      shares: { type: Number, default: 0 },
-      views: { type: Number, default: 0 },
-    },
+    stats: [{ type: Schema.Types.Mixed, default: {} }],
     instagramContainerId: { type: String },
     facebookContainerId: { type: String },
     platformStatus: { type: Map, of: String, default: {} },

@@ -5,6 +5,18 @@ import { StatsService } from './stats.service'
 import { StatusCodes } from 'http-status-codes'
 import { JwtPayload } from 'jsonwebtoken'
 
+const getAllPlatformStats = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as JwtPayload
+  const result = await StatsService.getAllPlatformStats(user)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'User Stats retrieved successfully',
+    data: result,
+  })
+})
+
 const getUserStats = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload
   const result = await StatsService.getUserContentStats(user)
@@ -17,4 +29,4 @@ const getUserStats = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
-export const StatsController = { getUserStats }
+export const StatsController = { getUserStats, getAllPlatformStats }

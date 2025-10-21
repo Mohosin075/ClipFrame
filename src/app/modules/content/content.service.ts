@@ -22,6 +22,7 @@ import {
 } from '../../../helpers/graphAPIHelper'
 import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
 import { detectMediaType } from '../../../helpers/detectMedia'
+import { Stats } from '../stats/stats.model'
 
 // Old version
 // export const createContent = async (
@@ -248,13 +249,13 @@ import { detectMediaType } from '../../../helpers/detectMedia'
 // }
 
 // new version
-const CONTENT_TYPES = ['post', 'reel', 'carousel', 'story'] as const
-type ContentTypeKeys = (typeof CONTENT_TYPES)[number]
 
 export const createContent = async (
   user: JwtPayload,
   payload: IContent,
 ): Promise<IContent> => {
+  const CONTENT_TYPES = ['post', 'reel', 'carousel', 'story'] as const
+  type ContentTypeKeys = (typeof CONTENT_TYPES)[number]
   if (!payload.mediaUrls || payload.mediaUrls.length === 0) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -508,6 +509,8 @@ const getSingleContent = async (id: string): Promise<IContent> => {
     path: 'user',
     select: 'name email verified',
   })
+
+  const stats = await Stats.findOne({ contentId: result?._id })
 
   // .populate('facebookAccounts')
   if (!result) {

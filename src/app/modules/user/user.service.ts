@@ -90,6 +90,7 @@ const getAllUsers = async (paginationOptions: IPaginationOptions) => {
       .skip(skip)
       .limit(limit)
       .sort({ [sortBy]: sortOrder })
+      .select('-password -authentication')
       .exec(),
 
     User.countDocuments({ status: { $nin: [USER_STATUS.DELETED] } }),
@@ -165,7 +166,7 @@ const getUserById = async (userId: string): Promise<IUser | null> => {
   const isUserExist = await User.findOne({
     _id: userId,
     status: { $nin: [USER_STATUS.DELETED] },
-  })
+  }).select('-password -authentication')
   if (!isUserExist) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found.')
   }

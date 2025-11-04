@@ -608,6 +608,9 @@ const resendOtp = async (
       otp,
       type: authType,
     })
+
+    await emailHelper.sendEmail(forgetPasswordEmailTemplate)
+
     // emailQueue.add('emails', forgetPasswordEmailTemplate)
   }
 

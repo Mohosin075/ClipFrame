@@ -1,5 +1,5 @@
-import axios from 'axios'
-import config from '../config'
+import axios from "axios"
+import config from "../config"
 
 export async function getTiktokToken(code: string) {
   try {

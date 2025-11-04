@@ -79,7 +79,7 @@ app.get(
     console.log('✅ OAuth successful, user:', req.user)
     // send them back to frontend with a token or success msg
     res.redirect(
-      `https://intensive-premiere-pope-threats.trycloudflare.com/privacy-policy`,
+      `https://mill-stopped-monroe-worldwide.trycloudflare.com/privacy-policy`,
     )
   },
 )
@@ -93,8 +93,8 @@ app.get('/tiktok/callback', async (req, res) => {
   const userId = state
 
   // Define success and failure redirect URLs
-  const successUrl = `https://intensive-premiere-pope-threats.trycloudflare.com/privacy-policy?connected=true`
-  const failureUrl = `https://intensive-premiere-pope-threats.trycloudflare.com/privacy-policy?connected=false`
+  const successUrl = `https://mill-stopped-monroe-worldwide.trycloudflare.com/privacy-policy?connected=true`
+  const failureUrl = `https://mill-stopped-monroe-worldwide.trycloudflare.com/privacy-policy?connected=false`
 
   try {
     if (!code || !userId) {

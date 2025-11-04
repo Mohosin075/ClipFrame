@@ -23,6 +23,9 @@ import {
 import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
 import { detectMediaType } from '../../../helpers/detectMedia'
 import { Stats } from '../stats/stats.model'
+import axios from 'axios'
+import FormData from 'form-data'
+import { getVideoMetadata } from '../../../helpers/tiktokAPIHelper'
 
 // Old version
 // export const createContent = async (
@@ -266,11 +269,12 @@ export const createContent = async (
   const platforms = payload.platform || []
   const facebook = platforms.includes('facebook')
   const instagram = platforms.includes('instagram')
+  const tiktok = platforms.includes('tiktok')
 
-  if (!facebook && !instagram) {
+  if (!facebook && !instagram && !tiktok) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Please select at least one platform (Facebook or Instagram).',
+      'Please select at least one platform (Facebook , Instagram or Tiktok).',
     )
   }
 

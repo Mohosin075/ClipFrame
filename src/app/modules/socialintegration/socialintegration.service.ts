@@ -56,12 +56,12 @@ const getAllSocialintegrations = async (
   pagination: IPaginationOptions,
 ) => {
   const token =
-    'EAATItxj1TL8BPtE8njlPlNFHfxqtruMRf3jxJQQgWW2G1FP0LzYvcn8dIi4L6Ova1zWuudB703KTkvlo0p2D5lYAtJSAI5xZCpmzB0BMZAYn9UD4smlf4TX5pj7h27uQvUgLaQeGSFmWO6JBjrOTVtrl9Yms0mTR4j1RkvnpyhwtTDj5plj7AdPYRZCfVkSSglk2lF3WgVeElOZASULa'
+    'act.FowCuHFJtyv8vzcBiYnmYjRiDrJbVXfxtrkLOUPuVM4xrUMJU8j6UxqFkSAg!4526.va'
   const id = '17841443388295568'
   const fbContainerId = '122111981337022104'
   const igId = '18076592735160188'
 
-  const stats = await getInstagramVideoDetails(igId, token)
+  const stats = await getTikTokAccounts(token)
 
   console.log({ stats })
 

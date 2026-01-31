@@ -20,7 +20,7 @@ import { getTiktokToken } from './helpers/tiktokAPIHelper'
 
 const app = express()
 
-// -------------------- Stripe Webhook --------------------
+// -------------------- Stripe Webhook -------------------- 
 app.use(
   '/webhook',
   express.raw({ type: 'application/json' }),

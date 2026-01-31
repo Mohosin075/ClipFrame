@@ -4,6 +4,8 @@ import { ContenttemplateValidations } from './contenttemplate.validation'
 import validateRequest from '../../middleware/validateRequest'
 import auth from '../../middleware/auth'
 import { USER_ROLES } from '../../../enum/user'
+import fileUploadHandler from '../../middleware/fileUploadHandler'
+import { handleMediaUpload } from './mediaUpload'
 
 const router = express.Router()
 
@@ -17,6 +19,8 @@ router
   .get(auth(USER_ROLES.ADMIN), ContenttemplateController.getAllContenttemplates)
   .post(
     auth(USER_ROLES.ADMIN),
+    fileUploadHandler(),
+    handleMediaUpload,
     validateRequest(ContenttemplateValidations.create),
     ContenttemplateController.createContenttemplate,
   )

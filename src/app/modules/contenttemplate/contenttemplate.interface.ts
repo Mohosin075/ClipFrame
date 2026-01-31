@@ -2,11 +2,12 @@ import { Model, Types } from 'mongoose'
 
 export interface StepsItem {
   title: string
-  description?: string
+  mainTip: string
+  detailedTips?: string
   mediaType: 'video' | 'image'
   url: string
   shotType: 'wide' | 'mid-shot' | 'close-up'
-  duration?: number
+  duration?: string
 }
 
 export interface IContenttemplateFilterables {
@@ -24,6 +25,7 @@ export interface IContenttemplate {
   type: string
   category?: string
   thumbnail?: string
+  previewUrl?: string
   steps?: StepsItem[]
   hashtags: string[]
   isActive?: boolean

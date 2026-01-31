@@ -85,9 +85,9 @@ const fileUploadHandler = () => {
     },
   }).fields([
     { name: 'image', maxCount: 5 },
-    { name: 'media', maxCount: 3 },
+    { name: 'media', maxCount: 5 },
     { name: 'doc', maxCount: 3 },
-    { name: 'clips', maxCount: 3 },
+    { name: 'clips', maxCount: 20 },
   ])
 
   // Process uploaded images with Sharp

@@ -19,6 +19,7 @@ import {
   getInstagramAccounts,
   getInstagramPhotoDetails,
   getInstagramVideoDetails,
+  validateFacebookToken,
 } from '../../../helpers/graphAPIHelper'
 import { IUser } from '../user/user.interface'
 import axios from 'axios'
@@ -56,14 +57,12 @@ const getAllSocialintegrations = async (
   pagination: IPaginationOptions,
 ) => {
   const token =
-    'act.FowCuHFJtyv8vzcBiYnmYjRiDrJbVXfxtrkLOUPuVM4xrUMJU8j6UxqFkSAg!4526.va'
-  const id = '17841443388295568'
+    'EAATItxj1TL8BPiRg4FnrcZB1k7TviQRqPjUgJynUoGS8AHB3L1Ci6kDR5IvfpKw6D8aS1rovOrx9tEtTg0RZC9AeCIYhQeceCHNPAcIbLxpGHDQS0wZAIwmCVTphNOtLeI6qinxsfXjJ0kJUHnaMRKRKfoZAUJfhaNCbZCGa7wV4mjTMCdkAT3cXwE5747j9vGplIHwMd5yaZAL0fUuHwT929u'
+  const id = '823267804193695'
   const fbContainerId = '122111981337022104'
   const igId = '18076592735160188'
 
-  const stats = await getTikTokAccounts(token)
 
-  console.log({ stats })
 
   const { searchTerm, ...filterData } = filterables
   const { page, skip, limit, sortBy, sortOrder } =

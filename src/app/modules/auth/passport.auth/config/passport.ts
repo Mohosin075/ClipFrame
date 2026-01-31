@@ -102,10 +102,12 @@ passport.use(
         const flow = req.session.connectType // 'facebook' or 'instagram'
         console.log({flow})
         const longLiveToken = await exchangeForLongLivedToken(
-          accessToken,
+          accessToken, // it's short lived token
           config.facebook.app_id!,
           config.facebook.app_secret!,
         )
+        // it's actual final token
+        console.log(longLiveToken.accessToken)
         if (flow === 'facebook') {
           await upsertFacebookPages(longLiveToken.accessToken, profile, user!)
         } else if (flow === 'instagram') {

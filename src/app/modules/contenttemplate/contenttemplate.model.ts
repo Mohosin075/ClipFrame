@@ -4,15 +4,16 @@ import { IContenttemplate } from './contenttemplate.interface'
 // Step schema based on StepsItem interface
 const stepSchema = new Schema({
   title: { type: String, required: true },
-  description: { type: String },
+  mainTip: { type: String, required: true },
+  detailedTips: { type: String },
   mediaType: { type: String, enum: ['video', 'image'], required: true },
-  url: { type: String, required: true },
+  url: { type: String},
   shotType: {
     type: String,
     enum: ['wide', 'mid-shot', 'close-up'],
     required: true,
   },
-  duration: { type: Number, default: 5 },
+  duration: { type: String },
 })
 
 // Main ContentTemplate schema
@@ -23,6 +24,7 @@ const contentTemplateSchema = new Schema<IContenttemplate>(
     type: { type: String, enum: ['reel', 'post', 'story'], default: 'reel' },
     category: { type: String },
     thumbnail: { type: String },
+    previewUrl: { type: String },
     steps: { type: [stepSchema], default: [] },
     hashtags: { type: [String], default: [] },
     isActive: { type: Boolean, default: true },

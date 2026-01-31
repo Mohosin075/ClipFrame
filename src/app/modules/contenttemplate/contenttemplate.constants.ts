@@ -1,5 +1,5 @@
 // Filterable fields for Contenttemplate
-export const contenttemplateFilterables = ['title', 'description', 'category', 'thumbnail'];
+export const contenttemplateFilterables = ['title', 'description', 'category', 'thumbnail', 'type'];
 
 // Searchable fields for Contenttemplate
 export const contenttemplateSearchableFields = ['title', 'description', 'category', 'thumbnail'];

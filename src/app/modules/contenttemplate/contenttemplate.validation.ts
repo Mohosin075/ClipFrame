@@ -2,10 +2,11 @@ import { z } from 'zod'
 
 const stepsItemSchema = z.object({
   title: z.string(),
-  description: z.string().optional(),
+  mainTip: z.string(),
+  detailedTips: z.string().optional(),
   mediaType: z.string(),
   shotType: z.string(),
-  duration: z.number().optional(),
+  duration: z.string().optional(),
 })
 
 export const ContenttemplateValidations = {
@@ -16,6 +17,7 @@ export const ContenttemplateValidations = {
       type: z.string(),
       category: z.string().optional(),
       thumbnail: z.string().optional(),
+      previewUrl: z.string().optional(),
       steps: z.array(stepsItemSchema),
       hashtags: z.array(z.string()),
       isActive: z.boolean().optional(),
@@ -29,6 +31,7 @@ export const ContenttemplateValidations = {
       type: z.string().optional(),
       category: z.string().optional(),
       thumbnail: z.string().optional(),
+      previewUrl: z.string().optional(),
       steps: z.array(stepsItemSchema).optional(),
       hashtags: z.array(z.string()).optional(),
       isActive: z.boolean().optional(),

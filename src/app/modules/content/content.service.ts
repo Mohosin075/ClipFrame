@@ -25,7 +25,6 @@ import { detectMediaType } from '../../../helpers/detectMedia'
 import { Stats } from '../stats/stats.model'
 import axios from 'axios'
 import FormData from 'form-data'
-import { getVideoMetadata } from '../../../helpers/tiktokAPIHelper'
 
 // Old version
 // export const createContent = async (
@@ -270,7 +269,7 @@ export const createContent = async (
   const facebook = platforms.includes('facebook')
   const instagram = platforms.includes('instagram')
   const tiktok = platforms.includes('tiktok')
-
+  
   if (!facebook && !instagram && !tiktok) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -315,18 +314,20 @@ export const createContent = async (
 
     const tasks: Promise<any>[] = []
 
-    if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
-    if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
+    // if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
+    // if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
 
     await Promise.all(tasks)
 
-    if (createdContent.templateId) {
-      await ContentTemplate.findByIdAndUpdate(
-        createdContent.templateId,
-        { $inc: { 'stats.reuseCount': 1 } },
-        { new: true },
-      )
-    }
+    // TODO, NEED UNCOMMENTS
+
+    // if (createdContent.templateId) {
+    //   await ContentTemplate.findByIdAndUpdate(
+    //     createdContent.templateId,
+    //     { $inc: { 'stats.reuseCount': 1 } },
+    //     { new: true },
+    //   )
+    // }
 
     return createdContent
   } catch (error: any) {

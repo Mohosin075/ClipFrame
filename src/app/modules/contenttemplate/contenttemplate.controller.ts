@@ -12,6 +12,8 @@ const createContenttemplate = catchAsync(
   async (req: Request, res: Response) => {
     const contenttemplateData = req.body
 
+    console.log(contenttemplateData)
+
     const result = await ContenttemplateServices.createContentTemplate(
       req.user!,
       contenttemplateData,

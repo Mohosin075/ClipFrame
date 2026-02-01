@@ -11,12 +11,12 @@ const router = express.Router()
 
 router
   .route('/recent')
-  .get(auth(USER_ROLES.ADMIN), ContenttemplateController.getRecentTemplates)
+  .get(auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER), ContenttemplateController.getRecentTemplates)
 
 // Base route: '/'
 router
   .route('/')
-  .get(auth(USER_ROLES.ADMIN), ContenttemplateController.getAllContenttemplates)
+  .get(auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER), ContenttemplateController.getAllContenttemplates)
   .post(
     auth(USER_ROLES.ADMIN),
     fileUploadHandler(),
@@ -29,16 +29,16 @@ router
 router
   .route('/:id')
   .get(
-    auth(USER_ROLES.ADMIN),
+    auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
     ContenttemplateController.getSingleContenttemplate,
   )
   .patch(
-    auth(USER_ROLES.ADMIN),
+    auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
     validateRequest(ContenttemplateValidations.update),
     ContenttemplateController.updateContenttemplate,
   )
   .delete(
-    auth(USER_ROLES.ADMIN),
+    auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
     ContenttemplateController.deleteContenttemplate,
   )
 

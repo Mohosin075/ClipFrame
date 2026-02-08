@@ -16,6 +16,14 @@ import { JwtPayload } from 'jsonwebtoken'
 import { IUser } from '../../user/user.interface'
 import { emailHelper } from '../../../../helpers/emailHelper'
 // import { emailQueue } from '../../../../helpers/bull-mq-producer'
+import {
+  exchangeForLongLivedToken,
+  getFacebookUser,
+} from '../../../../helpers/graphAPIHelper'
+import {
+  upsertFacebookPages,
+  upsertInstagramAccounts,
+} from '../../socialintegration/socialintegration.service'
 
 const createUser = async (payload: IUser) => {
   payload.email = payload.email?.toLowerCase().trim()
@@ -657,6 +665,44 @@ const changePassword = async (
   return { message: 'Password changed successfully' }
 }
 
+const connectFacebookWithToken = async (user: JwtPayload, token: string) => {
+  const longLivedToken = await exchangeForLongLivedToken(
+    token,
+    config.facebook.app_id!,
+    config.facebook.app_secret!,
+  )
+
+  const profile = await getFacebookUser(longLivedToken.accessToken)
+
+  const isUserExist = await User.findById(user.authId)
+  if (!isUserExist) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  }
+
+  await upsertFacebookPages(longLivedToken.accessToken, profile, isUserExist)
+
+  return { message: 'Facebook connected successfully' }
+}
+
+const connectInstagramWithToken = async (user: JwtPayload, token: string) => {
+  const longLivedToken = await exchangeForLongLivedToken(
+    token,
+    config.facebook.app_id!,
+    config.facebook.app_secret!,
+  )
+
+  const profile = await getFacebookUser(longLivedToken.accessToken)
+
+  const isUserExist = await User.findById(user.authId)
+  if (!isUserExist) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  }
+
+  await upsertInstagramAccounts(longLivedToken.accessToken, profile, isUserExist)
+
+  return { message: 'Instagram connected successfully' }
+}
+
 export const CustomAuthServices = {
   adminLogin,
   forgetPassword,
@@ -670,4 +716,6 @@ export const CustomAuthServices = {
   resendOtp,
   changePassword,
   createUser,
+  connectFacebookWithToken,
+  connectInstagramWithToken,
 }

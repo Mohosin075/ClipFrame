@@ -131,6 +131,13 @@ router.get(
   }),
 )
 
+router.post(
+  '/facebook/token',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  validateRequest(AuthValidations.socialTokenZodSchema),
+  CustomAuthController.connectFacebookWithToken,
+)
+
 // 👉 Connect Instagram (uses FB login w/ IG scopes)
 router.get(
   '/instagram',
@@ -159,6 +166,13 @@ router.get(
       'read_insights',
     ],
   }),
+)
+
+router.post(
+  '/instagram/token',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  validateRequest(AuthValidations.socialTokenZodSchema),
+  CustomAuthController.connectInstagramWithToken,
 )
 
 // for tiktok

@@ -163,6 +163,12 @@ const socialLoginZodSchema = z.object({
   }),
 })
 
+const socialTokenZodSchema = z.object({
+  body: z.object({
+    token: z.string({ required_error: 'Token is required' }),
+  }),
+})
+
 export const AuthValidations = {
   verifyEmailOrPhoneOtpZodSchema,
   forgetPasswordZodSchema,
@@ -174,4 +180,5 @@ export const AuthValidations = {
   createUserZodSchema,
   deleteAccount,
   socialLoginZodSchema,
+  socialTokenZodSchema,
 }

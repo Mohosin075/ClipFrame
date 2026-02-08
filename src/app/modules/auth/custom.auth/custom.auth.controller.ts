@@ -154,6 +154,36 @@ const logout = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const connectFacebookWithToken = catchAsync(async (req: Request, res: Response) => {
+  const { token } = req.body
+  const result = await CustomAuthServices.connectFacebookWithToken(
+    req.user as JwtPayload,
+    token,
+  )
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  })
+})
+
+const connectInstagramWithToken = catchAsync(
+  async (req: Request, res: Response) => {
+    const { token } = req.body
+    const result = await CustomAuthServices.connectInstagramWithToken(
+      req.user as JwtPayload,
+      token,
+    )
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: result.message,
+      data: result,
+    })
+  },
+)
+
 export const CustomAuthController = {
   forgetPassword,
   resetPassword,
@@ -166,5 +196,7 @@ export const CustomAuthController = {
   deleteAccount,
   adminLogin,
   socialLogin,
-  logout
+  logout,
+  connectFacebookWithToken,
+  connectInstagramWithToken,
 }

@@ -125,17 +125,19 @@ export async function uploadFacebookPhotoScheduled(
   caption: string,
   contentId: Types.ObjectId,
   isPublished: boolean,
+  scheduledPublishTime?: number,
 ) {
   const type = await detectMediaType(imageUrl)
 
   if (type === 'video') {
-    await uploadFacebookReelScheduled(
+    return await uploadFacebookReelScheduled(
       pageId,
       pageAccessToken,
       imageUrl,
       caption!,
       contentId!,
-      true,
+      isPublished,
+      scheduledPublishTime,
     )
   }
   if (type === 'photo') {
@@ -144,6 +146,10 @@ export async function uploadFacebookPhotoScheduled(
       url: imageUrl,
       access_token: pageAccessToken,
       published: isPublished,
+    }
+
+    if (!isPublished && scheduledPublishTime) {
+      body.scheduled_publish_time = scheduledPublishTime
     }
 
     const res = await fetch(
@@ -165,7 +171,7 @@ export async function uploadFacebookPhotoScheduled(
         {
           $set: {
             facebookContainerId: containerId,
-            status: CONTENT_STATUS.SCHEDULED,
+            status: isPublished ? CONTENT_STATUS.PUBLISHED : CONTENT_STATUS.SCHEDULED,
             'platformStatus.facebook': 'published',
           },
         },
@@ -177,6 +183,7 @@ export async function uploadFacebookPhotoScheduled(
   }
 }
 
+
 // perfect working function for reel
 export async function uploadFacebookReelScheduled(
   pageId: string,
@@ -185,12 +192,17 @@ export async function uploadFacebookReelScheduled(
   caption: string,
   contentId: Types.ObjectId,
   isPublished: boolean,
+  scheduledPublishTime?: number,
 ) {
   const body: any = {
     description: caption, // Reels use 'description' instead of 'caption'
     file_url: videoUrl, // video URL
     access_token: pageAccessToken,
     published: isPublished,
+  }
+
+  if (!isPublished && scheduledPublishTime) {
+    body.scheduled_publish_time = scheduledPublishTime
   }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${pageId}/videos`, {
@@ -210,7 +222,7 @@ export async function uploadFacebookReelScheduled(
       {
         $set: {
           facebookContainerId: containerId,
-          status: CONTENT_STATUS.SCHEDULED,
+          status: isPublished ? CONTENT_STATUS.PUBLISHED : CONTENT_STATUS.SCHEDULED,
           'platformStatus.facebook': 'published',
         },
       },
@@ -220,6 +232,7 @@ export async function uploadFacebookReelScheduled(
   return data.id
 }
 
+
 // Perfect working Upload multiple photos as a carousel (scheduled or immediate)
 export async function uploadFacebookCarouselScheduled(
   pageId: string,
@@ -228,6 +241,7 @@ export async function uploadFacebookCarouselScheduled(
   caption: string,
   contentId: Types.ObjectId,
   isPublished: boolean,
+  scheduledPublishTime?: number,
 ) {
   if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
     throw new Error('imageUrls must be a non-empty array')
@@ -261,11 +275,15 @@ export async function uploadFacebookCarouselScheduled(
   }
 
   // Step 2: Create the carousel post (unpublished container)
-  const postBody = {
+  const postBody: any = {
     message: caption,
-    published: isPublished, // don’t publish yet, just create container
+    published: isPublished,
     attached_media: mediaFbids.map(id => ({ media_fbid: id })),
     access_token: pageAccessToken,
+  }
+
+  if (!isPublished && scheduledPublishTime) {
+    postBody.scheduled_publish_time = scheduledPublishTime
   }
 
   const postRes = await fetch(
@@ -290,7 +308,7 @@ export async function uploadFacebookCarouselScheduled(
       {
         $set: {
           facebookContainerId: containerId,
-          status: CONTENT_STATUS.SCHEDULED, // you can change this if needed
+          status: isPublished ? CONTENT_STATUS.PUBLISHED : CONTENT_STATUS.SCHEDULED,
           'platformStatus.facebook': 'published',
         },
       },
@@ -300,6 +318,7 @@ export async function uploadFacebookCarouselScheduled(
 
   return containerId
 }
+
 
 // Function to post a Facebook Story (photo or video) == not access by graph api
 
@@ -838,7 +857,7 @@ async function tryPublish(
   igUserId: string,
   accessToken: string,
   containerId: string,
-  type: 'post' | 'reel' | 'carousel',
+  type: 'post' | 'reel' | 'carousel' | 'story',
   caption: string,
   content: IContent,
 ) {
@@ -878,50 +897,92 @@ async function tryPublish(
   )
 }
 
-async function instagramPublishWorker() {
+async function platformPublishWorker() {
+  const now = new Date()
   const pendingContents = await Content.find({
     status: CONTENT_STATUS.SCHEDULED,
-    'platformStatus.instagram': 'pending',
+    $or: [
+      { 'platformStatus.instagram': 'pending' },
+      { 'platformStatus.facebook': 'pending' },
+    ],
   })
 
   for (const content of pendingContents) {
     try {
-      if (!content.instagramContainerId) continue
+      // Logic for checking scheduled time
+      if (content.scheduledAt && content.scheduledAt.type === 'single') {
+        const { date, time } = content.scheduledAt
+        if (date && time) {
+          const scheduledDateTime = new Date(date)
+          const [hours, minutes] = time.split(':').map(Number)
+          scheduledDateTime.setHours(hours, minutes, 0, 0)
 
-      const { instagramId, instagramAccessToken } =
-        await getInstagramTokenAndIdFromDB(content.user?.toString() || '')
-
-      // If it's a reel, check container status first
-      if (content.contentType === 'reel') {
-        await checkContainerStatus(
-          content.instagramContainerId,
-          instagramAccessToken,
-        )
-        await new Promise(res => setTimeout(res, 5000)) // small buffer
+          if (scheduledDateTime > now) {
+            continue // Still in future
+          }
+        }
       }
 
-      await tryPublish(
-        instagramId,
-        instagramAccessToken,
-        content.instagramContainerId,
-        'reel',
-        content.caption!,
-        content,
-      )
+      // 1. Handle Instagram
+      if (content.platformStatus?.get('instagram') === 'pending') {
+        const { instagramId, instagramAccessToken } =
+          await getInstagramTokenAndIdFromDB(content.user?.toString() || '')
 
-      content?.platformStatus!.set('instagram', 'published')
-      await content.save()
-      console.log('✅ Instagram content published:', content._id)
+        if (content.instagramContainerId) {
+          if (content.contentType === 'reel' || content.contentType === 'story') {
+            await checkContainerStatus(
+              content.instagramContainerId,
+              instagramAccessToken,
+            )
+          }
+
+          await tryPublish(
+            instagramId,
+            instagramAccessToken,
+            content.instagramContainerId,
+            content.contentType || 'post',
+            content.caption!,
+            content,
+          )
+
+          content.platformStatus.set('instagram', 'published')
+          await content.save()
+          console.log('✅ Instagram content published:', content._id)
+        }
+      }
+
+      // 2. Handle Facebook (mostly for Story scheduling since FB doesn't support it natively)
+      if (content.platformStatus?.get('facebook') === 'pending') {
+        const { facebookPageId, facebookAccessToken } =
+          await getFacebookTokenAndIdFromDB(content.user?.toString() || '')
+
+        if (content.contentType === 'story') {
+          const type = await detectMediaType(content.mediaUrls![0])
+          await uploadFacebookStory({
+            pageId: facebookPageId,
+            pageAccessToken: facebookAccessToken,
+            mediaUrl: content.mediaUrls![0],
+            type,
+            caption: content.caption!,
+            contentId: content._id,
+          })
+          // uploadFacebookStory sets status to published internally
+          console.log('✅ Facebook story published via worker:', content._id)
+        }
+      }
     } catch (err: any) {
-      console.log('Will retry later:', content._id, err.message)
+      console.log('Worker retry later:', content._id, err.message)
     }
   }
 }
 
+
+
 // run every 5s
 setInterval(() => {
-  instagramPublishWorker().catch(console.error)
+  platformPublishWorker().catch(console.error)
 }, 5000)
+
 
 export async function uploadAndQueueInstagramContent(
   contentId: string,

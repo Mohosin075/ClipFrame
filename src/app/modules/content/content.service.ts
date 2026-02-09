@@ -314,8 +314,8 @@ export const createContent = async (
 
     const tasks: Promise<any>[] = []
 
-    // if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
-    // if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
+    if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
+    if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
 
     await Promise.all(tasks)
 
@@ -353,6 +353,27 @@ const postToFacebook = async (userId: string, content: IContent) => {
 
   const { pageId, pageAccessToken } = fbAccount.accounts[0]
 
+  let isPublished = true
+  let scheduledPublishTime: number | undefined
+
+  if (content.scheduledAt && content.scheduledAt.type === 'single') {
+    const { date, time } = content.scheduledAt
+    if (date && time) {
+      const scheduledDateTime = new Date(date)
+      const [hours, minutes] = time.split(':').map(Number)
+      scheduledDateTime.setHours(hours, minutes, 0, 0)
+
+      const now = new Date()
+      // Facebook requires scheduled_publish_time to be between 10 minutes and 30 days in the future
+      const tenMinutesFromNow = new Date(now.getTime() + 10 * 60 * 1000)
+
+      if (scheduledDateTime > tenMinutesFromNow) {
+        isPublished = false
+        scheduledPublishTime = Math.floor(scheduledDateTime.getTime() / 1000)
+      }
+    }
+  }
+
   switch (content.contentType) {
     case 'post':
       return uploadFacebookPhotoScheduled(
@@ -361,7 +382,8 @@ const postToFacebook = async (userId: string, content: IContent) => {
         content.mediaUrls![0],
         content.caption!,
         content._id!,
-        true,
+        isPublished,
+        scheduledPublishTime,
       )
     case 'reel':
       return uploadFacebookReelScheduled(
@@ -370,7 +392,8 @@ const postToFacebook = async (userId: string, content: IContent) => {
         content.mediaUrls![0],
         content.caption!,
         content._id!,
-        true,
+        isPublished,
+        scheduledPublishTime,
       )
     case 'carousel':
       return uploadFacebookCarouselScheduled(
@@ -379,7 +402,8 @@ const postToFacebook = async (userId: string, content: IContent) => {
         content.mediaUrls!,
         content.caption!,
         content._id!,
-        true,
+        isPublished,
+        scheduledPublishTime,
       )
     case 'story':
       const type = await detectMediaType(content.mediaUrls![0])
@@ -388,16 +412,26 @@ const postToFacebook = async (userId: string, content: IContent) => {
           StatusCodes.BAD_REQUEST,
           'Facebook stories support images only.',
         )
-      return uploadFacebookStory({
-        pageId,
-        pageAccessToken,
-        mediaUrl: content.mediaUrls![0],
-        type,
-        caption: content.caption!,
-        contentId: content._id,
-      })
+
+      if (isPublished) {
+        return uploadFacebookStory({
+          pageId,
+          pageAccessToken,
+          mediaUrl: content.mediaUrls![0],
+          type,
+          caption: content.caption!,
+          contentId: content._id,
+        })
+      } else {
+        await Content.findByIdAndUpdate(content._id, {
+          $set: { 'platformStatus.facebook': 'pending' },
+        })
+        return
+      }
+
   }
 }
+
 
 // Instagram posting
 const postToInstagram = async (userId: string, content: IContent) => {

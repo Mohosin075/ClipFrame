@@ -20,7 +20,7 @@ import { getTiktokToken } from './helpers/tiktokAPIHelper'
 
 const app = express()
 
-// -------------------- Stripe Webhook -------------------- 
+// -------------------- Stripe Webhook --------------------
 app.use(
   '/webhook',
   express.raw({ type: 'application/json' }),
@@ -78,9 +78,7 @@ app.get(
   (req, res) => {
     console.log('✅ OAuth successful, user:', req.user)
     // send them back to frontend with a token or success msg
-    res.redirect(
-      `https://mill-stopped-monroe-worldwide.trycloudflare.com/privacy-policy`,
-    )
+    res.redirect(`https://mohosin5001.binarybards.online/privacy-policy`)
   },
 )
 
@@ -93,8 +91,8 @@ app.get('/tiktok/callback', async (req, res) => {
   const userId = state
 
   // Define success and failure redirect URLs
-  const successUrl = `https://mill-stopped-monroe-worldwide.trycloudflare.com/privacy-policy?connected=true`
-  const failureUrl = `https://mill-stopped-monroe-worldwide.trycloudflare.com/privacy-policy?connected=false`
+  const successUrl = `https://mohosin5001.binarybards.online/privacy-policy?connected=true`
+  const failureUrl = `https://mohosin5001.binarybards.online/privacy-policy?connected=false`
 
   try {
     if (!code || !userId) {

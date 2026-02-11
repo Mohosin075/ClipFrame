@@ -228,7 +228,7 @@ const verifyAccount = async (email, onetimeCode) => {
     if (!isUserExist.verified) {
         await user_model_1.User.findByIdAndUpdate(isUserExist._id, { $set: { verified: true } }, { new: true });
         const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name, isUserExist.email);
-        console.log({ tokens });
+        // console.log({ tokens });
         return (0, common_1.authResponse)(http_status_codes_1.StatusCodes.OK, `Welcome ${isUserExist.name} to our platform.`, isUserExist.role, tokens.accessToken, tokens.refreshToken);
     }
     else {

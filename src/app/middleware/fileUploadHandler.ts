@@ -14,6 +14,7 @@ const fileUploadHandler = () => {
     file: Express.Multer.File,
     cb: FileFilterCallback,
   ) => {
+    console.log({ name: file.fieldname })
     try {
       const allowedImageTypes = ['image/jpeg', 'image/png', 'image/jpg']
       const allowedMediaTypes = ['video/mp4', 'audio/mpeg']
@@ -75,12 +76,11 @@ const fileUploadHandler = () => {
     }
   }
 
-  // Configure multer
   const upload = multer({
     storage: storage,
     fileFilter: filterFilter,
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10 MB (adjust as needed)
+      fileSize: 50 * 1024 * 1024, // 50 MB (adjust as needed)
       files: 10, // Maximum number of files allowed
     },
   }).fields([
@@ -136,7 +136,20 @@ const fileUploadHandler = () => {
   // Return middleware chain
   return (req: Request, res: Response, next: NextFunction) => {
     upload(req, res, err => {
-      if (err) return next(err)
+      if (err) {
+        if (
+          err instanceof multer.MulterError &&
+          err.code === 'LIMIT_FILE_SIZE'
+        ) {
+          return next(
+            new ApiError(
+              StatusCodes.BAD_REQUEST,
+              'File too large. Maximum allowed size is 50 MB.',
+            ),
+          )
+        }
+        return next(err)
+      }
       processImages(req, res, next)
     })
   }

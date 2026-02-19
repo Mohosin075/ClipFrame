@@ -7,6 +7,7 @@ const socket_1 = require("../utils/socket");
 const pushnotificationHelper_1 = require("./pushnotificationHelper");
 const sendNotification = async (from, to, title, body, deviceToken) => {
     try {
+        console.log({ from, to });
         const result = await notifications_model_1.Notification.create({
             from,
             to,
@@ -14,6 +15,7 @@ const sendNotification = async (from, to, title, body, deviceToken) => {
             body,
             isRead: false,
         });
+        console.log({ result });
         if (!result)
             logger_1.logger.warn('Notification not sent');
         const populatedResult = (await result.populate('from', { profile: 1, name: 1 })).populate('to', { profile: 1, name: 1 });

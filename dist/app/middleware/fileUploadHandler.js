@@ -12,6 +12,7 @@ const fileUploadHandler = () => {
     const storage = multer_1.default.memoryStorage();
     // File filter
     const filterFilter = async (req, file, cb) => {
+        console.log({ name: file.fieldname });
         try {
             const allowedImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
             const allowedMediaTypes = ['video/mp4', 'audio/mpeg'];
@@ -25,6 +26,14 @@ const fileUploadHandler = () => {
                 }
             }
             else if (file.fieldname === 'media') {
+                if (allowedMediaTypes.includes(file.mimetype)) {
+                    cb(null, true);
+                }
+                else {
+                    cb(new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Only .mp4, .mp3 file supported'));
+                }
+            }
+            else if (file.fieldname === 'clips') {
                 if (allowedMediaTypes.includes(file.mimetype)) {
                     cb(null, true);
                 }
@@ -48,18 +57,18 @@ const fileUploadHandler = () => {
             cb(new ApiError_1.default(http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, 'File validation failed'));
         }
     };
-    // Configure multer
     const upload = (0, multer_1.default)({
         storage: storage,
         fileFilter: filterFilter,
         limits: {
-            fileSize: 10 * 1024 * 1024, // 10 MB (adjust as needed)
+            fileSize: 50 * 1024 * 1024, // 50 MB (adjust as needed)
             files: 10, // Maximum number of files allowed
         },
     }).fields([
         { name: 'image', maxCount: 5 },
-        { name: 'media', maxCount: 3 },
+        { name: 'media', maxCount: 5 },
         { name: 'doc', maxCount: 3 },
+        { name: 'clips', maxCount: 20 },
     ]);
     // Process uploaded images with Sharp
     const processImages = async (req, res, next) => {
@@ -78,7 +87,7 @@ const fileUploadHandler = () => {
                         continue;
                     // Resize and optimize the image
                     const optimizedBuffer = await (0, sharp_1.default)(file.buffer)
-                        .resize(1024) // Resize to max width of 800px (maintain aspect ratio)
+                        .resize({ width: 1080, height: 1350 })
                         .jpeg({ quality: 80 }) // Compress with 80% quality
                         .png({ quality: 80 }) // Compress with 80% quality
                         .jpeg({ quality: 80 }) // Compress with 80% quality
@@ -96,8 +105,13 @@ const fileUploadHandler = () => {
     // Return middleware chain
     return (req, res, next) => {
         upload(req, res, err => {
-            if (err)
+            if (err) {
+                if (err instanceof multer_1.default.MulterError &&
+                    err.code === 'LIMIT_FILE_SIZE') {
+                    return next(new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'File too large. Maximum allowed size is 50 MB.'));
+                }
                 return next(err);
+            }
             processImages(req, res, next);
         });
     };

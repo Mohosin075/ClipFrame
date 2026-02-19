@@ -13,7 +13,6 @@ const useronboarding_constants_1 = require("./useronboarding.constants");
 const pagination_1 = require("../../../interfaces/pagination");
 const createUseronboarding = (0, catchAsync_1.default)(async (req, res) => {
     const useronboardingData = req.body;
-    console.log({ useronboardingData });
     const result = await useronboarding_service_1.UseronboardingServices.createUseronboarding(req.user, useronboardingData);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.CREATED,

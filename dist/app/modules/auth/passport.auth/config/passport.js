@@ -12,6 +12,8 @@ const FacebookStrategy = require('passport-facebook').Strategy;
 const config_1 = __importDefault(require("../../../../../config"));
 const ApiError_1 = __importDefault(require("../../../../../errors/ApiError"));
 const http_status_codes_1 = require("http-status-codes");
+const graphAPIHelper_1 = require("../../../../../helpers/graphAPIHelper");
+const socialintegration_service_1 = require("../../../socialintegration/socialintegration.service");
 passport_1.default.use(new passport_local_1.Strategy({
     usernameField: 'email',
     passwordField: 'password',
@@ -42,7 +44,7 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
     passReqToCallback: true,
 }, async (req, accessToken, refreshToken, profile, done) => {
     req.body.profile = profile;
-    req.body.role = user_1.USER_ROLES.STUDENT;
+    req.body.role = user_1.USER_ROLES.USER;
     try {
         return done(null, req.body);
     }
@@ -56,42 +58,64 @@ passport_1.default.use(new FacebookStrategy({
     callbackURL: config_1.default.facebook.callback_url,
     profileFields: ['id', 'emails', 'name', 'displayName', 'photos'],
     passReqToCallback: true,
-}, async (accessToken, refreshToken, profile, done) => {
-    var _a, _b, _c, _d;
+}, async (req, accessToken, _refresh, profile, done) => {
+    var _a;
     try {
-        // Find or create user
-        let user = await user_model_1.User.findOne({ appId: profile.id });
-        if (!user) {
-            user = new user_model_1.User({
-                appId: profile.id,
-                email: (_b = (_a = profile.emails) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.value,
-                name: profile.displayName,
-                profilePhoto: (_d = (_c = profile.photos) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.value,
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-            });
-            await user.save();
+        // TODO : REMOVE USERiD
+        const userId = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.authId) || '68b1fd9e3a485a0f4fc4b527';
+        const user = await user_model_1.User.findOne({
+            _id: userId,
+        }).select('email name role');
+        console.log({ user });
+        const flow = req.session.connectType; // 'facebook' or 'instagram'
+        console.log({ flow });
+        const longLiveToken = await (0, graphAPIHelper_1.exchangeForLongLivedToken)(accessToken, // it's short lived token
+        config_1.default.facebook.app_id, config_1.default.facebook.app_secret);
+        // it's actual final token
+        console.log(longLiveToken.accessToken);
+        if (flow === 'facebook') {
+            await (0, socialintegration_service_1.upsertFacebookPages)(longLiveToken.accessToken, profile, user);
         }
-        else {
-            // Update access token if user exists
-            await user.save();
+        else if (flow === 'instagram') {
+            await (0, socialintegration_service_1.upsertInstagramAccounts)(longLiveToken.accessToken, profile, user);
         }
-        return done(null, user);
+        done(null, { platform: flow, token: longLiveToken.accessToken, user });
     }
-    catch (error) {
-        return done(error, null);
+    catch (err) {
+        done(err);
     }
 }));
-passport_1.default.serializeUser((user, done) => {
-    done(null, user);
-});
-passport_1.default.deserializeUser(async (id, done) => {
-    try {
-        const user = await user_model_1.User.findById(id);
-        done(null, user);
+// Serialize the user
+passport_1.default.serializeUser((data, done) => {
+    var _a;
+    console.log('Serializing user:', data);
+    // If we have a DB user, store the _id; otherwise, store the whole object for social-only login
+    if ((_a = data.user) === null || _a === void 0 ? void 0 : _a._id) {
+        done(null, { type: 'db', id: data.user._id.toString() });
     }
-    catch (error) {
-        done(error, null);
+    else {
+        done(null, { type: 'social', data }); // store social-only info
+    }
+});
+// Deserialize the user
+passport_1.default.deserializeUser(async (payload, done) => {
+    console.log('Deserializing payload:', payload);
+    try {
+        if (!payload)
+            return done(null, null);
+        if (payload.type === 'db') {
+            // Fetch DB user by _id
+            const user = await user_model_1.User.findById(payload.id).select('email name role');
+            return done(null, user || null);
+        }
+        else if (payload.type === 'social') {
+            // Social-only user, just return stored data
+            return done(null, payload.data);
+        }
+        return done(null, null);
+    }
+    catch (err) {
+        done(err, null);
     }
 });
 exports.default = passport_1.default;

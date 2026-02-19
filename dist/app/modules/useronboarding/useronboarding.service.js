@@ -13,19 +13,38 @@ const useronboarding_model_1 = require("./useronboarding.model");
 const createUseronboarding = async (user, payload) => {
     const data = { ...payload, userId: user.authId };
     try {
-        const existing = await useronboarding_model_1.Useronboarding.aggregate([
-            { $match: { userId: new mongoose_1.Types.ObjectId(user.authId) } },
-            { $limit: 1 },
-        ]);
-        if (!existing || existing.length === 0) {
-            // First time: create new document
+        const existing = await useronboarding_model_1.Useronboarding.findOne({
+            userId: user.authId,
+        });
+        // 🧩 If user onboarding doesn’t exist, create it
+        if (!existing) {
             const created = await useronboarding_model_1.Useronboarding.create(data);
             return created;
         }
+        // 🔧 Prepare update fields
         const updateFields = {};
         Object.keys(payload).forEach(key => {
             updateFields[key] = payload[key];
         });
+        // Handle all other fields normally
+        // Object.keys(payload).forEach(key => {
+        //   if (key !== 'socialHandles') {
+        //     updateFields[key] = (payload as any)[key]
+        //   }
+        // })
+        // // ⚙️ Handle socialHandles logic
+        // if (payload.socialHandles && payload.socialHandles.length > 0) {
+        //   const existingHandles = existing.socialHandles || []
+        //   for (const handle of payload.socialHandles) {
+        //     const alreadyExists = existingHandles.some(
+        //       h => h.platform === handle.platform,
+        //     )
+        //     if (!alreadyExists) {
+        //       existingHandles.push(handle)
+        //     }
+        //   }
+        //   updateFields.socialHandles = existingHandles
+        // }
         const updated = await useronboarding_model_1.Useronboarding.findOneAndUpdate({ userId: user.authId }, { $set: updateFields }, { new: true }).lean();
         if (!updated) {
             throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Failed to update onboarding data.');

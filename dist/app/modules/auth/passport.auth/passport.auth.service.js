@@ -30,7 +30,7 @@ const handleGoogleLogin = async (payload) => {
         profile: photos[0].value,
         name: displayName,
         verified: true,
-        password: id,
+        // password: id,
         status: user_1.USER_STATUS.ACTIVE,
         appId: id,
         role: payload.role,
@@ -56,5 +56,5 @@ const handleGoogleLogin = async (payload) => {
     }
 };
 exports.PassportAuthServices = {
-    handleGoogleLogin,
+    handleGoogleLogin
 };

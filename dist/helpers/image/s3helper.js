@@ -46,7 +46,7 @@ const deleteFromS3 = async (fileKey) => {
     try {
         const command = new client_s3_1.DeleteObjectCommand(params);
         await s3Client.send(command);
-        console.log("deleted");
+        console.log('deleted');
     }
     catch (error) {
         logger_1.logger.error('Error deleting from S3:', error);
@@ -60,8 +60,14 @@ const uploadMultipleFilesToS3 = async (files, folder) => {
     }
     const uploadPromises = files.map(async (file) => {
         // Validate file type
-        if (!file.mimetype.startsWith('image/')) {
-            throw new Error('Invalid file type. Only image uploads are allowed.');
+        if (file.mimetype.startsWith('image/')) {
+            // process with sharp (resize/compress)
+        }
+        else if (file.mimetype.startsWith('video/')) {
+            // upload as-is, no sharp
+        }
+        else {
+            throw new Error('Unsupported file type');
         }
         // Generate unique file name
         const fileExtension = file.originalname.split('.').pop();
@@ -93,8 +99,39 @@ const uploadMultipleFilesToS3 = async (files, folder) => {
         .filter(result => result.status === 'fulfilled' && result.value)
         .map(result => result.value);
 };
+const uploadMultipleVideosToS3 = async (files, folder) => {
+    if (!files || files.length === 0) {
+        throw new Error("No video files provided for upload");
+    }
+    const uploadPromises = files.map(async (file) => {
+        const fileExtension = file.originalname.split(".").pop();
+        const fileKey = `${folder}/${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2)}.${fileExtension}`;
+        try {
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: fileKey,
+                Body: file.buffer, // Upload raw video
+                ContentType: file.mimetype,
+            };
+            const command = new client_s3_1.PutObjectCommand(params);
+            await s3Client.send(command);
+            return getPublicUri(fileKey);
+        }
+        catch (error) {
+            console.error("Error uploading video to S3:", error);
+            return null;
+        }
+    });
+    const results = await Promise.allSettled(uploadPromises);
+    return results
+        .filter((r) => r.status === "fulfilled" && r.value)
+        .map((r) => r.value);
+};
 exports.S3Helper = {
     uploadToS3,
     uploadMultipleFilesToS3,
+    uploadMultipleVideosToS3,
     deleteFromS3: exports.deleteFromS3,
 };

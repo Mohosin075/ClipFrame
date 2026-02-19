@@ -17,6 +17,7 @@ const createContentTemplate = async (
   payload: IContenttemplate,
 ): Promise<IContenttemplate> => {
   try {
+    console.log({payload})
     const result = await ContentTemplate.create({
       ...payload,
       createdBy: user.authId,

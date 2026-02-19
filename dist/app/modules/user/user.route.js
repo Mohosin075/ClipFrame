@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRoutes = void 0;
 const express_1 = __importDefault(require("express"));
 const user_controller_1 = require("./user.controller");
-const user_validation_1 = require("./user.validation");
 const validateRequest_1 = __importDefault(require("../../middleware/validateRequest"));
 const auth_1 = __importDefault(require("../../middleware/auth"));
 const user_1 = require("../../../enum/user");
@@ -14,9 +13,10 @@ const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const http_status_codes_1 = require("http-status-codes");
 const s3helper_1 = require("../../../helpers/image/s3helper");
 const fileUploadHandler_1 = __importDefault(require("../../middleware/fileUploadHandler"));
+const user_validation_1 = require("./user.validation");
 const router = express_1.default.Router();
-router.get('/profile', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.TEACHER, user_1.USER_ROLES.STUDENT, user_1.USER_ROLES.GUEST), user_controller_1.UserController.getProfile);
-router.patch('/profile', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.TEACHER, user_1.USER_ROLES.STUDENT, user_1.USER_ROLES.GUEST), (0, fileUploadHandler_1.default)(), async (req, res, next) => {
+router.get('/profile', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.CREATOR, user_1.USER_ROLES.USER), user_controller_1.UserController.getProfile);
+router.patch('/profile', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.CREATOR, user_1.USER_ROLES.USER), (0, fileUploadHandler_1.default)(), async (req, res, next) => {
     var _a;
     const payload = req.body;
     try {
@@ -41,12 +41,12 @@ router.patch('/profile', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USE
         console.error({ error });
         res.status(400).json({ message: 'Failed to upload image' });
     }
-}, (0, validateRequest_1.default)(user_validation_1.UserValidations.updateUserZodSchema), user_controller_1.UserController.updateProfile);
-router.delete('/profile', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.TEACHER, user_1.USER_ROLES.STUDENT, user_1.USER_ROLES.GUEST), user_controller_1.UserController.deleteProfile);
+}, (0, validateRequest_1.default)(user_validation_1.updateUserSchema), user_controller_1.UserController.updateProfile);
+router.delete('/profile', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.CREATOR, user_1.USER_ROLES.USER), user_controller_1.UserController.deleteProfile);
 router.route('/').get((0, auth_1.default)(user_1.USER_ROLES.ADMIN), user_controller_1.UserController.getAllUsers);
 router
     .route('/:userId')
     .get((0, auth_1.default)(user_1.USER_ROLES.ADMIN), user_controller_1.UserController.getUserById)
     .delete((0, auth_1.default)(user_1.USER_ROLES.ADMIN), user_controller_1.UserController.deleteUser)
-    .patch((0, auth_1.default)(user_1.USER_ROLES.ADMIN), (0, validateRequest_1.default)(user_validation_1.UserValidations.updateUserStatusZodSchema), user_controller_1.UserController.updateUserStatus);
+    .patch((0, auth_1.default)(user_1.USER_ROLES.ADMIN), (0, validateRequest_1.default)(user_validation_1.updateUserSchema), user_controller_1.UserController.updateUserStatus);
 exports.UserRoutes = router;

@@ -11,12 +11,18 @@ const router = express.Router()
 
 router
   .route('/recent')
-  .get(auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER), ContenttemplateController.getRecentTemplates)
+  .get(
+    auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+    ContenttemplateController.getRecentTemplates,
+  )
 
 // Base route: '/'
 router
   .route('/')
-  .get(auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER), ContenttemplateController.getAllContenttemplates)
+  .get(
+    auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+    ContenttemplateController.getAllContenttemplates,
+  )
   .post(
     auth(USER_ROLES.ADMIN),
     fileUploadHandler(),
@@ -34,6 +40,8 @@ router
   )
   .patch(
     auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+    fileUploadHandler(),
+    handleMediaUpload,
     validateRequest(ContenttemplateValidations.update),
     ContenttemplateController.updateContenttemplate,
   )

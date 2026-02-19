@@ -9,9 +9,13 @@ const express_1 = __importDefault(require("express"));
 const notifications_route_1 = require("../app/modules/notifications/notifications.route");
 const public_route_1 = require("../app/modules/public/public.route");
 const support_route_1 = require("../app/modules/support/support.route");
-const review_route_1 = require("../app/modules/review/review.route");
-const category_route_1 = require("../app/modules/category/category.route");
 const useronboarding_route_1 = require("../app/modules/useronboarding/useronboarding.route");
+const content_route_1 = require("../app/modules/content/content.route");
+const socialintegration_route_1 = require("../app/modules/socialintegration/socialintegration.route");
+const plan_routes_1 = require("../app/modules/plan/plan.routes");
+const subscription_routes_1 = require("../app/modules/subscription/subscription.routes");
+const stats_route_1 = require("../app/modules/stats/stats.route");
+const contenttemplate_route_1 = require("../app/modules/contenttemplate/contenttemplate.route");
 const router = express_1.default.Router();
 const apiRoutes = [
     { path: '/user', route: user_route_1.UserRoutes },
@@ -19,9 +23,13 @@ const apiRoutes = [
     { path: '/notifications', route: notifications_route_1.NotificationRoutes },
     { path: '/public', route: public_route_1.PublicRoutes },
     { path: '/support', route: support_route_1.SupportRoutes },
-    { path: '/review', route: review_route_1.ReviewRoutes },
-    { path: '/category', route: category_route_1.CategoryRoutes },
     { path: '/useronboarding', route: useronboarding_route_1.UseronboardingRoutes },
+    { path: '/content', route: content_route_1.ContentRoutes },
+    { path: '/socialintegration', route: socialintegration_route_1.SocialintegrationRoutes },
+    { path: '/plan', route: plan_routes_1.PlanRoutes },
+    { path: '/subscription', route: subscription_routes_1.SubscriptionRoutes },
+    { path: '/stats', route: stats_route_1.StatsRoutes },
+    { path: '/contentTemplate', route: contenttemplate_route_1.ContenttemplateRoutes }
 ];
 apiRoutes.forEach(route => {
     router.use(route.path, route.route);

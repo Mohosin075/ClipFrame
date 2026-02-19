@@ -8,6 +8,7 @@ const catchAsync_1 = __importDefault(require("../../../../shared/catchAsync"));
 const custom_auth_service_1 = require("./custom.auth.service");
 const sendResponse_1 = __importDefault(require("../../../../shared/sendResponse"));
 const http_status_codes_1 = require("http-status-codes");
+const token_service_1 = require("../../token/token.service");
 const customLogin = (0, catchAsync_1.default)(async (req, res) => {
     const { ...loginData } = req.body;
     const result = await custom_auth_service_1.CustomAuthServices.customLogin(loginData);
@@ -123,6 +124,36 @@ const socialLogin = (0, catchAsync_1.default)(async (req, res) => {
         data: { accessToken, refreshToken, role },
     });
 });
+const logout = (0, catchAsync_1.default)(async (req, res) => {
+    const userId = req.user.authId;
+    const result = await token_service_1.TokenServices.logout(userId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: 'Logged out successfully',
+        data: result,
+    });
+});
+const connectFacebookWithToken = (0, catchAsync_1.default)(async (req, res) => {
+    const { token } = req.body;
+    const result = await custom_auth_service_1.CustomAuthServices.connectFacebookWithToken(req.user, token);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: result.message,
+        data: result,
+    });
+});
+const connectInstagramWithToken = (0, catchAsync_1.default)(async (req, res) => {
+    const { token } = req.body;
+    const result = await custom_auth_service_1.CustomAuthServices.connectInstagramWithToken(req.user, token);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: result.message,
+        data: result,
+    });
+});
 exports.CustomAuthController = {
     forgetPassword,
     resetPassword,
@@ -135,4 +166,7 @@ exports.CustomAuthController = {
     deleteAccount,
     adminLogin,
     socialLogin,
+    logout,
+    connectFacebookWithToken,
+    connectInstagramWithToken,
 };

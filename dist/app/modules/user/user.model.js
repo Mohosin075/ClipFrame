@@ -5,135 +5,79 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
 const mongoose_1 = require("mongoose");
-const user_1 = require("../../../enum/user");
-const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
-const http_status_codes_1 = require("http-status-codes");
-const config_1 = __importDefault(require("../../../config"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const userSchema = new mongoose_1.Schema({
-    name: {
-        type: String,
-    },
-    email: {
-        type: String,
-    },
-    phone: {
-        type: String,
-    },
+const user_1 = require("../../../enum/user");
+// ------------------ USER SCHEMA ------------------
+const UserSchema = new mongoose_1.Schema({
+    name: { type: String, trim: true },
+    email: { type: String, unique: true, lowercase: true, required: true },
+    profile: { type: String },
+    businessName: { type: String },
+    phone: { type: String },
+    description: { type: String },
     status: {
         type: String,
-        enum: [user_1.USER_STATUS.ACTIVE, user_1.USER_STATUS.INACTIVE, user_1.USER_STATUS.DELETED],
+        enum: Object.values(user_1.USER_STATUS),
         default: user_1.USER_STATUS.ACTIVE,
     },
-    verified: {
-        type: Boolean,
-        default: false,
-    },
-    profile: {
-        type: String,
-    },
-    password: {
-        type: String,
-        required: true,
-        select: false,
-    },
-    role: {
-        type: String,
-        default: user_1.USER_ROLES.STUDENT,
-    },
+    verified: { type: Boolean, default: false },
     address: {
-        city: {
-            type: String,
-        },
-        permanentAddress: {
-            type: String,
-        },
-        presentAddress: {
-            type: String,
-        },
-        country: {
-            type: String,
-        },
-        postalCode: {
-            type: String,
-        },
+        city: String,
+        postalCode: String,
+        country: String,
+        permanentAddress: String,
+        presentAddress: String,
     },
     location: {
         type: {
             type: String,
-            default: 'Point',
             enum: ['Point'],
+            default: 'Point',
         },
         coordinates: {
             type: [Number],
-            default: [0.0, 0.0], // [longitude, latitude]
+            default: [0, 0], // [longitude, latitude]
         },
     },
-    appId: {
+    subscribe: { type: Boolean, default: false },
+    password: { type: String, minlength: 6 },
+    role: {
         type: String,
+        enum: Object.values(user_1.USER_ROLES),
+        default: user_1.USER_ROLES.USER,
     },
-    deviceToken: {
-        type: String,
-    },
+    appId: { type: String },
+    provider: { type: String },
+    deviceToken: { type: String },
+    timezone: { type: String, default: 'UTC' },
     authentication: {
-        _id: false,
-        select: false,
-        type: {
-            restrictionLeftAt: {
-                type: Date,
-                default: null,
-            },
-            resetPassword: {
-                type: Boolean,
-                default: false,
-            },
-            wrongLoginAttempts: {
-                type: Number,
-                default: 0,
-            },
-            passwordChangedAt: {
-                type: Date,
-                default: null,
-            },
-            oneTimeCode: {
-                type: String,
-                default: null,
-            },
-            latestRequestAt: {
-                type: Date,
-                default: null,
-            },
-            expiresAt: {
-                type: Date,
-                default: null,
-            },
-            requestCount: {
-                type: Number,
-                default: 0,
-            },
-            authType: {
-                type: String,
-                default: null,
-            },
-        },
+        restrictionLeftAt: { type: Date, default: null },
+        resetPassword: { type: Boolean, default: false },
+        wrongLoginAttempts: { type: Number, default: 0 },
+        passwordChangedAt: { type: Date },
+        oneTimeCode: { type: String },
+        latestRequestAt: { type: Date, default: Date.now },
+        expiresAt: { type: Date },
+        requestCount: { type: Number, default: 0 },
+        authType: { type: String, enum: ['createAccount', 'resetPassword'] },
     },
 }, {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
 });
-userSchema.index({ location: '2dsphere' });
-userSchema.statics.isPasswordMatched = async function (givenPassword, savedPassword) {
-    return await bcrypt_1.default.compare(givenPassword, savedPassword);
-};
-userSchema.pre('save', async function (next) {
-    //find the user by email
-    const isExist = await exports.User.findOne({
-        email: this.email,
-        status: { $in: [user_1.USER_STATUS.ACTIVE, user_1.USER_STATUS.INACTIVE] },
-    });
-    if (isExist) {
-        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'An account with this email already exists');
-    }
-    this.password = await bcrypt_1.default.hash(this.password, Number(config_1.default.bcrypt_salt_rounds));
+// ------------------ INDEXES ------------------
+UserSchema.index({ location: '2dsphere' }); // Geo queries support
+// ------------------ PRE HOOKS ------------------
+UserSchema.pre('save', async function (next) {
+    if (!this.isModified('password'))
+        return next();
+    this.password = await bcrypt_1.default.hash(this.password, 10);
     next();
 });
-exports.User = (0, mongoose_1.model)('User', userSchema);
+// ------------------ STATIC METHODS ------------------
+UserSchema.statics.isPasswordMatched = async function (givenPassword, savedPassword) {
+    return bcrypt_1.default.compare(givenPassword, savedPassword);
+};
+// ------------------ MODEL ------------------
+exports.User = (0, mongoose_1.model)('User', UserSchema);

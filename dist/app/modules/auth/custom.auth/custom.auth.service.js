@@ -51,6 +51,8 @@ const common_1 = require("../common");
 const jwtHelper_1 = require("../../../../helpers/jwtHelper");
 const emailHelper_1 = require("../../../../helpers/emailHelper");
 // import { emailQueue } from '../../../../helpers/bull-mq-producer'
+const graphAPIHelper_1 = require("../../../../helpers/graphAPIHelper");
+const socialintegration_service_1 = require("../../socialintegration/socialintegration.service");
 const createUser = async (payload) => {
     var _a;
     payload.email = (_a = payload.email) === null || _a === void 0 ? void 0 : _a.toLowerCase().trim();
@@ -87,19 +89,22 @@ const createUser = async (payload) => {
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Failed to create user.');
     }
     // emailQueue.add('emails', createAccount)
-    return "Account created successfully.";
+    return 'Account created successfully.';
 };
 const customLogin = async (payload) => {
     const { email, phone } = payload;
     const query = email ? { email: email.toLowerCase().trim() } : { phone: phone };
     const isUserExist = await user_model_1.User.findOne({
         ...query,
-        status: { $in: [user_1.USER_STATUS.ACTIVE, user_1.USER_STATUS.INACTIVE] },
+        status: { $in: [user_1.USER_STATUS.ACTIVE] },
     })
         .select('+password +authentication')
         .lean();
     if (!isUserExist) {
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, `No account found with this ${email ? 'email' : 'phone'}`);
+    }
+    if (!isUserExist.password) {
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'It seems you have signed up using social login. Please use social login to access your account.');
     }
     const result = await common_1.AuthCommonServices.handleLoginLogic(payload, isUserExist);
     return result;
@@ -108,7 +113,7 @@ const adminLogin = async (payload) => {
     const { email, phone } = payload;
     const query = email ? { email: email.trim().toLowerCase() } : { phone: phone };
     const isUserExist = await user_model_1.User.findOne({
-        ...query
+        ...query,
     })
         .select('+password +authentication')
         .lean();
@@ -127,7 +132,9 @@ const adminLogin = async (payload) => {
     return (0, common_1.authResponse)(http_status_codes_1.StatusCodes.OK, `Welcome back ${isUserExist.name}`, isUserExist.role, tokens.accessToken, tokens.refreshToken);
 };
 const forgetPassword = async (email, phone) => {
-    const query = email ? { email: email.toLocaleLowerCase().trim() } : { phone: phone };
+    const query = email
+        ? { email: email.toLocaleLowerCase().trim() }
+        : { phone: phone };
     const isUserExist = await user_model_1.User.findOne({
         ...query,
         status: { $in: [user_1.USER_STATUS.ACTIVE, user_1.USER_STATUS.INACTIVE] },
@@ -149,7 +156,7 @@ const forgetPassword = async (email, phone) => {
         authType: 'resetPassword',
     };
     await user_model_1.User.findByIdAndUpdate(isUserExist._id, {
-        $set: { 'authentication': authentication },
+        $set: { authentication: authentication },
     }, { new: true });
     // //send otp to user
     if (email) {
@@ -161,7 +168,7 @@ const forgetPassword = async (email, phone) => {
         await emailHelper_1.emailHelper.sendEmail(forgetPasswordEmailTemplate);
         // emailQueue.add('emails', forgetPasswordEmailTemplate)
     }
-    return "OTP sent successfully.";
+    return 'OTP sent successfully.';
 };
 const resetPassword = async (resetToken, payload) => {
     const { newPassword, confirmPassword } = payload;
@@ -210,7 +217,8 @@ const verifyAccount = async (email, onetimeCode) => {
     const isUserExist = await user_model_1.User.findOne({
         email: email.toLowerCase().trim(),
         status: { $nin: [user_1.USER_STATUS.DELETED] },
-    }).select('+password +authentication')
+    })
+        .select('+password +authentication')
         .lean();
     if (!isUserExist) {
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, `No account found with this ${email}, please register first.`);
@@ -228,11 +236,22 @@ const verifyAccount = async (email, onetimeCode) => {
     if (!isUserExist.verified) {
         await user_model_1.User.findByIdAndUpdate(isUserExist._id, { $set: { verified: true } }, { new: true });
         const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name, isUserExist.email);
-        // console.log({ tokens });
+        console.log({ tokens });
         return (0, common_1.authResponse)(http_status_codes_1.StatusCodes.OK, `Welcome ${isUserExist.name} to our platform.`, isUserExist.role, tokens.accessToken, tokens.refreshToken);
     }
     else {
-        await user_model_1.User.findByIdAndUpdate(isUserExist._id, { $set: { authentication: { oneTimeCode: '', expiresAt: null, latestRequestAt: null, requestCount: 0, authType: '', resetPassword: true } } }, { new: true });
+        await user_model_1.User.findByIdAndUpdate(isUserExist._id, {
+            $set: {
+                authentication: {
+                    oneTimeCode: '',
+                    expiresAt: null,
+                    latestRequestAt: null,
+                    requestCount: 0,
+                    authType: '',
+                    resetPassword: true,
+                },
+            },
+        }, { new: true });
         const token = await token_model_1.Token.create({
             token: (0, crypto_1.default)(),
             user: isUserExist._id,
@@ -323,6 +342,7 @@ const resendOtpToPhoneOrEmail = async (authType, email, phone) => {
             $set: { authentication: updatedAuthentication },
         }, { new: true });
     }
+    // TODO : need mobile varificaition implementation after signup with phone
     if (phone) {
         //implement this feature using twilio/aws sns
         await user_model_1.User.findByIdAndUpdate(isUserExist._id, {
@@ -383,6 +403,7 @@ const resendOtp = async (email, authType) => {
             otp,
             type: authType,
         });
+        await emailHelper_1.emailHelper.sendEmail(forgetPasswordEmailTemplate);
         // emailQueue.add('emails', forgetPasswordEmailTemplate)
     }
     return 'OTP sent successfully.';
@@ -406,6 +427,26 @@ const changePassword = async (user, currentPassword, newPassword) => {
     await user_model_1.User.findByIdAndUpdate(user.authId, { password: hashedPassword }, { new: true });
     return { message: 'Password changed successfully' };
 };
+const connectFacebookWithToken = async (user, token) => {
+    const longLivedToken = await (0, graphAPIHelper_1.exchangeForLongLivedToken)(token, config_1.default.facebook.app_id, config_1.default.facebook.app_secret);
+    const profile = await (0, graphAPIHelper_1.getFacebookUser)(longLivedToken.accessToken);
+    const isUserExist = await user_model_1.User.findById(user.authId);
+    if (!isUserExist) {
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'User not found');
+    }
+    await (0, socialintegration_service_1.upsertFacebookPages)(longLivedToken.accessToken, profile, isUserExist);
+    return { message: 'Facebook connected successfully' };
+};
+const connectInstagramWithToken = async (user, token) => {
+    const longLivedToken = await (0, graphAPIHelper_1.exchangeForLongLivedToken)(token, config_1.default.facebook.app_id, config_1.default.facebook.app_secret);
+    const profile = await (0, graphAPIHelper_1.getFacebookUser)(longLivedToken.accessToken);
+    const isUserExist = await user_model_1.User.findById(user.authId);
+    if (!isUserExist) {
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'User not found');
+    }
+    await (0, socialintegration_service_1.upsertInstagramAccounts)(longLivedToken.accessToken, profile, isUserExist);
+    return { message: 'Instagram connected successfully' };
+};
 exports.CustomAuthServices = {
     adminLogin,
     forgetPassword,
@@ -419,4 +460,6 @@ exports.CustomAuthServices = {
     resendOtp,
     changePassword,
     createUser,
+    connectFacebookWithToken,
+    connectInstagramWithToken,
 };

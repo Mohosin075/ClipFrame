@@ -37,8 +37,8 @@ const handleBrandingImageUpload = async (req, res, next) => {
 };
 router.get('/', (0, auth_1.default)(user_1.USER_ROLES.ADMIN), useronboarding_controller_1.UseronboardingController.getAllUseronboardings);
 router.get('/:id', (0, auth_1.default)(user_1.USER_ROLES.ADMIN), useronboarding_controller_1.UseronboardingController.getSingleUseronboarding);
-router.post('/', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.STUDENT), (0, validateRequest_1.default)(useronboarding_validation_1.UserOnboardingSchema), useronboarding_controller_1.UseronboardingController.createUseronboarding);
-router.post('/branding', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.STUDENT), (0, fileUploadHandler_1.default)(), handleBrandingImageUpload, 
+router.post('/', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.CREATOR, user_1.USER_ROLES.USER), (0, validateRequest_1.default)(useronboarding_validation_1.UserOnboardingSchema), useronboarding_controller_1.UseronboardingController.createUseronboarding);
+router.post('/branding', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.USER, user_1.USER_ROLES.CREATOR), (0, fileUploadHandler_1.default)(), handleBrandingImageUpload, 
 // validateRequest(UserOnboardingSchema),
 useronboarding_controller_1.UseronboardingController.createUseronboarding);
 router.delete('/:id', (0, auth_1.default)(user_1.USER_ROLES.ADMIN), useronboarding_controller_1.UseronboardingController.deleteUseronboarding);

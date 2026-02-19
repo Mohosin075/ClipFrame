@@ -7,30 +7,85 @@ const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const http_status_codes_1 = require("http-status-codes");
 const path_1 = __importDefault(require("path"));
+const express_session_1 = __importDefault(require("express-session"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const passport_1 = __importDefault(require("./app/modules/auth/passport.auth/config/passport"));
 const routes_1 = __importDefault(require("./routes"));
 const morgan_1 = require("./shared/morgan");
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const globalErrorHandler_1 = __importDefault(require("./app/middleware/globalErrorHandler"));
-const passport_1 = __importDefault(require("./app/modules/auth/passport.auth/config/passport"));
+require("./task/scheduler");
+const handleStripeWebhook_1 = __importDefault(require("./stripe/handleStripeWebhook"));
+const config_1 = __importDefault(require("./config"));
+const socialintegration_service_1 = require("./app/modules/socialintegration/socialintegration.service");
 const app = (0, express_1.default)();
-//morgan
-app.use(morgan_1.Morgan.successHandler);
-app.use(morgan_1.Morgan.errorHandler);
-//body parser
+// -------------------- Stripe Webhook --------------------
+app.use('/webhook', express_1.default.raw({ type: 'application/json' }), handleStripeWebhook_1.default);
+// -------------------- Middleware --------------------
+// Session must come before passport
+app.use((0, express_session_1.default)({
+    secret: config_1.default.jwt.jwt_secret || 'secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // true if using HTTPS
+}));
+// Initialize Passport
+app.use(passport_1.default.initialize());
+app.use(passport_1.default.session());
+// CORS
 app.use((0, cors_1.default)({
-    origin: '*',
+    origin: ['*', 'http://localhost:3000'],
     credentials: true,
 }));
+// Body parser
 app.use(express_1.default.json());
-app.use(passport_1.default.initialize());
 app.use(express_1.default.urlencoded({ extended: true }));
+// Cookie parser
 app.use((0, cookie_parser_1.default)());
-//file retrieve
+// Morgan logging
+app.use(morgan_1.Morgan.successHandler);
+app.use(morgan_1.Morgan.errorHandler);
+// -------------------- Static Files --------------------
 app.use(express_1.default.static('uploads'));
 app.use('/uploads', express_1.default.static(path_1.default.join(process.cwd(), 'uploads')));
-//router
+// routes/auth.ts
+// import express from 'express'
+// import passport from 'passport'
+// const router = express.Router()
+// common callback
+app.get('/facebook/callback', passport_1.default.authenticate('facebook', { failureRedirect: '/auth/fail' }), (req, res) => {
+    console.log('✅ OAuth successful, user:', req.user);
+    // send them back to frontend with a token or success msg
+    res.redirect(`https://mohosin5001.binarybards.online/privacy-policy`);
+});
+//
+app.get('/tiktok/callback', async (req, res) => {
+    console.log('🎯 TikTok callback hit');
+    const { code, state } = req.query;
+    const userId = state;
+    // Define success and failure redirect URLs
+    const successUrl = `https://mohosin5001.binarybards.online/privacy-policy?connected=true`;
+    const failureUrl = `https://mohosin5001.binarybards.online/privacy-policy?connected=false`;
+    try {
+        if (!code || !userId) {
+            console.error('Missing code or userId');
+            return res.redirect(failureUrl);
+        }
+        await (0, socialintegration_service_1.upsertTikTokAccounts)(code, userId);
+        console.log('✅ TikTok account linked successfully');
+        return res.redirect(successUrl);
+    }
+    catch (error) {
+        console.error('❌ TikTok account linking failed:', error);
+        return res.redirect(failureUrl);
+    }
+});
+// -------------------- API Routes --------------------
 app.use('/api/v1', routes_1.default);
-//live response
+// -------------------- Privacy Policy --------------------
+app.get('/privacy-policy', (req, res) => {
+    res.sendFile(path_1.default.join(__dirname, 'privacy-policy.html'));
+});
+// -------------------- Root / Live Response --------------------
 app.get('/', (req, res) => {
     res.send(`
     <div style="
@@ -45,9 +100,7 @@ app.get('/', (req, res) => {
       padding: 2rem;
     ">
       <div>
-        <h1 style="font-size: 3rem; margin-bottom: 1rem;">
-          🛑 Whoa there, hacker man.
-        </h1>
+        <h1 style="font-size: 3rem; margin-bottom: 1rem;">🛑 Whoa there, hacker man.</h1>
         <p style="font-size: 1.4rem; line-height: 1.6;">
           You really just typed <code style="color:#ffd700;">'/'</code> in your browser and expected magic?<br><br>
           This isn’t Hogwarts, and you’re not the chosen one. 🧙‍♂️<br><br>
@@ -60,8 +113,9 @@ app.get('/', (req, res) => {
     </div>
   `);
 });
-//global error handle
+// -------------------- Global Error Handler --------------------
 app.use(globalErrorHandler_1.default);
+// -------------------- 404 Handler --------------------
 app.use((req, res) => {
     res.status(http_status_codes_1.StatusCodes.NOT_FOUND).json({
         success: false,
@@ -73,10 +127,10 @@ app.use((req, res) => {
             },
             {
                 path: '/docs',
-                message: "Hint: Maybe try reading the docs next time? 📚",
+                message: 'Hint: Maybe try reading the docs next time? 📚',
             },
         ],
-        roast: "404 brain cells not found. Try harder. 🧠❌",
+        roast: '404 brain cells not found. Try harder. 🧠❌',
         timestamp: new Date().toISOString(),
     });
 });

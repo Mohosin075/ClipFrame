@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthValidations = void 0;
+const libphonenumber_js_1 = require("libphonenumber-js");
 const zod_1 = require("zod");
-const user_1 = require("../../../enum/user");
 const verifyEmailOrPhoneOtpZodSchema = zod_1.z.object({
     body: zod_1.z.object({
         email: zod_1.z
@@ -59,6 +59,7 @@ const loginZodSchema = zod_1.z.object({
             message: 'Invalid phone number format',
         }),
         deviceToken: zod_1.z.string().min(1).optional(),
+        rememberMe: zod_1.z.boolean().optional(),
         password: zod_1.z.string().min(8, { message: 'Password is required' }),
     }),
 });
@@ -132,22 +133,26 @@ const createUserZodSchema = zod_1.z.object({
         email: zod_1.z.string({ required_error: 'Email is required' }).email(),
         password: zod_1.z.string({ required_error: 'Password is required' }).min(6),
         name: zod_1.z.string({ required_error: 'Name is required' }).optional(),
-        phone: zod_1.z.string({ required_error: 'Phone is required' }).optional(),
+        phone: zod_1.z.string().refine(val => {
+            var _a;
+            const p = (0, libphonenumber_js_1.parsePhoneNumberFromString)(val);
+            return (_a = p === null || p === void 0 ? void 0 : p.isValid()) !== null && _a !== void 0 ? _a : false;
+        }, { message: 'Invalid phone number' }),
         address: addressSchema.optional(),
-        role: zod_1.z.enum([
-            user_1.USER_ROLES.ADMIN,
-            user_1.USER_ROLES.STUDENT,
-            user_1.USER_ROLES.GUEST,
-            user_1.USER_ROLES.TEACHER,
-        ], {
-            message: 'Role must be one of admin, student, guest, teacher',
-        }),
+        // role: z.enum([USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR], {
+        //   message: 'Role must be one of admin, user, creator',
+        // }),
     }),
 });
 const socialLoginZodSchema = zod_1.z.object({
     body: zod_1.z.object({
         appId: zod_1.z.string({ required_error: 'App ID is required' }),
         deviceToken: zod_1.z.string({ required_error: 'Device token is required' }),
+    }),
+});
+const socialTokenZodSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        token: zod_1.z.string({ required_error: 'Token is required' }),
     }),
 });
 exports.AuthValidations = {
@@ -161,4 +166,5 @@ exports.AuthValidations = {
     createUserZodSchema,
     deleteAccount,
     socialLoginZodSchema,
+    socialTokenZodSchema,
 };

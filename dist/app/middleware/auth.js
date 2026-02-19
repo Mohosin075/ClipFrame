@@ -32,6 +32,7 @@ const auth = (...roles) => async (req, res, next) => {
                 if (error instanceof Error && error.name === 'TokenExpiredError') {
                     throw new ApiError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, 'Access Token has expired');
                 }
+                next(error);
                 throw new ApiError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, 'Invalid Access Token');
             }
         }
@@ -68,6 +69,7 @@ const tempAuth = (...roles) => async (req, res, next) => {
                 if (error instanceof Error && error.name === 'TokenExpiredError') {
                     throw new ApiError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, 'Access Token has expired');
                 }
+                next(error);
                 throw new ApiError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, 'Invalid Access Token');
             }
         }

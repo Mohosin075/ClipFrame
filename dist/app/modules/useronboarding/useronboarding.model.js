@@ -17,19 +17,19 @@ const BrandColorSchema = new mongoose_1.Schema({
 const UserOnboardingSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
     businessType: { type: String, default: 'General' },
-    customBusinessType: { type: String, default: '' },
+    // customBusinessType: { type: String, default: '' },
     businessDescription: { type: String, default: '' },
     targetAudience: {
         type: [String],
         enum: Object.values(useronboarding_interface_1.TargetAudience),
         default: [],
     },
-    contentLanguages: {
-        type: String,
+    preferredLanguages: {
+        type: [String],
         enum: Object.values(useronboarding_interface_1.ContentLanguage),
-        default: useronboarding_interface_1.ContentLanguage.EN,
+        default: [useronboarding_interface_1.ContentLanguage.EN],
     },
-    logo: { type: String, default: '' },
+    logo: { type: String },
     brandColors: { type: [BrandColorSchema], default: [] },
     autoTranslateCaptions: { type: Boolean, default: false },
     socialHandles: { type: [SocialHandlesSchema], default: [] },

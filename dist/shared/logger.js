@@ -7,14 +7,15 @@ exports.errorLogger = exports.logger = void 0;
 const path_1 = __importDefault(require("path"));
 const winston_1 = require("winston");
 const winston_daily_rotate_file_1 = __importDefault(require("winston-daily-rotate-file"));
+const fs_1 = __importDefault(require("fs"));
 // Function to create the necessary directories if they don't exist
 const createLogDirs = () => {
-    // const dirs = ['logs/winston/successes', 'logs/winston/errors']
-    // dirs.forEach(dir => {
-    //   if (!fs.existsSync(path.join(process.cwd(), dir))) {
-    //     fs.mkdirSync(path.join(process.cwd(), dir), { recursive: true })
-    //   }
-    // })
+    const dirs = ['logs/winston/successes', 'logs/winston/errors'];
+    dirs.forEach(dir => {
+        if (!fs_1.default.existsSync(path_1.default.join(process.cwd(), dir))) {
+            fs_1.default.mkdirSync(path_1.default.join(process.cwd(), dir), { recursive: true });
+        }
+    });
 };
 // Custom log format
 const { combine, timestamp, label, printf } = winston_1.format;

@@ -23,4 +23,10 @@ router.get(
   StatsController.getAdminDashboardStats,
 )
 
+router.get(
+  '/user-stats',
+  auth(USER_ROLES.ADMIN),
+  StatsController.getAdminUserStats,
+)
+
 export const StatsRoutes = router

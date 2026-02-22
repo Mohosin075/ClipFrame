@@ -41,8 +41,15 @@ const getAdminDashboardStats = async (user) => {
     }
     const now = new Date();
     const startOfPeriod = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-    const [totalUsers, totalSubscriptions, revenueAggregation, revenueByMonthAggregation, templateCategoryAggregation,] = await Promise.all([
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [totalUsers, activeUsers, premiumUserIds, newUsers, totalSubscriptions, revenueAggregation, revenueByMonthAggregation, templateCategoryAggregation,] = await Promise.all([
         user_model_1.User.countDocuments({ status: { $nin: [user_1.USER_STATUS.DELETED] } }),
+        user_model_1.User.countDocuments({ status: user_1.USER_STATUS.ACTIVE }),
+        subscription_model_1.Subscription.distinct('user', { status: 'active' }),
+        user_model_1.User.countDocuments({
+            status: { $nin: [user_1.USER_STATUS.DELETED] },
+            createdAt: { $gte: startOfMonth },
+        }),
         subscription_model_1.Subscription.countDocuments({ status: 'active' }),
         subscription_model_1.Subscription.aggregate([
             { $match: { status: 'active' } },
@@ -87,6 +94,7 @@ const getAdminDashboardStats = async (user) => {
         ]),
     ]);
     const totalRevenue = revenueAggregation.length > 0 ? revenueAggregation[0].totalRevenue : 0;
+    const premiumUsers = Array.isArray(premiumUserIds) ? premiumUserIds.length : 0;
     const monthNames = [
         'Jan',
         'Feb',
@@ -126,10 +134,40 @@ const getAdminDashboardStats = async (user) => {
     });
     return {
         totalUsers,
+        premiumUsers,
+        activeUsers,
+        newUsers,
         totalSubscriptions,
         totalRevenue,
         monthlyRevenue,
         templateCategoryBreakdown,
+    };
+};
+const getAdminUserStats = async (user) => {
+    const isAdminExist = await user_model_1.User.findOne({
+        _id: user.authId,
+        role: user_1.USER_ROLES.ADMIN,
+    });
+    if (!isAdminExist) {
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'No admin user found for the provided ID. Please check and try again');
+    }
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [totalUsers, activeUsers, premiumUserIds, newUsers] = await Promise.all([
+        user_model_1.User.countDocuments({ status: { $nin: [user_1.USER_STATUS.DELETED] } }),
+        user_model_1.User.countDocuments({ status: user_1.USER_STATUS.ACTIVE }),
+        subscription_model_1.Subscription.distinct('user', { status: 'active' }),
+        user_model_1.User.countDocuments({
+            status: { $nin: [user_1.USER_STATUS.DELETED] },
+            createdAt: { $gte: startOfMonth },
+        }),
+    ]);
+    const premiumUsers = Array.isArray(premiumUserIds) ? premiumUserIds.length : 0;
+    return {
+        totalUsers,
+        premiumUsers,
+        activeUsers,
+        newUsers,
     };
 };
 const getUserContentStats = async (user) => {
@@ -297,4 +335,5 @@ exports.StatsService = {
     getUserContentStats,
     getAllPlatformStats,
     getAdminDashboardStats,
+    getAdminUserStats,
 };

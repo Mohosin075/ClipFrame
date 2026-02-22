@@ -54,15 +54,25 @@ const getAdminDashboardStats = async (user: JwtPayload) => {
 
   const now = new Date()
   const startOfPeriod = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
   const [
     totalUsers,
+    activeUsers,
+    premiumUserIds,
+    newUsers,
     totalSubscriptions,
     revenueAggregation,
     revenueByMonthAggregation,
     templateCategoryAggregation,
   ] = await Promise.all([
     User.countDocuments({ status: { $nin: [USER_STATUS.DELETED] } }),
+    User.countDocuments({ status: USER_STATUS.ACTIVE }),
+    Subscription.distinct('user', { status: 'active' }),
+    User.countDocuments({
+      status: { $nin: [USER_STATUS.DELETED] },
+      createdAt: { $gte: startOfMonth },
+    }),
     Subscription.countDocuments({ status: 'active' }),
     Subscription.aggregate([
       { $match: { status: 'active' } },
@@ -109,6 +119,7 @@ const getAdminDashboardStats = async (user: JwtPayload) => {
 
   const totalRevenue =
     revenueAggregation.length > 0 ? revenueAggregation[0].totalRevenue : 0
+  const premiumUsers = Array.isArray(premiumUserIds) ? premiumUserIds.length : 0
 
   const monthNames = [
     'Jan',
@@ -159,10 +170,51 @@ const getAdminDashboardStats = async (user: JwtPayload) => {
 
   return {
     totalUsers,
+    premiumUsers,
+    activeUsers,
+    newUsers,
     totalSubscriptions,
     totalRevenue,
     monthlyRevenue,
     templateCategoryBreakdown,
+  }
+}
+
+const getAdminUserStats = async (user: JwtPayload) => {
+  const isAdminExist = await User.findOne({
+    _id: user.authId,
+    role: USER_ROLES.ADMIN,
+  })
+
+  if (!isAdminExist) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      'No admin user found for the provided ID. Please check and try again',
+    )
+  }
+
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const [totalUsers, activeUsers, premiumUserIds, newUsers] = await Promise.all(
+    [
+      User.countDocuments({ status: { $nin: [USER_STATUS.DELETED] } }),
+      User.countDocuments({ status: USER_STATUS.ACTIVE }),
+      Subscription.distinct('user', { status: 'active' }),
+      User.countDocuments({
+        status: { $nin: [USER_STATUS.DELETED] },
+        createdAt: { $gte: startOfMonth },
+      }),
+    ],
+  )
+
+  const premiumUsers = Array.isArray(premiumUserIds) ? premiumUserIds.length : 0
+
+  return {
+    totalUsers,
+    premiumUsers,
+    activeUsers,
+    newUsers,
   }
 }
 
@@ -349,4 +401,5 @@ export const StatsService = {
   getUserContentStats,
   getAllPlatformStats,
   getAdminDashboardStats,
+  getAdminUserStats,
 }

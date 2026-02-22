@@ -42,9 +42,21 @@ const getAdminDashboardStats = catchAsync(
     })
   },
 )
+const getAdminUserStats = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as JwtPayload
+  const result = await StatsService.getAdminUserStats(user)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Admin user stats retrieved successfully',
+    data: result,
+  })
+})
 
 export const StatsController = {
   getUserStats,
   getAllPlatformStats,
+  getAdminUserStats,
   getAdminDashboardStats,
 }

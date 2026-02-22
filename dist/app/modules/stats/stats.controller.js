@@ -38,8 +38,19 @@ const getAdminDashboardStats = (0, catchAsync_1.default)(async (req, res) => {
         data: result,
     });
 });
+const getAdminUserStats = (0, catchAsync_1.default)(async (req, res) => {
+    const user = req.user;
+    const result = await stats_service_1.StatsService.getAdminUserStats(user);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: 'Admin user stats retrieved successfully',
+        data: result,
+    });
+});
 exports.StatsController = {
     getUserStats,
     getAllPlatformStats,
+    getAdminUserStats,
     getAdminDashboardStats,
 };

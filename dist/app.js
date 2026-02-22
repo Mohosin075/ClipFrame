@@ -33,7 +33,7 @@ app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
 // CORS
 app.use((0, cors_1.default)({
-    origin: ['*', 'http://localhost:3000'],
+    origin: ['*', 'http://localhost:3000', 'http://195.35.6.13:4001'],
     credentials: true,
 }));
 // Body parser

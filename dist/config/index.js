@@ -2,7 +2,6 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable no-undef */
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -59,9 +58,6 @@ exports.default = {
     application_fee: process.env.APPLICATION_FEE,
     instant_transfer_fee: process.env.INSTANT_TRANSFER_FEE,
     openAi_api_key: process.env.OPENAI_API_KEY,
-    stripe_secret: process.env.STRIPE_SECRET_KEY,
-    stripe_account_id: process.env.STRIPE_ACCOUNT_ID,
-    webhook_secret: process.env.WEBHOOK_SECRET,
     email: {
         from: process.env.EMAIL_FROM,
         user: process.env.EMAIL_USER,
@@ -69,30 +65,31 @@ exports.default = {
         host: process.env.EMAIL_HOST,
         pass: process.env.EMAIL_PASS,
     },
-    twilio: {
-        account_sid: process.env.TWILIO_ACCOUNT_SID,
-        auth_token: process.env.TWILIO_AUTH_TOKEN,
-        phone_number: process.env.TWILIO_PHONE_NUMBER,
-    },
-    cloudinary: {
-        cloudinary_name: process.env.CLOUDINARY_NAME,
-        cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
-        cloudinary_secret: process.env.CLOUDINARY_SECRET,
-    },
+    // twilio: {
+    //   account_sid: process.env.TWILIO_ACCOUNT_SID,
+    //   auth_token: process.env.TWILIO_AUTH_TOKEN,
+    //   phone_number: process.env.TWILIO_PHONE_NUMBER,
+    // },
+    // cloudinary: {
+    //   cloudinary_name: process.env.CLOUDINARY_NAME,
+    //   cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
+    //   cloudinary_secret: process.env.CLOUDINARY_SECRET,
+    // },
     // Firebase Service Account Configuration
-    firebase: {
-        type: process.env.FIREBASE_TYPE,
-        project_id: process.env.FIREBASE_PROJECT_ID,
-        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-        private_key: (_a = process.env.FIREBASE_PRIVATE_KEY) === null || _a === void 0 ? void 0 : _a.replace(/\\n/g, '\n'), // Handle newline characters
-        client_email: process.env.FIREBASE_CLIENT_EMAIL,
-        client_id: process.env.FIREBASE_CLIENT_ID,
-        auth_uri: process.env.FIREBASE_AUTH_URI,
-        token_uri: process.env.FIREBASE_TOKEN_URI,
-        auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-        client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-        universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
-    },
+    // firebase: {
+    //   type: process.env.FIREBASE_TYPE,
+    //   project_id: process.env.FIREBASE_PROJECT_ID,
+    //   private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    //   private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'), // Handle newline characters
+    //   client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    //   client_id: process.env.FIREBASE_CLIENT_ID,
+    //   auth_uri: process.env.FIREBASE_AUTH_URI,
+    //   token_uri: process.env.FIREBASE_TOKEN_URI,
+    //   auth_provider_x509_cert_url:
+    //     process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+    //   client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+    //   universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
+    // },
     super_admin: {
         name: process.env.SUPER_ADMIN_NAME,
         email: process.env.SUPER_ADMIN_EMAIL,

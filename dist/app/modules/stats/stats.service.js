@@ -14,8 +14,9 @@ const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const http_status_codes_1 = require("http-status-codes");
 const socialintegration_model_1 = require("../socialintegration/socialintegration.model");
 const graphAPIHelper_1 = require("../../../helpers/graphAPIHelper");
+const subscription_model_1 = require("../subscription/subscription.model");
+const contenttemplate_model_1 = require("../contenttemplate/contenttemplate.model");
 const createStats = async (content, payload) => {
-    // 🧠 Step 1: Verify admin user
     const newStats = await stats_model_1.Stats.create(payload);
     return newStats;
 };
@@ -29,6 +30,107 @@ const getAllPlatformStats = async (user) => {
     }
     const allStats = await stats_model_1.Stats.find({});
     return allStats;
+};
+const getAdminDashboardStats = async (user) => {
+    const isAdminExist = await user_model_1.User.findOne({
+        _id: user.authId,
+        role: user_1.USER_ROLES.ADMIN,
+    });
+    if (!isAdminExist) {
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'No admin user found for the provided ID. Please check and try again');
+    }
+    const now = new Date();
+    const startOfPeriod = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const [totalUsers, totalSubscriptions, revenueAggregation, revenueByMonthAggregation, templateCategoryAggregation,] = await Promise.all([
+        user_model_1.User.countDocuments({ status: { $nin: [user_1.USER_STATUS.DELETED] } }),
+        subscription_model_1.Subscription.countDocuments({ status: 'active' }),
+        subscription_model_1.Subscription.aggregate([
+            { $match: { status: 'active' } },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: '$price' },
+                },
+            },
+        ]),
+        subscription_model_1.Subscription.aggregate([
+            {
+                $match: {
+                    status: 'active',
+                    createdAt: { $gte: startOfPeriod },
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: '$createdAt' },
+                        month: { $month: '$createdAt' },
+                    },
+                    totalRevenue: { $sum: '$price' },
+                },
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1 } },
+        ]),
+        contenttemplate_model_1.ContentTemplate.aggregate([
+            {
+                $match: {
+                    isActive: true,
+                },
+            },
+            {
+                $group: {
+                    _id: '$category',
+                    totalTemplates: { $sum: 1 },
+                },
+            },
+            { $sort: { totalTemplates: -1 } },
+        ]),
+    ]);
+    const totalRevenue = revenueAggregation.length > 0 ? revenueAggregation[0].totalRevenue : 0;
+    const monthNames = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+    ];
+    const monthlyRevenue = revenueByMonthAggregation.map(item => {
+        const monthIndex = item._id.month - 1;
+        const monthLabel = monthNames[monthIndex] || String(item._id.month);
+        return {
+            year: item._id.year,
+            month: item._id.month,
+            monthLabel,
+            totalRevenue: item.totalRevenue,
+        };
+    });
+    const totalTemplates = templateCategoryAggregation.reduce((sum, item) => sum + item.totalTemplates, 0);
+    const templateCategoryBreakdown = templateCategoryAggregation
+        .filter(item => item._id)
+        .map(item => {
+        const percentage = totalTemplates > 0
+            ? Number(((item.totalTemplates / totalTemplates) * 100).toFixed(2))
+            : 0;
+        return {
+            category: item._id,
+            totalTemplates: item.totalTemplates,
+            percentage,
+        };
+    });
+    return {
+        totalUsers,
+        totalSubscriptions,
+        totalRevenue,
+        monthlyRevenue,
+        templateCategoryBreakdown,
+    };
 };
 const getUserContentStats = async (user) => {
     const userId = new mongoose_1.Types.ObjectId(user.authId);
@@ -113,7 +215,6 @@ const getUserContentStats = async (user) => {
             result.averageEngagementRate = 0;
         }
     }
-    // 📝 Return clean single-layer response
     return result;
 };
 const updateFacebookContentStats = async () => {
@@ -195,4 +296,5 @@ exports.StatsService = {
     createStats,
     getUserContentStats,
     getAllPlatformStats,
+    getAdminDashboardStats,
 };

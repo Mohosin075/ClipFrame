@@ -29,4 +29,22 @@ const getUserStats = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
-export const StatsController = { getUserStats, getAllPlatformStats }
+const getAdminDashboardStats = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as JwtPayload
+    const result = await StatsService.getAdminDashboardStats(user)
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Admin dashboard stats retrieved successfully',
+      data: result,
+    })
+  },
+)
+
+export const StatsController = {
+  getUserStats,
+  getAllPlatformStats,
+  getAdminDashboardStats,
+}

@@ -4,7 +4,7 @@ import { CONTENT_STATUS } from '../content/content.constants'
 import { Types } from 'mongoose'
 import { Stats } from './stats.model'
 import { User } from '../user/user.model'
-import { USER_ROLES } from '../../../enum/user'
+import { USER_ROLES, USER_STATUS } from '../../../enum/user'
 import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { IStats } from './stats.interface'
@@ -14,10 +14,10 @@ import {
   getFacebookPhotoDetails,
   getFacebookVideoFullDetails,
 } from '../../../helpers/graphAPIHelper'
+import { Subscription } from '../subscription/subscription.model'
+import { ContentTemplate } from '../contenttemplate/contenttemplate.model'
 
 const createStats = async (content: IContent, payload: IStats) => {
-  // 🧠 Step 1: Verify admin user
-
   const newStats = await Stats.create(payload)
   return newStats
 }
@@ -37,6 +37,133 @@ const getAllPlatformStats = async (user: JwtPayload) => {
 
   const allStats = await Stats.find({})
   return allStats
+}
+
+const getAdminDashboardStats = async (user: JwtPayload) => {
+  const isAdminExist = await User.findOne({
+    _id: user.authId,
+    role: USER_ROLES.ADMIN,
+  })
+
+  if (!isAdminExist) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      'No admin user found for the provided ID. Please check and try again',
+    )
+  }
+
+  const now = new Date()
+  const startOfPeriod = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+
+  const [
+    totalUsers,
+    totalSubscriptions,
+    revenueAggregation,
+    revenueByMonthAggregation,
+    templateCategoryAggregation,
+  ] = await Promise.all([
+    User.countDocuments({ status: { $nin: [USER_STATUS.DELETED] } }),
+    Subscription.countDocuments({ status: 'active' }),
+    Subscription.aggregate([
+      { $match: { status: 'active' } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$price' },
+        },
+      },
+    ]),
+    Subscription.aggregate([
+      {
+        $match: {
+          status: 'active',
+          createdAt: { $gte: startOfPeriod },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          totalRevenue: { $sum: '$price' },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]),
+    ContentTemplate.aggregate([
+      {
+        $match: {
+          isActive: true,
+        },
+      },
+      {
+        $group: {
+          _id: '$category',
+          totalTemplates: { $sum: 1 },
+        },
+      },
+      { $sort: { totalTemplates: -1 } },
+    ]),
+  ])
+
+  const totalRevenue =
+    revenueAggregation.length > 0 ? revenueAggregation[0].totalRevenue : 0
+
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ]
+
+  const monthlyRevenue = revenueByMonthAggregation.map(item => {
+    const monthIndex = item._id.month - 1
+    const monthLabel = monthNames[monthIndex] || String(item._id.month)
+
+    return {
+      year: item._id.year,
+      month: item._id.month,
+      monthLabel,
+      totalRevenue: item.totalRevenue,
+    }
+  })
+
+  const totalTemplates = templateCategoryAggregation.reduce(
+    (sum, item) => sum + item.totalTemplates,
+    0,
+  )
+
+  const templateCategoryBreakdown = templateCategoryAggregation
+    .filter(item => item._id)
+    .map(item => {
+      const percentage =
+        totalTemplates > 0
+          ? Number(((item.totalTemplates / totalTemplates) * 100).toFixed(2))
+          : 0
+
+      return {
+        category: item._id,
+        totalTemplates: item.totalTemplates,
+        percentage,
+      }
+    })
+
+  return {
+    totalUsers,
+    totalSubscriptions,
+    totalRevenue,
+    monthlyRevenue,
+    templateCategoryBreakdown,
+  }
 }
 
 const getUserContentStats = async (user: JwtPayload) => {
@@ -128,7 +255,6 @@ const getUserContentStats = async (user: JwtPayload) => {
     }
   }
 
-  // 📝 Return clean single-layer response
   return result
 }
 
@@ -222,4 +348,5 @@ export const StatsService = {
   createStats,
   getUserContentStats,
   getAllPlatformStats,
+  getAdminDashboardStats,
 }

@@ -11,4 +11,5 @@ const user_1 = require("../../../enum/user");
 const router = express_1.default.Router();
 router.get('/', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.CREATOR, user_1.USER_ROLES.USER), stats_controller_1.StatsController.getAllPlatformStats);
 router.get('/user-content-stats', (0, auth_1.default)(user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.CREATOR, user_1.USER_ROLES.USER), stats_controller_1.StatsController.getUserStats);
+router.get('/dashboard', (0, auth_1.default)(user_1.USER_ROLES.ADMIN), stats_controller_1.StatsController.getAdminDashboardStats);
 exports.StatsRoutes = router;

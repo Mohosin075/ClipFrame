@@ -10,7 +10,8 @@ const UserSchema = new Schema<IUser, UserModel>(
     email: { type: String, unique: true, lowercase: true, required: true },
     profile: { type: String },
     businessName: { type: String },
-    phone: { type: String },
+    businessCategory: { type: String },
+    phone: { type: String },  
     description: { type: String },
 
     status: {

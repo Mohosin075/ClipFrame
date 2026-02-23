@@ -1,5 +1,5 @@
 // Filterable fields for Contenttemplate
-export const contenttemplateFilterables = ['title', 'description', 'category', 'thumbnail', 'type'];
+export const contenttemplateFilterables = ['searchTerm', 'title', 'description', 'category', 'thumbnail', 'type'];
 
 // Searchable fields for Contenttemplate
 export const contenttemplateSearchableFields = ['title', 'description', 'category', 'thumbnail'];
@@ -12,5 +12,4 @@ export const isSetEqual = (setA: Set<string>, setB: Set<string>): boolean => {
   }
   return true;
 };
-
 

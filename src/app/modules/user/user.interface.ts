@@ -34,6 +34,7 @@ export interface IUser {
   email?: string
   profile?: string
   businessName?: string
+  businessCategory?: string
   phone?: string
   description?: string
 

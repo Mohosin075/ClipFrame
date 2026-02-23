@@ -34,6 +34,7 @@ export const updateUserSchema = z.object({
     email: z.string().email().optional(),
     profile: z.string().url().optional(),
     businessName: z.string().optional(),
+    businessCategory: z.string().optional(),
     phone: z.string().optional(),
     description: z.string().optional(),
 

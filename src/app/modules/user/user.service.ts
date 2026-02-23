@@ -26,10 +26,14 @@ const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found.')
   }
 
-  if (isUserExist.profile) {
-    const url = new URL(isUserExist.profile)
-    const key = url.pathname.substring(1)
-    await S3Helper.deleteFromS3(key)
+  if (payload.profile && isUserExist.profile) {
+    try {
+      const url = new URL(isUserExist.profile)
+      const key = url.pathname.substring(1)
+      await S3Helper.deleteFromS3(key)
+    } catch (error) {
+      logger.error('Failed to delete old profile image from S3', error)
+    }
   }
 
   const updatedProfile = await User.findOneAndUpdate(

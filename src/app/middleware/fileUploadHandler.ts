@@ -4,7 +4,8 @@ import multer, { FileFilterCallback } from 'multer'
 import sharp from 'sharp'
 import ApiError from '../../errors/ApiError'
 
-const fileUploadHandler = () => {
+const fileUploadHandler = (maxSizeInMB: number = 100) => {
+  const maxSize = maxSizeInMB * 1024 * 1024
   // Configure storage
   const storage = multer.memoryStorage()
 
@@ -80,7 +81,7 @@ const fileUploadHandler = () => {
     storage: storage,
     fileFilter: filterFilter,
     limits: {
-      fileSize: 50 * 1024 * 1024, // 50 MB (adjust as needed)
+      fileSize: maxSize,
       files: 10, // Maximum number of files allowed
     },
   }).fields([
@@ -144,7 +145,7 @@ const fileUploadHandler = () => {
           return next(
             new ApiError(
               StatusCodes.BAD_REQUEST,
-              'File too large. Maximum allowed size is 50 MB.',
+              `File too large. Maximum allowed size is ${maxSizeInMB} MB.`,
             ),
           )
         }

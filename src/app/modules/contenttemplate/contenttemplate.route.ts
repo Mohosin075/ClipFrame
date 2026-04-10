@@ -25,7 +25,7 @@ router
   )
   .post(
     auth(USER_ROLES.ADMIN),
-    fileUploadHandler(),
+    fileUploadHandler(100),
     handleMediaUpload,
     validateRequest(ContenttemplateValidations.create),
     ContenttemplateController.createContenttemplate,
@@ -40,7 +40,7 @@ router
   )
   .patch(
     auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
-    fileUploadHandler(),
+    fileUploadHandler(100),
     handleMediaUpload,
     validateRequest(ContenttemplateValidations.update),
     ContenttemplateController.updateContenttemplate,

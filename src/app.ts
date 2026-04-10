@@ -45,7 +45,7 @@ app.use(passport.session())
 // CORS
 app.use(
   cors({
-    origin: ['*', 'http://localhost:3000', 'http://195.35.6.13:4001'],
+    origin: ['*', 'http://localhost:3000', 'http://195.35.6.13:3004', 'http://195.35.6.13:4001', 'http://10.10.7.58:3001'],
     credentials: true,
   }),
 )

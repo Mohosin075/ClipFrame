@@ -252,25 +252,23 @@ const getUserContentStats = async (user: JwtPayload) => {
     {
       // 🧠 Calculate engagement and make sure stats fields are always numbers
       $addFields: {
-        stats: {
-          likes: { $ifNull: ['$stats.likes', 0] },
-          comments: { $ifNull: ['$stats.comments', 0] },
-          shares: { $ifNull: ['$stats.shares', 0] },
-          views: { $ifNull: ['$stats.views', 0] },
-        },
+        totalLikes: { $sum: '$stats.likes' },
+        totalComments: { $sum: '$stats.comments' },
+        totalShares: { $sum: '$stats.shares' },
+        totalViews: { $sum: '$stats.views' },
+      },
+    },
+    {
+      $addFields: {
         engagement: {
-          $add: [
-            { $ifNull: ['$stats.likes', 0] },
-            { $ifNull: ['$stats.comments', 0] },
-            { $ifNull: ['$stats.shares', 0] },
-          ],
+          $add: ['$totalLikes', '$totalComments', '$totalShares'],
         },
       },
     },
     {
       $group: {
         _id: null,
-        totalViews: { $sum: '$stats.views' },
+        totalViews: { $sum: '$totalViews' },
         totalEngagement: { $sum: '$engagement' },
         totalContents: { $sum: 1 },
       },

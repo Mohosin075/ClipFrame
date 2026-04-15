@@ -313,9 +313,9 @@ export const createContent = async (
     const caption = buildCaptionWithTags(payload.caption, payload.tags)
 
     const tasks: Promise<any>[] = []
-
-    if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
-    if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
+// todo : need to uncomments
+    // if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
+    // if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
 
     await Promise.all(tasks)
 

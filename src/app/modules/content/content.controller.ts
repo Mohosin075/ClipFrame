@@ -14,6 +14,8 @@ const createContent = catchAsync(async (req: Request, res: Response) => {
 
   const contentData = { ...req.body, user: userId.authId, templateId: id }
 
+  console.log(contentData)
+
   const result = await ContentServices.createContent(req.user!, contentData)
 
   sendResponse(res, {

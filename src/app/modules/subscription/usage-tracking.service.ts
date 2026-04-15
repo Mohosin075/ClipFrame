@@ -8,8 +8,6 @@ import { Socialintegration } from '../socialintegration/socialintegration.model'
 
 interface UsageData {
   userId: string
-  serviceCount: number
-  teamMemberCount: number
   storageUsed: number
   apiCallsThisMonth: number
   reelsUsed: number
@@ -20,103 +18,6 @@ interface UsageData {
 }
 
 class UsageTrackingService {
-  // Check if user can add more services
-  async canAddService(
-    userId: string,
-  ): Promise<{ allowed: boolean; reason?: string }> {
-    try {
-      const subscription = await Subscription.findOne({
-        userId: new Types.ObjectId(userId),
-        status: { $in: ['active', 'trialing'] },
-      }).populate('planId')
-
-      if (!subscription) {
-        return { allowed: false, reason: 'No active subscription' }
-      }
-
-      let plan: ISubscriptionPlan
-      if (
-        subscription.planId &&
-        typeof subscription.planId === 'object' &&
-        'name' in (subscription.planId as any) &&
-        'maxServices' in (subscription.planId as any)
-      ) {
-        plan = subscription.planId as unknown as ISubscriptionPlan
-      } else {
-        const { subscriptionService } = await import('./subscription.service')
-        plan = await subscriptionService.getPlanById(
-          subscription.planId.toString(),
-        )
-      }
-
-      const currentServiceCount = await this.getCurrentServiceCount(userId)
-
-      if (currentServiceCount >= plan.maxServices) {
-        return {
-          allowed: false,
-          reason: `Plan limit reached. Your ${plan.name} plan allows ${plan.maxServices} services.`,
-        }
-      }
-
-      return { allowed: true }
-    } catch (error) {
-      console.error('Error checking service limit:', error)
-      throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        'Failed to check service limit',
-      )
-    }
-  }
-
-  // Check if user can add more team members
-  async canAddTeamMember(
-    userId: string,
-  ): Promise<{ allowed: boolean; reason?: string }> {
-    try {
-      const subscription = await Subscription.findOne({
-        userId: new Types.ObjectId(userId),
-        status: { $in: ['active', 'trialing'] },
-      }).populate('planId')
-
-      if (!subscription) {
-        return { allowed: false, reason: 'No active subscription' }
-      }
-
-      let plan: ISubscriptionPlan
-      if (
-        subscription.planId &&
-        typeof subscription.planId === 'object' &&
-        'name' in (subscription.planId as any) &&
-        'maxTeamMembers' in (subscription.planId as any)
-      ) {
-        plan = subscription.planId as unknown as ISubscriptionPlan
-      } else {
-        const { subscriptionService } = await import('./subscription.service')
-        plan = await subscriptionService.getPlanById(
-          subscription.planId.toString(),
-        )
-      }
-
-      const currentTeamMemberCount =
-        await this.getCurrentTeamMemberCount(userId)
-
-      if (currentTeamMemberCount >= plan.maxTeamMembers) {
-        return {
-          allowed: false,
-          reason: `Plan limit reached. Your ${plan.name} plan allows ${plan.maxTeamMembers} team members.`,
-        }
-      }
-
-      return { allowed: true }
-    } catch (error) {
-      console.error('Error checking team member limit:', error)
-      throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        'Failed to check team member limit',
-      )
-    }
-  }
-
   // Check if user can manage more businesses
   async canManageBusiness(
     userId: string,
@@ -283,16 +184,12 @@ class UsageTrackingService {
         status: { $in: ['active', 'trialing'] },
       })
 
-      const serviceCount = await this.getCurrentServiceCount(userId)
-      const teamMemberCount = await this.getCurrentTeamMemberCount(userId)
       const businessesUsed = await Socialintegration.countDocuments({
         user: new Types.ObjectId(userId),
       })
 
       return {
         userId,
-        serviceCount,
-        teamMemberCount,
         storageUsed: 0,
         apiCallsThisMonth: 0,
         reelsUsed: subscription?.usage?.reelsUsed ?? 0,
@@ -314,8 +211,6 @@ class UsageTrackingService {
   async getUsageWithLimits(userId: string): Promise<{
     usage: UsageData
     limits: {
-      maxServices: number
-      maxTeamMembers: number
       reelsPerWeek: number
       postsPerWeek: number
       storiesPerWeek: number
@@ -323,8 +218,6 @@ class UsageTrackingService {
       carouselPerWeek: number
     }
     percentages: {
-      servicesUsed: number
-      teamMembersUsed: number
       reelsUsed: number
       postsUsed: number
       storiesUsed: number
@@ -364,8 +257,6 @@ class UsageTrackingService {
       return {
         usage,
         limits: {
-          maxServices: plan.maxServices,
-          maxTeamMembers: plan.maxTeamMembers,
           reelsPerWeek: plan.reelsPerWeek,
           postsPerWeek: plan.postsPerWeek,
           storiesPerWeek: plan.storiesPerWeek,
@@ -373,11 +264,6 @@ class UsageTrackingService {
           carouselPerWeek: plan.carouselPerWeek,
         },
         percentages: {
-          servicesUsed:
-            Math.round((usage.serviceCount / plan.maxServices) * 100) || 0,
-          teamMembersUsed:
-            Math.round((usage.teamMemberCount / plan.maxTeamMembers) * 100) ||
-            0,
           reelsUsed:
             Math.round((usage.reelsUsed / plan.reelsPerWeek) * 100) || 0,
           postsUsed:
@@ -411,22 +297,6 @@ class UsageTrackingService {
       const data = await this.getUsageWithLimits(userId)
       const warnings: string[] = []
       const suggestions: string[] = []
-
-      if (data.percentages.servicesUsed >= 80) {
-        warnings.push(
-          `You're using ${data.percentages.servicesUsed}% of your service limit`,
-        )
-        suggestions.push('Consider upgrading your plan to add more services')
-      }
-
-      if (data.percentages.teamMembersUsed >= 80) {
-        warnings.push(
-          `You're using ${data.percentages.teamMembersUsed}% of your team member limit`,
-        )
-        suggestions.push(
-          'Consider upgrading your plan to add more team members',
-        )
-      }
 
       return { warnings, suggestions }
     } catch (error) {

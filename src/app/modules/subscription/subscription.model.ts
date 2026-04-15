@@ -78,11 +78,11 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
       default: false,
     },
     usage: {
-      reelsUsed: { type: Number, default: 0 },
-      postsUsed: { type: Number, default: 0 },
-      storiesUsed: { type: Number, default: 0 },
-      businessesUsed: { type: Number, default: 0 },
-      carouselUsed: { type: Number, default: 0 },
+      reelsUsed: { type: Number, default: 0, required: true },
+      postsUsed: { type: Number, default: 0, required: true },
+      storiesUsed: { type: Number, default: 0, required: true },
+      businessesUsed: { type: Number, default: 0, required: true },
+      carouselUsed: { type: Number, default: 0, required: true },
     },
     lastReset: {
       type: Date,

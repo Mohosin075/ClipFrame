@@ -11,8 +11,6 @@ export interface ISubscriptionPlan {
   intervalCount: number
   trialPeriodDays: number
   features: string[]
-  maxTeamMembers: number
-  maxServices: number
   reelsPerWeek: number
   postsPerWeek: number
   storiesPerWeek: number
@@ -21,7 +19,6 @@ export interface ISubscriptionPlan {
   isActive: boolean
   stripePriceId: string
   stripeProductId: string
-  userTypes: ('user' | 'organizer' | 'admin' | 'super_admin')[]
   priority: number
   tier: 'free' | 'basic' | 'premium'
   lastWebhookEventId?: string | null

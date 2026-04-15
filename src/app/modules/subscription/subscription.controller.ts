@@ -7,9 +7,7 @@ import { JwtPayload } from 'jsonwebtoken'
 
 // Get available subscription plans
 const getAvailablePlans = catchAsync(async (req: Request, res: Response) => {
-  const { userType } = req.query
-
-  const plans = await subscriptionService.getAvailablePlans(userType as string)
+  const plans = await subscriptionService.getAvailablePlans()
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -198,10 +196,8 @@ const updateSubscriptionPlan = catchAsync(
 
 // Admin: Get all plans (including inactive)
 const getAllPlans = catchAsync(async (req: Request, res: Response) => {
-  const { userType } = req.query
-
   // For admin, get all plans including inactive ones
-  const plans = await subscriptionService.getAvailablePlans(userType as string)
+  const plans = await subscriptionService.getAvailablePlans()
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

@@ -1,7 +1,13 @@
 import mongoose, { Schema, model } from 'mongoose'
-import { ISubscriptionPlan, SubscriptionPlanModel } from './subscription.interface'
+import {
+  ISubscriptionPlan,
+  SubscriptionPlanModel,
+} from './subscription.interface'
 
-const subscriptionPlanSchema = new Schema<ISubscriptionPlan, SubscriptionPlanModel>(
+const subscriptionPlanSchema = new Schema<
+  ISubscriptionPlan,
+  SubscriptionPlanModel
+>(
   {
     name: {
       type: String,
@@ -37,18 +43,12 @@ const subscriptionPlanSchema = new Schema<ISubscriptionPlan, SubscriptionPlanMod
       default: 10,
       min: 0,
     },
-    features: [{
-      type: String,
-      required: true,
-    }],
-    maxTeamMembers: {
-      type: Number,
-      default: 1,
-    },
-    maxServices: {
-      type: Number,
-      default: 1,
-    },
+    features: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
     reelsPerWeek: {
       type: Number,
       default: 0,
@@ -82,11 +82,6 @@ const subscriptionPlanSchema = new Schema<ISubscriptionPlan, SubscriptionPlanMod
       type: String,
       required: true,
     },
-    userTypes: [{
-      type: String,
-      enum: ['user', 'organizer', 'admin', 'super_admin'],
-      required: true,
-    }],
     priority: {
       type: Number,
       default: 0,
@@ -108,7 +103,7 @@ const subscriptionPlanSchema = new Schema<ISubscriptionPlan, SubscriptionPlanMod
 )
 
 // Index for efficient queries
-subscriptionPlanSchema.index({ isActive: 1, userTypes: 1 })
+subscriptionPlanSchema.index({ isActive: 1 })
 subscriptionPlanSchema.index({ stripePriceId: 1 })
 
 export const SubscriptionPlan = model<ISubscriptionPlan, SubscriptionPlanModel>(

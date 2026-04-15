@@ -19,13 +19,9 @@ import QueryBuilder from '../../builder/QueryBuilder'
 
 class SubscriptionService {
   // Get all available subscription plans
-  async getAvailablePlans(userType?: string): Promise<ISubscriptionPlan[]> {
+  async getAvailablePlans(): Promise<ISubscriptionPlan[]> {
     try {
       const query: any = { isActive: true }
-
-      if (userType) {
-        query.userTypes = { $in: [userType] }
-      }
 
       const plans = await SubscriptionPlan.find(query).sort({
         priority: 1,
@@ -787,9 +783,11 @@ class SubscriptionService {
         name: planData.name,
         description: planData.description,
         metadata: {
-          userTypes: planData.userTypes.join(','),
-          maxTeamMembers: planData.maxTeamMembers.toString(),
-          maxServices: planData.maxServices.toString(),
+          reelsPerWeek: planData.reelsPerWeek.toString(),
+          postsPerWeek: planData.postsPerWeek.toString(),
+          storiesPerWeek: planData.storiesPerWeek.toString(),
+          businessesManageable: planData.businessesManageable.toString(),
+          carouselPerWeek: planData.carouselPerWeek.toString(),
         },
       })
 

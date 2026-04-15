@@ -7,8 +7,7 @@ import { SupportRoutes } from '../app/modules/support/support.route'
 import { UseronboardingRoutes } from '../app/modules/useronboarding/useronboarding.route'
 import { ContentRoutes } from '../app/modules/content/content.route'
 import { SocialintegrationRoutes } from '../app/modules/socialintegration/socialintegration.route'
-import { PlanRoutes } from '../app/modules/plan/plan.routes'
-import { SubscriptionRoutes } from '../app/modules/subscription/subscription.routes'
+import { SubscriptionRoutes } from '../app/modules/subscription/subscription.route'
 import { StatsRoutes } from '../app/modules/stats/stats.route'
 import { ContenttemplateRoutes } from '../app/modules/contenttemplate/contenttemplate.route'
 
@@ -23,10 +22,10 @@ const apiRoutes: { path: string; route: Router }[] = [
   { path: '/useronboarding', route: UseronboardingRoutes },
   { path: '/content', route: ContentRoutes },
   { path: '/socialintegration', route: SocialintegrationRoutes },
-  { path: '/plan', route: PlanRoutes },
   { path: '/subscription', route: SubscriptionRoutes },
   { path: '/stats', route: StatsRoutes },
-  { path: '/contentTemplate', route: ContenttemplateRoutes }]
+  { path: '/contentTemplate', route: ContenttemplateRoutes },
+]
 
 apiRoutes.forEach(route => {
   router.use(route.path, route.route)

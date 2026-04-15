@@ -7,7 +7,7 @@ import { paginationHelper } from '../../../helpers/paginationHelper'
 import { CONTENT_STATUS, contentSearchableFields } from './content.constants'
 import mongoose, { Types } from 'mongoose'
 import { ContentType, IContent, IContentFilterables } from './content.interface'
-import { checkAndIncrementUsage } from '../subscription/checkSubscription'
+import { usageTrackingService } from '../subscription/usage-tracking.service'
 import { Socialintegration } from '../socialintegration/socialintegration.model'
 import { buildCaptionWithTags } from '../../../utils/caption'
 import {
@@ -269,7 +269,7 @@ export const createContent = async (
   const facebook = platforms.includes('facebook')
   const instagram = platforms.includes('instagram')
   const tiktok = platforms.includes('tiktok')
-  
+
   if (!facebook && !instagram && !tiktok) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -300,7 +300,10 @@ export const createContent = async (
   }
 
   try {
-    await checkAndIncrementUsage(user, payload.contentType as ContentTypeKeys)
+    await usageTrackingService.checkAndIncrementUsage(
+      user.authId!.toString(),
+      payload.contentType as ContentType,
+    )
     const [createdContent] = await Content.create([payload])
 
     if (!createdContent) {
@@ -313,7 +316,7 @@ export const createContent = async (
     const caption = buildCaptionWithTags(payload.caption, payload.tags)
 
     const tasks: Promise<any>[] = []
-// todo : need to uncomments
+    // todo : need to uncomments
     // if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
     // if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
 
@@ -428,10 +431,8 @@ const postToFacebook = async (userId: string, content: IContent) => {
         })
         return
       }
-
   }
 }
-
 
 // Instagram posting
 const postToInstagram = async (userId: string, content: IContent) => {

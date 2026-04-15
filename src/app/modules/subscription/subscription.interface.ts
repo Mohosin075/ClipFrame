@@ -1,17 +1,66 @@
-import { Date, Model, Types } from 'mongoose'
+import { Model, Types } from 'mongoose'
 
-export type ISubscription = {
-  _id?: string
-  customerId: string
+// Subscription Plan Interface
+export interface ISubscriptionPlan {
+  _id?: Types.ObjectId
+  name: string
+  description: string
   price: number
-  user: Types.ObjectId
-  plan: Types.ObjectId
-  trxId: string
-  subscriptionId: string
-  status: 'expired' | 'active' | 'cancel'
-  currentPeriodStart: string
-  currentPeriodEnd: string
+  currency: string
+  interval: 'month' | 'year'
+  intervalCount: number
+  trialPeriodDays: number
+  features: string[]
+  maxTeamMembers: number
+  maxServices: number
+  reelsPerWeek: number
+  postsPerWeek: number
+  storiesPerWeek: number
+  businessesManageable: number
+  carouselPerWeek: number
+  isActive: boolean
+  stripePriceId: string
+  stripeProductId: string
+  userTypes: ('user' | 'organizer' | 'admin' | 'super_admin')[]
+  priority: number
+  tier: 'free' | 'basic' | 'premium'
+  lastWebhookEventId?: string | null
+  createdAt?: Date
+  updatedAt?: Date
+}
 
+export type SubscriptionPlanModel = Model<ISubscriptionPlan>
+
+// Subscription Interface
+export interface ISubscription {
+  _id?: Types.ObjectId
+  userId: Types.ObjectId
+  planId: Types.ObjectId
+  price: number
+  stripeCustomerId: string
+  stripeSubscriptionId: string
+  stripePriceId: string
+  status:
+    | 'incomplete'
+    | 'incomplete_expired'
+    | 'trialing'
+    | 'active'
+    | 'past_due'
+    | 'canceled'
+    | 'unpaid'
+    | 'paused'
+  currentPeriodStart: Date
+  currentPeriodEnd: Date
+  trialStart?: Date | null
+  trialEnd?: Date | null
+  canceledAt?: Date | null
+  pausedAt?: Date | null
+  resumedAt?: Date | null
+  lastSyncedAt?: Date | null
+  cancelAtPeriodEnd: boolean
+  endedAt?: Date | null
+  hasUsedTrial: boolean
+  metadata: Map<string, string>
   usage: {
     reelsUsed: number
     postsUsed: number
@@ -20,6 +69,66 @@ export type ISubscription = {
     carouselUsed: number
   }
   lastReset: Date
+  lastPaymentDate?: Date | null
+  nextPaymentDate?: Date | null
+  paymentFailureCount: number
+  fraudFlags?: string
+  lastWebhookEventId?: string | null
+  riskScore?: Number
+  createdAt?: Date
+  updatedAt?: Date
 }
 
-export type SubscriptionModel = Model<ISubscription, Record<string, unknown>>
+export interface SubscriptionModel extends Model<ISubscription> {
+  findActiveByUserId(userId: string): Promise<ISubscription | null>
+  findByStripeId(stripeSubscriptionId: string): Promise<ISubscription | null>
+}
+
+// Request/Response Types
+export interface CreateSubscriptionRequest {
+  planId: string
+  paymentMethodId?: string
+  couponId?: string
+}
+
+export interface UpdateSubscriptionRequest {
+  planId?: string
+  cancelAtPeriodEnd?: boolean
+}
+
+export interface SubscriptionResponse {
+  subscription: ISubscription
+  clientSecret?: string
+}
+
+export interface PlanResponse {
+  plans: ISubscriptionPlan[]
+}
+
+// Webhook Event Types
+export interface StripeWebhookEvent {
+  id: string
+  type: string
+  data: {
+    object: any
+  }
+  created: number
+}
+
+// Trial Management
+export interface TrialInfo {
+  isEligible: boolean
+  hasUsedTrial: boolean
+  trialDays: number
+  reason?: string
+}
+
+// Subscription Status Check
+export interface SubscriptionStatus {
+  isActive: boolean
+  isTrialing: boolean
+  isPastDue: boolean
+  isCanceled: boolean
+  daysUntilExpiry: number
+  currentPlan?: ISubscriptionPlan
+}

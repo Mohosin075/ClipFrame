@@ -5,9 +5,11 @@ import { CustomAuthController } from './custom.auth/custom.auth.controller'
 import validateRequest from '../../middleware/validateRequest'
 import { AuthValidations } from './auth.validation'
 import { USER_ROLES } from '../../../enum/user'
+import ApiError from '../../../errors/ApiError'
+import { StatusCodes } from 'http-status-codes'
 import auth, { tempAuth } from '../../middleware/auth'
 import { JwtPayload } from 'jsonwebtoken'
-import { checkBusinessManage } from '../subscription/checkSubscription'
+import { usageTrackingService } from '../subscription/usage-tracking.service'
 import config from '../../../config'
 
 const router = express.Router()
@@ -108,9 +110,14 @@ router.get(
 
     // check how many business connected
 
-    // if (user) {
-    //   await checkBusinessManage(user)
-    // }
+    if (user) {
+      const result = await usageTrackingService.canManageBusiness(
+        user.authId!.toString(),
+      )
+      if (!result.allowed) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, result.reason!)
+      }
+    }
 
     // flag the flow
     req.session.connectType = 'facebook'
@@ -148,7 +155,12 @@ router.get(
     // check how many business connected
 
     if (user) {
-      await checkBusinessManage(user)
+      const result = await usageTrackingService.canManageBusiness(
+        user.authId!.toString(),
+      )
+      if (!result.allowed) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, result.reason!)
+      }
     }
     req.session.connectType = 'instagram'
     next()

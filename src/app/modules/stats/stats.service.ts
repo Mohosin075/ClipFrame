@@ -68,7 +68,7 @@ const getAdminDashboardStats = async (user: JwtPayload) => {
   ] = await Promise.all([
     User.countDocuments({ status: { $nin: [USER_STATUS.DELETED] } }),
     User.countDocuments({ status: USER_STATUS.ACTIVE }),
-    Subscription.distinct('user', { status: 'active' }),
+    Subscription.distinct('userId', { status: 'active' }),
     User.countDocuments({
       status: { $nin: [USER_STATUS.DELETED] },
       createdAt: { $gte: startOfMonth },
@@ -200,7 +200,7 @@ const getAdminUserStats = async (user: JwtPayload) => {
     [
       User.countDocuments({ status: { $nin: [USER_STATUS.DELETED] } }),
       User.countDocuments({ status: USER_STATUS.ACTIVE }),
-      Subscription.distinct('user', { status: 'active' }),
+      Subscription.distinct('userId', { status: 'active' }),
       User.countDocuments({
         status: { $nin: [USER_STATUS.DELETED] },
         createdAt: { $gte: startOfMonth },

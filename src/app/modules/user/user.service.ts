@@ -14,7 +14,7 @@ import { Useronboarding } from '../useronboarding/useronboarding.model'
 import config from '../../../config'
 import { IUseronboarding } from '../useronboarding/useronboarding.interface'
 import { Subscription } from '../subscription/subscription.model'
-import { IPlan } from '../plan/plan.interface'
+import { ISubscriptionPlan as IPlan } from '../subscription/subscription.interface'
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   const isUserExist = await User.findOne({
@@ -219,11 +219,11 @@ export const getProfile = async (user: JwtPayload) => {
     Useronboarding.findOne({ userId: user.authId }),
     Subscription.findOne({
       status: 'active',
-      user: user.authId,
+      userId: user.authId,
     })
-      .populate<{ plan: IPlan }>({
-        path: 'plan',
-        select: 'name price features duration title',
+      .populate<{ planId: IPlan }>({
+        path: 'planId',
+        select: 'name price features interval',
       })
       .lean()
       .exec(),
@@ -237,7 +237,7 @@ export const getProfile = async (user: JwtPayload) => {
   return {
     ...isUserExist.toObject(),
     platforms: socialPlatforms,
-    membership: subscriber?.plan?.title ?? '',
+    membership: (subscriber?.planId as unknown as IPlan)?.name ?? '',
     preferredLanguages: isOnboarded?.preferredLanguages ?? [],
     businessType: isOnboarded?.businessType ?? 'General',
     businessDescription: isOnboarded?.businessDescription,

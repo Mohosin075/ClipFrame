@@ -10,7 +10,7 @@ import router from './routes'
 import { Morgan } from './shared/morgan'
 import globalErrorHandler from './app/middleware/globalErrorHandler'
 import './task/scheduler'
-import handleStripeWebhook from './stripe/handleStripeWebhook'
+import { WebhookController } from './app/modules/subscription/webhook.controller'
 import config from './config'
 import { Socialintegration } from './app/modules/socialintegration/socialintegration.model'
 import axios from 'axios'
@@ -24,7 +24,7 @@ const app = express()
 app.use(
   '/webhook',
   express.raw({ type: 'application/json' }),
-  handleStripeWebhook,
+  WebhookController.handleStripeWebhook,
 )
 
 // -------------------- Middleware --------------------
@@ -45,7 +45,13 @@ app.use(passport.session())
 // CORS
 app.use(
   cors({
-    origin: ['*', 'http://localhost:3000', 'http://195.35.6.13:3004', 'http://195.35.6.13:4001', 'http://10.10.7.58:3001'],
+    origin: [
+      '*',
+      'http://localhost:3000',
+      'http://195.35.6.13:3004',
+      'http://195.35.6.13:4001',
+      'http://10.10.7.58:3001',
+    ],
     credentials: true,
   }),
 )

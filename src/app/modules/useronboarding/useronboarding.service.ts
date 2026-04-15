@@ -15,19 +15,10 @@ import { Useronboarding } from './useronboarding.model'
 
 const createUseronboarding = async (
   user: JwtPayload,
-  payload: Partial<IUseronboarding> & {
-    removeTargetAudience?: TargetAudience[]
-    removePreferredLanguages?: ContentLanguage[]
-  },
+  payload: Partial<IUseronboarding>,
 ) => {
   const userId = user.authId
-  const {
-    targetAudience,
-    preferredLanguages,
-    removeTargetAudience,
-    removePreferredLanguages,
-    ...otherData
-  } = payload
+  const { targetAudience, preferredLanguages, ...otherData } = payload
 
   try {
     const existing = await Useronboarding.findOne({ userId })
@@ -37,46 +28,25 @@ const createUseronboarding = async (
       const data = {
         ...otherData,
         userId,
-        targetAudience: targetAudience
-          ? Array.from(new Set(targetAudience))
-          : [],
-        preferredLanguages: preferredLanguages
-          ? Array.from(new Set(preferredLanguages))
-          : [ContentLanguage.EN],
+        targetAudience: targetAudience || [],
+        preferredLanguages: preferredLanguages || [ContentLanguage.EN],
       }
       return await Useronboarding.create(data)
     }
 
     // 🔧 Prepare update operations
-    const updateOps: any = {}
-
-    // 1. $set for regular fields
-    if (Object.keys(otherData).length > 0) {
-      updateOps.$set = otherData
+    const updateOps: any = {
+      $set: {
+        ...otherData,
+      },
     }
 
-    // 2. $addToSet for adding new unique options
-    const addToSetOps: any = {}
-    if (targetAudience && targetAudience.length > 0) {
-      addToSetOps.targetAudience = { $each: targetAudience }
-    }
-    if (preferredLanguages && preferredLanguages.length > 0) {
-      addToSetOps.preferredLanguages = { $each: preferredLanguages }
-    }
-    if (Object.keys(addToSetOps).length > 0) {
-      updateOps.$addToSet = addToSetOps
+    if (targetAudience) {
+      updateOps.$set.targetAudience = targetAudience
     }
 
-    // 3. $pull for removing existing options
-    const pullOps: any = {}
-    if (removeTargetAudience && removeTargetAudience.length > 0) {
-      pullOps.targetAudience = { $in: removeTargetAudience }
-    }
-    if (removePreferredLanguages && removePreferredLanguages.length > 0) {
-      pullOps.preferredLanguages = { $in: removePreferredLanguages }
-    }
-    if (Object.keys(pullOps).length > 0) {
-      updateOps.$pull = pullOps
+    if (preferredLanguages) {
+      updateOps.$set.preferredLanguages = preferredLanguages
     }
 
     const updated = await Useronboarding.findOneAndUpdate(
@@ -203,10 +173,7 @@ const getMyOnboarding = async (
 
 const updateMyOnboarding = async (
   user: JwtPayload,
-  payload: Partial<IUseronboarding> & {
-    removeTargetAudience?: TargetAudience[]
-    removePreferredLanguages?: ContentLanguage[]
-  },
+  payload: Partial<IUseronboarding>,
 ) => {
   return await createUseronboarding(user, payload)
 }

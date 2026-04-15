@@ -138,10 +138,10 @@ const fileUploadHandler = (maxSizeInMB: number = 100) => {
         for (const file of files) {
           if (!file.mimetype.startsWith('image')) continue
 
-          // Resize and optimize the image
+          // Resize and optimize the image while maintaining aspect ratio
           let sharpInstance = sharp(file.buffer).resize({
             width: 1080,
-            height: 1350,
+            withoutEnlargement: true,
           })
 
           if (file.mimetype === 'image/png') {

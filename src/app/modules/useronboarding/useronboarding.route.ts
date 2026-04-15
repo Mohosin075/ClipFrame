@@ -44,6 +44,18 @@ router.get(
 )
 
 router.get(
+  '/my-onboarding',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+  UseronboardingController.getMyOnboarding,
+)
+
+router.patch(
+  '/update-my-onboarding',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+  UseronboardingController.updateMyOnboarding,
+)
+
+router.get(
   '/:id',
   auth(USER_ROLES.ADMIN),
   UseronboardingController.getSingleUseronboarding,

@@ -3,6 +3,8 @@ import ApiError from '../../../errors/ApiError'
 import {
   IUseronboardingFilterables,
   IUseronboarding,
+  TargetAudience,
+  ContentLanguage,
 } from './useronboarding.interface'
 import { JwtPayload } from 'jsonwebtoken'
 import { IPaginationOptions } from '../../../interfaces/pagination'
@@ -13,56 +15,77 @@ import { Useronboarding } from './useronboarding.model'
 
 const createUseronboarding = async (
   user: JwtPayload,
-  payload: Partial<IUseronboarding>,
+  payload: Partial<IUseronboarding> & {
+    removeTargetAudience?: TargetAudience[]
+    removePreferredLanguages?: ContentLanguage[]
+  },
 ) => {
-  const data = { ...payload, userId: user.authId }
+  const userId = user.authId
+  const {
+    targetAudience,
+    preferredLanguages,
+    removeTargetAudience,
+    removePreferredLanguages,
+    ...otherData
+  } = payload
 
   try {
-    const existing = await Useronboarding.findOne({
-      userId: user.authId,
-    })
+    const existing = await Useronboarding.findOne({ userId })
 
     // 🧩 If user onboarding doesn’t exist, create it
     if (!existing) {
-      const created = await Useronboarding.create(data)
-      return created
+      const data = {
+        ...otherData,
+        userId,
+        targetAudience: targetAudience
+          ? Array.from(new Set(targetAudience))
+          : [],
+        preferredLanguages: preferredLanguages
+          ? Array.from(new Set(preferredLanguages))
+          : [ContentLanguage.EN],
+      }
+      return await Useronboarding.create(data)
     }
 
-    // 🔧 Prepare update fields
-    const updateFields: Record<string, any> = {}
+    // 🔧 Prepare update operations
+    const updateOps: any = {}
 
-    Object.keys(payload).forEach(key => {
-      updateFields[key] = (payload as any)[key]
-    })
+    // 1. $set for regular fields
+    if (Object.keys(otherData).length > 0) {
+      updateOps.$set = otherData
+    }
 
-    // Handle all other fields normally
-    // Object.keys(payload).forEach(key => {
-    //   if (key !== 'socialHandles') {
-    //     updateFields[key] = (payload as any)[key]
-    //   }
-    // })
+    // 2. $addToSet for adding new unique options
+    const addToSetOps: any = {}
+    if (targetAudience && targetAudience.length > 0) {
+      addToSetOps.targetAudience = { $each: targetAudience }
+    }
+    if (preferredLanguages && preferredLanguages.length > 0) {
+      addToSetOps.preferredLanguages = { $each: preferredLanguages }
+    }
+    if (Object.keys(addToSetOps).length > 0) {
+      updateOps.$addToSet = addToSetOps
+    }
 
-    // // ⚙️ Handle socialHandles logic
-    // if (payload.socialHandles && payload.socialHandles.length > 0) {
-    //   const existingHandles = existing.socialHandles || []
-
-    //   for (const handle of payload.socialHandles) {
-    //     const alreadyExists = existingHandles.some(
-    //       h => h.platform === handle.platform,
-    //     )
-
-    //     if (!alreadyExists) {
-    //       existingHandles.push(handle)
-    //     }
-    //   }
-
-    //   updateFields.socialHandles = existingHandles
-    // }
+    // 3. $pull for removing existing options
+    const pullOps: any = {}
+    if (removeTargetAudience && removeTargetAudience.length > 0) {
+      pullOps.targetAudience = { $in: removeTargetAudience }
+    }
+    if (removePreferredLanguages && removePreferredLanguages.length > 0) {
+      pullOps.preferredLanguages = { $in: removePreferredLanguages }
+    }
+    if (Object.keys(pullOps).length > 0) {
+      updateOps.$pull = pullOps
+    }
 
     const updated = await Useronboarding.findOneAndUpdate(
-      { userId: user.authId },
-      { $set: updateFields },
-      { new: true },
+      { userId },
+      updateOps,
+      {
+        new: true,
+        runValidators: true,
+      },
     ).lean()
 
     if (!updated) {
@@ -169,9 +192,30 @@ const deleteUseronboarding = async (id: string): Promise<IUseronboarding> => {
   return result
 }
 
+const getMyOnboarding = async (
+  user: JwtPayload,
+): Promise<IUseronboarding | null> => {
+  const result = await Useronboarding.findOne({ userId: user.authId }).populate(
+    'userId',
+  )
+  return result
+}
+
+const updateMyOnboarding = async (
+  user: JwtPayload,
+  payload: Partial<IUseronboarding> & {
+    removeTargetAudience?: TargetAudience[]
+    removePreferredLanguages?: ContentLanguage[]
+  },
+) => {
+  return await createUseronboarding(user, payload)
+}
+
 export const UseronboardingServices = {
   createUseronboarding,
   getAllUseronboardings,
   getSingleUseronboarding,
   deleteUseronboarding,
+  getMyOnboarding,
+  updateMyOnboarding,
 }

@@ -317,7 +317,7 @@ export const createContent = async (
     // if (facebook) tasks.push(postToFacebook(user.authId, createdContent))
     // if (instagram) tasks.push(postToInstagram(user.authId, createdContent))
 
-    await Promise.all(tasks)
+    // await Promise.all(tasks)
 
     // TODO, NEED UNCOMMENTS
 

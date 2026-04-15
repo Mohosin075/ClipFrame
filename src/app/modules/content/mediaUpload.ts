@@ -84,7 +84,7 @@ export const handleMediaUpload = async (req: any, res: any, next: any) => {
           step: i + 1,
           url,
           duration,
-          type: 'video',
+          type: file.mimetype.startsWith('video') ? 'video' : 'image',
           size: file.size, // in bytes
         })
       }

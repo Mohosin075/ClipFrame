@@ -69,9 +69,36 @@ const deleteUseronboarding = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const getMyOnboarding = catchAsync(async (req: Request, res: Response) => {
+  const result = await UseronboardingServices.getMyOnboarding(req.user!)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Useronboarding retrieved successfully',
+    data: result,
+  })
+})
+
+const updateMyOnboarding = catchAsync(async (req: Request, res: Response) => {
+  const result = await UseronboardingServices.updateMyOnboarding(
+    req.user!,
+    req.body,
+  )
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Useronboarding updated successfully',
+    data: result,
+  })
+})
+
 export const UseronboardingController = {
   createUseronboarding,
   getSingleUseronboarding,
   getAllUseronboardings,
   deleteUseronboarding,
+  getMyOnboarding,
+  updateMyOnboarding,
 }

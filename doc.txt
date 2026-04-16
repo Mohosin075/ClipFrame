@@ -1,0 +1,12 @@
+1. “Create Weekly Content” Button
+   •  Currently, this button is not working.
+   •  Instead of a guided step-by-step flow, I believe it should be much simpler.
+ 
+Suggested approach:
+   •  When clicking the button, it should display a simple and clear tutorial/checklist explaining what the user needs to create for the week.
+ 
+For example:
+   •  Create 1 reel → brief explanation of what to do
+   •  Create 1 post → brief explanation
+   •  Create 3 stories → brief explanation
+   •  The idea is to keep it very simple, intuitive, and easy to follow, rather than forcing a strict flow.

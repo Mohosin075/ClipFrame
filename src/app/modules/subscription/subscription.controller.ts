@@ -348,6 +348,22 @@ const getUsageWarnings = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+// Get weekly content checklist
+const getWeeklyChecklist = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as JwtPayload
+  const userId = user.authId!.toString()
+
+  const { usageTrackingService } = await import('./usage-tracking.service')
+  const checklist = await usageTrackingService.getWeeklyChecklist(userId)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Weekly content checklist retrieved successfully',
+    data: checklist,
+  })
+})
+
 // Get billing portal session
 const createBillingPortal = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload
@@ -385,6 +401,7 @@ export const SubscriptionController = {
   resumeSubscription,
   getUsageData,
   getUsageWarnings,
+  getWeeklyChecklist,
   createBillingPortal,
 
   // Admin endpoints (require admin role)

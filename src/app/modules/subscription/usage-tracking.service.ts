@@ -288,6 +288,51 @@ class UsageTrackingService {
     }
   }
 
+  // Get weekly content checklist
+  async getWeeklyChecklist(userId: string) {
+    const data = await this.getUsageWithLimits(userId)
+
+    const checklist = [
+      {
+        id: 'reel',
+        title: 'Create Reels',
+        task: `Create ${data.limits.reelsPerWeek} reels this week`,
+        completed: data.usage.reelsUsed,
+        target: data.limits.reelsPerWeek,
+        description:
+          'Create short, engaging videos using our templates to reach new audiences.',
+        isDone: data.usage.reelsUsed >= data.limits.reelsPerWeek,
+      },
+      {
+        id: 'post',
+        title: 'Create Posts',
+        task: `Create ${data.limits.postsPerWeek} posts this week`,
+        completed: data.usage.postsUsed,
+        target: data.limits.postsPerWeek,
+        description:
+          'Share high-quality images or graphics to keep your feed active and consistent.',
+        isDone: data.usage.postsUsed >= data.limits.postsPerWeek,
+      },
+      {
+        id: 'story',
+        title: 'Create Stories',
+        task: `Create ${data.limits.storiesPerWeek} stories this week`,
+        completed: data.usage.storiesUsed,
+        target: data.limits.storiesPerWeek,
+        description:
+          'Post daily updates and behind-the-scenes to stay connected with your followers.',
+        isDone: data.usage.storiesUsed >= data.limits.storiesPerWeek,
+      },
+    ]
+
+    const isFullDone = checklist.every(item => item.isDone)
+
+    return {
+      isFullDone,
+      checklist,
+    }
+  }
+
   // Check if user is approaching limits (80% threshold)
   async checkApproachingLimits(userId: string): Promise<{
     warnings: string[]

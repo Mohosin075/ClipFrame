@@ -108,6 +108,12 @@ router.get(
   SubscriptionController.getUsageWarnings,
 )
 
+router.get(
+  '/weekly-checklist',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  SubscriptionController.getWeeklyChecklist,
+)
+
 router.post(
   '/billing-portal',
   auth(USER_ROLES.ADMIN, USER_ROLES.USER),

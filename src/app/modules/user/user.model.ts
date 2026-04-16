@@ -64,6 +64,24 @@ const UserSchema = new Schema<IUser, UserModel>(
       requestCount: { type: Number, default: 0 },
       authType: { type: String, enum: ['createAccount', 'resetPassword'] },
     },
+
+    // Subscription tracking
+    subscriptionStatus: {
+      type: String,
+      default: 'inactive',
+    },
+    subscriptionTier: {
+      type: String,
+      default: 'free',
+    },
+    subscriptionExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    stripeCustomerId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -96,12 +96,8 @@ class UsageTrackingService {
   async checkAndIncrementUsage(userId: string, type: ContentType) {
     try {
       const { subscriptionService } = await import('./subscription.service')
-      await subscriptionService.handleFreeSubscriptionCreate(userId)
-
-      const subscription = await Subscription.findOne({
-        userId: new Types.ObjectId(userId),
-        status: { $in: ['active', 'trialing'] },
-      }).populate('planId')
+      const subscription =
+        await subscriptionService.handleFreeSubscriptionCreate(userId)
 
       if (!subscription) {
         throw new ApiError(

@@ -52,6 +52,13 @@ export interface IUser {
   // membership: Membership
 
   authentication: IAuthentication
+  
+  // Subscription fields
+  subscriptionStatus?: string
+  subscriptionTier?: string
+  subscriptionExpiresAt?: Date
+  stripeCustomerId?: string
+
   createdAt: Date
   updatedAt: Date
 }

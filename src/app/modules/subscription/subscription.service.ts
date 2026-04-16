@@ -21,7 +21,6 @@ class SubscriptionService {
   // Get all available subscription plans
   async getAllPlans(): Promise<ISubscriptionPlan[]> {
     try {
-
       const plans = await SubscriptionPlan.find({}).sort({
         priority: 1,
         price: 1,
@@ -323,20 +322,57 @@ class SubscriptionService {
   // Create free subscription if none exists
   async handleFreeSubscriptionCreate(userId: string) {
     try {
+      const user = await User.findById(userId)
+      if (!user) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+      }
+
       const existingSubscription = await Subscription.findActiveByUserId(userId)
       if (existingSubscription) {
         return existingSubscription
       }
 
-      const freePlan = await SubscriptionPlan.findOne({
-        price: 0,
+      let freePlan = await SubscriptionPlan.findOne({
+        $or: [{ price: 0 }, { tier: 'free' }],
         isActive: true,
       })
+
       if (!freePlan) {
-        // If no free plan found, we might not want to throw an error here,
-        // as it might be intentional. But for now, let's just log it.
-        console.warn('No active free subscription plan found')
-        return null
+        // Auto-seed free plan if it's missing
+        console.log('No free plan found, attempting to create one...')
+        freePlan = await SubscriptionPlan.create({
+          name: 'Free Plan',
+          description: 'Perfect for creators starting out',
+          price: 0,
+          currency: 'usd',
+          interval: 'month',
+          intervalCount: 1,
+          trialPeriodDays: 0,
+          features: [
+            'Access to 50+ basic frames',
+            'Standard video export quality',
+            'Basic video editing tools',
+            'ClipFrame watermark on videos',
+            'Community support access',
+          ],
+          reelsPerWeek: 5,
+          postsPerWeek: 5,
+          storiesPerWeek: 5,
+          businessesManageable: 1,
+          carouselPerWeek: 5,
+          priority: 1,
+          tier: 'free',
+          isActive: true,
+          stripePriceId: 'free_price',
+          stripeProductId: 'free_product',
+        })
+      }
+
+      if (!freePlan) {
+        throw new ApiError(
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          'No active free subscription plan found in the system and failed to create one.',
+        )
       }
 
       const now = new Date()
@@ -361,9 +397,11 @@ class SubscriptionService {
           businessesUsed: 0,
           carouselUsed: 0,
         },
+        lastReset: now,
       })
 
       await subscription.save()
+      await subscription.populate('planId')
 
       // Update user profile
       await User.findByIdAndUpdate(userId, {
@@ -375,8 +413,11 @@ class SubscriptionService {
       return subscription
     } catch (error) {
       console.error('Error handling free subscription creation:', error)
-      // Don't throw here to avoid breaking the main flow if free subscription fails
-      return null
+      if (error instanceof ApiError) throw error
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Failed to automatically create free subscription plan for you. Please try again or contact support.',
+      )
     }
   }
 

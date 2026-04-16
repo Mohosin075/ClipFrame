@@ -13,6 +13,7 @@ const StatsSchema = new Schema<IStats>({
   comments: { type: Number, default: 0 },
   shares: { type: Number, default: 0 },
   views: { type: Number, default: 0 },
+  reach: { type: Number, default: 0 },
 })
 
 export const Stats = model<IStats>('Stats', StatsSchema)

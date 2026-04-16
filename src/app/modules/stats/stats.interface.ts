@@ -8,4 +8,5 @@ export interface IStats {
   comments: number
   shares: number
   views: number
+  reach?: number
 }

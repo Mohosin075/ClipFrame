@@ -19,6 +19,22 @@ import QueryBuilder from '../../builder/QueryBuilder'
 
 class SubscriptionService {
   // Get all available subscription plans
+  async getAllPlans(): Promise<ISubscriptionPlan[]> {
+    try {
+
+      const plans = await SubscriptionPlan.find({}).sort({
+        priority: 1,
+        price: 1,
+      })
+      return plans
+    } catch (error) {
+      console.error('Error fetching subscription plans:', error)
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Failed to fetch subscription plans',
+      )
+    }
+  }
   async getAvailablePlans(): Promise<ISubscriptionPlan[]> {
     try {
       const query: any = { isActive: true }

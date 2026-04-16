@@ -19,12 +19,12 @@ const getAllPlatformStats = catchAsync(async (req: Request, res: Response) => {
 
 const getUserStats = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as JwtPayload
-  const result = await StatsService.getUserContentStats(user)
+  const result = await StatsService.getUserMetrics(user)
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'User Stats retrieved successfully',
+    message: 'User metrics retrieved successfully',
     data: result,
   })
 })

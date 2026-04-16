@@ -197,7 +197,7 @@ const updateSubscriptionPlan = catchAsync(
 // Admin: Get all plans (including inactive)
 const getAllPlans = catchAsync(async (req: Request, res: Response) => {
   // For admin, get all plans including inactive ones
-  const plans = await subscriptionService.getAvailablePlans()
+  const plans = await subscriptionService.getAllPlans()
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

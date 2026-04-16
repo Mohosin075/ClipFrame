@@ -218,90 +218,105 @@ const getAdminUserStats = async (user: JwtPayload) => {
   }
 }
 
-const getUserContentStats = async (user: JwtPayload) => {
+const getUserMetrics = async (user: JwtPayload) => {
   const userId = new Types.ObjectId(user.authId)
 
-  // 🟦 Step 1: Basic published counts
-  const stats = await Content.aggregate([
+  // 🟦 Step 1: Counts for all content types and statuses
+  const counts = await Content.aggregate([
     {
       $match: {
         user: userId,
-        status: CONTENT_STATUS.PUBLISHED,
+        status: { $ne: CONTENT_STATUS.DELETED },
       },
     },
     {
       $group: {
-        _id: '$contentType',
-        total: { $sum: 1 },
+        _id: {
+          contentType: '$contentType',
+          status: '$status',
+        },
+        count: { $sum: 1 },
       },
     },
   ])
 
-  // 🟨 Step 2: Weekly views & engagement for published content
-  const oneWeekAgo = new Date()
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-
-  const engagementStats = await Content.aggregate([
+  // 🟨 Step 2: Performance stats for published content
+  const performanceStats = await Stats.aggregate([
     {
       $match: {
         user: userId,
-        status: CONTENT_STATUS.PUBLISHED,
-        createdAt: { $gte: oneWeekAgo },
-      },
-    },
-    {
-      // 🧠 Calculate engagement and make sure stats fields are always numbers
-      $addFields: {
-        totalLikes: { $sum: '$stats.likes' },
-        totalComments: { $sum: '$stats.comments' },
-        totalShares: { $sum: '$stats.shares' },
-        totalViews: { $sum: '$stats.views' },
-      },
-    },
-    {
-      $addFields: {
-        engagement: {
-          $add: ['$totalLikes', '$totalComments', '$totalShares'],
-        },
       },
     },
     {
       $group: {
         _id: null,
-        totalViews: { $sum: '$totalViews' },
-        totalEngagement: { $sum: '$engagement' },
-        totalContents: { $sum: 1 },
+        totalLikes: { $sum: '$likes' },
+        totalComments: { $sum: '$comments' },
+        totalShares: { $sum: '$shares' },
+        totalViews: { $sum: '$views' },
+        totalReach: { $sum: '$reach' },
       },
     },
   ])
 
-  // 🟩 Step 3: Build result object
+  // 🟩 Step 3: Format the response
   const result = {
-    postsPublished: 0,
-    reelsPublished: 0,
-    storiesCreated: 0,
-    weeklyViews: 0,
-    averageEngagementRate: 0,
+    contentCreation: {
+      posts: { total: 0, published: 0, draft: 0, scheduled: 0 },
+      reels: { total: 0, published: 0, draft: 0, scheduled: 0 },
+      stories: { total: 0, published: 0, draft: 0, scheduled: 0 },
+      carousel: { total: 0, published: 0, draft: 0, scheduled: 0 },
+    },
+    performance: {
+      totalViews: 0,
+      totalLikes: 0,
+      totalComments: 0,
+      totalShares: 0,
+      totalReach: 0,
+      avgEngagementRate: 0,
+    },
   }
 
-  // Fill counts
-  for (const item of stats) {
-    if (item._id === 'post') result.postsPublished = item.total
-    if (item._id === 'reel') result.reelsPublished = item.total
-    if (item._id === 'story') result.storiesCreated = item.total
+  // Map counts
+  for (const item of counts) {
+    const type = item._id.contentType as 'post' | 'reel' | 'story' | 'carousel'
+    const status = item._id.status as string
+    const count = item.count
+
+    if (
+      result.contentCreation[
+        (type + 's') as keyof typeof result.contentCreation
+      ]
+    ) {
+      const typeKey = (type + 's') as keyof typeof result.contentCreation
+      result.contentCreation[typeKey].total += count
+      if (status === CONTENT_STATUS.PUBLISHED)
+        result.contentCreation[typeKey].published += count
+      if (status === CONTENT_STATUS.DRAFT)
+        result.contentCreation[typeKey].draft += count
+      if (status === CONTENT_STATUS.SCHEDULED)
+        result.contentCreation[typeKey].scheduled += count
+    }
   }
 
-  // Fill engagement data
-  if (engagementStats.length > 0) {
-    const { totalViews, totalEngagement } = engagementStats[0]
-    result.weeklyViews = totalViews || 0
+  // Map performance
+  if (performanceStats.length > 0) {
+    const p = performanceStats[0]
+    result.performance.totalViews = p.totalViews || 0
+    result.performance.totalLikes = p.totalLikes || 0
+    result.performance.totalComments = p.totalComments || 0
+    result.performance.totalShares = p.totalShares || 0
+    result.performance.totalReach = p.totalReach || 0
 
-    if (totalViews > 0) {
-      result.averageEngagementRate = Number(
-        (totalEngagement / totalViews).toFixed(2),
+    const totalEngagement =
+      result.performance.totalLikes +
+      result.performance.totalComments +
+      result.performance.totalShares
+
+    if (result.performance.totalViews > 0) {
+      result.performance.avgEngagementRate = Number(
+        (totalEngagement / result.performance.totalViews).toFixed(2),
       )
-    } else {
-      result.averageEngagementRate = 0
     }
   }
 
@@ -396,7 +411,7 @@ export const updateFacebookContentStats = async () => {
 
 export const StatsService = {
   createStats,
-  getUserContentStats,
+  getUserMetrics,
   getAllPlatformStats,
   getAdminDashboardStats,
   getAdminUserStats,

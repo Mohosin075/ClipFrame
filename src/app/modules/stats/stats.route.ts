@@ -18,6 +18,12 @@ router.get(
 )
 
 router.get(
+  '/my-metrics',
+  auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+  StatsController.getUserStats,
+)
+
+router.get(
   '/dashboard',
   auth(USER_ROLES.ADMIN),
   StatsController.getAdminDashboardStats,

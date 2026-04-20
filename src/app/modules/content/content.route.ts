@@ -59,4 +59,12 @@ router
     ContentController.duplicateContent,
   )
 
+// /api/v1/content/generate-caption
+router.post(
+  '/generate-caption',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
+  validateRequest(ContentValidations.generateCaption),
+  ContentController.generateCaption,
+)
+
 export const ContentRoutes = router

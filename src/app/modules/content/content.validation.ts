@@ -48,7 +48,7 @@ export const clipSchema = z.object({
 export const ContentValidations = {
   create: z.object({
     body: z.object({
-      caption: z.string(),
+      caption: z.string().optional(),
       // description: z.string().optional(),
       mediaUrls: z.array(z.string()),
       contentType: z.enum(['post', 'reel', 'story', 'carousel']),
@@ -65,6 +65,16 @@ export const ContentValidations = {
       caption: z.string().optional(),
       // description: z.string().optional(),
       scheduledAt: ScheduledAtSchema.optional(),
+    }),
+  }),
+
+  generateCaption: z.object({
+    body: z.object({
+      templateId: z.string({
+        required_error: 'Template ID is required',
+      }),
+      tone: z.string().optional(),
+      suggestions: z.string().optional(),
     }),
   }),
 }

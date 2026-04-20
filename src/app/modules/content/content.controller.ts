@@ -117,6 +117,19 @@ const getAllMyContents = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const generateCaption = catchAsync(async (req: Request, res: Response) => {
+  const { templateId, tone, suggestions } = req.body
+
+  const result = await ContentServices.generateCaption(templateId, tone, suggestions)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Caption generated successfully',
+    data: result,
+  })
+})
+
 export const ContentController = {
   createContent,
   updateContent,
@@ -125,4 +138,5 @@ export const ContentController = {
   deleteContent,
   duplicateContent,
   getAllMyContents,
+  generateCaption,
 }

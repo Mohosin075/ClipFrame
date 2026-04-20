@@ -25,6 +25,7 @@ import { detectMediaType } from '../../../helpers/detectMedia'
 import { Stats } from '../stats/stats.model'
 import axios from 'axios'
 import FormData from 'form-data'
+import { AIHelper } from '../../../helpers/aiHelper'
 
 // Old version
 // export const createContent = async (
@@ -300,6 +301,26 @@ export const createContent = async (
   }
 
   try {
+    // Auto generate caption if not provided and templateId exists
+    if (!payload.caption && payload.templateId) {
+      const template = await ContentTemplate.findById(payload.templateId)
+      if (template) {
+        const prompt = `Generate a caption for a social media ${payload.contentType || 'post'} based on this template:
+        Title: ${template.title}
+        Description: ${template.description}
+        Steps: ${template.steps?.map(step => step.title).join(', ')}
+        Hashtags: ${template.hashtags.join(', ')}`
+
+        const aiResult = await AIHelper.generateCaption(prompt)
+        if (aiResult) {
+          payload.caption = aiResult.caption
+          if (aiResult.hashtags && Array.isArray(aiResult.hashtags)) {
+            payload.tags = [...(payload.tags || []), ...aiResult.hashtags]
+          }
+        }
+      }
+    }
+
     await usageTrackingService.checkAndIncrementUsage(
       user.authId!.toString(),
       payload.contentType as ContentType,
@@ -730,6 +751,33 @@ const getAllMyContents = async (
   }
 }
 
+const generateCaption = async (
+  templateId: string,
+  tone?: string,
+  suggestions?: string,
+) => {
+  const template = await ContentTemplate.findById(templateId)
+  if (!template) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Template not found')
+  }
+
+  const prompt = `Generate a social media caption based on this template:
+  Title: ${template.title}
+  Description: ${template.description}
+  Steps: ${template.steps?.map(step => step.title).join(', ')}
+  Hashtags: ${template.hashtags.join(', ')}`
+
+  const result = await AIHelper.generateCaption(prompt, tone, suggestions)
+  if (!result) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to generate caption',
+    )
+  }
+
+  return result
+}
+
 export const ContentServices = {
   createContent,
   getAllContents,
@@ -738,4 +786,5 @@ export const ContentServices = {
   deleteContent,
   duplicateContent,
   getAllMyContents,
+  generateCaption,
 }

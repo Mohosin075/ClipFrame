@@ -20,7 +20,7 @@ router
   .route('/create/:id')
   .post(
     auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.CREATOR),
-    fileUploadHandler(100),
+    fileUploadHandler(100, { preserveOriginalImages: true }),
     handleMediaUpload,
     validateRequest(ContentValidations.create),
     ContentController.createContent,

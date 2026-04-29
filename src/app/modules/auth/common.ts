@@ -88,7 +88,11 @@ const handleLoginLogic = async (
   )
 
   if (!isPasswordMatched) {
-    isUserExist.authentication.wrongLoginAttempts = wrongLoginAttempts + 1
+    // Guard against legacy/bad data so Number cast never receives NaN.
+    const safeWrongLoginAttempts = Number.isFinite(wrongLoginAttempts)
+      ? wrongLoginAttempts
+      : 0
+    isUserExist.authentication.wrongLoginAttempts = safeWrongLoginAttempts + 1
 
     if (isUserExist.authentication.wrongLoginAttempts >= 5) {
       isUserExist.status = USER_STATUS.INACTIVE
@@ -100,10 +104,10 @@ const handleLoginLogic = async (
     await User.findByIdAndUpdate(isUserExist._id, {
       $set: {
         status: isUserExist.status,
-        authentication: {
-          restrictionLeftAt: isUserExist.authentication.restrictionLeftAt,
-          wrongLoginAttempts: isUserExist.authentication.wrongLoginAttempts,
-        },
+        'authentication.restrictionLeftAt':
+          isUserExist.authentication.restrictionLeftAt,
+        'authentication.wrongLoginAttempts':
+          isUserExist.authentication.wrongLoginAttempts,
       },
     })
 
@@ -118,10 +122,8 @@ const handleLoginLogic = async (
     {
       $set: {
         deviceToken: payload.deviceToken,
-        authentication: {
-          restrictionLeftAt: null,
-          wrongLoginAttempts: 0,
-        },
+        'authentication.restrictionLeftAt': null,
+        'authentication.wrongLoginAttempts': 0,
       },
     },
     { new: true },

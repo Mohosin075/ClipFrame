@@ -4,7 +4,10 @@ import multer, { FileFilterCallback } from 'multer'
 import sharp from 'sharp'
 import ApiError from '../../errors/ApiError'
 
-const fileUploadHandler = (maxSizeInMB: number = 100) => {
+const fileUploadHandler = (
+  maxSizeInMB: number = 100,
+  options?: { preserveOriginalImages?: boolean },
+) => {
   const maxSize = maxSizeInMB * 1024 * 1024
   // Configure storage
   const storage = multer.memoryStorage()
@@ -129,6 +132,8 @@ const fileUploadHandler = (maxSizeInMB: number = 100) => {
         'clips',
       ]
 
+      const preserveOriginalImages = options?.preserveOriginalImages === true
+
       // Process each image field
       for (const field of imageFields) {
         const files = (req.files as any)[field]
@@ -137,6 +142,7 @@ const fileUploadHandler = (maxSizeInMB: number = 100) => {
         // Process each file in the field
         for (const file of files) {
           if (!file.mimetype.startsWith('image')) continue
+          if (preserveOriginalImages) continue
 
           // Resize and optimize the image while maintaining aspect ratio
           let sharpInstance = sharp(file.buffer).resize({

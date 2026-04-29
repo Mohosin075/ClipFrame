@@ -145,6 +145,12 @@ router.post(
   CustomAuthController.connectFacebookWithToken,
 )
 
+router.delete(
+  '/facebook/disconnect',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  CustomAuthController.disconnectFacebook,
+)
+
 // 👉 Connect Instagram (uses FB login w/ IG scopes)
 router.get(
   '/instagram',
@@ -185,6 +191,12 @@ router.post(
   auth(USER_ROLES.ADMIN, USER_ROLES.USER),
   validateRequest(AuthValidations.socialTokenZodSchema),
   CustomAuthController.connectInstagramWithToken,
+)
+
+router.delete(
+  '/instagram/disconnect',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  CustomAuthController.disconnectInstagram,
 )
 
 // for tiktok

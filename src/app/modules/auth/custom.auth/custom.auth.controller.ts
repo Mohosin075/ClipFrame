@@ -184,6 +184,30 @@ const connectInstagramWithToken = catchAsync(
   },
 )
 
+const disconnectFacebook = catchAsync(async (req: Request, res: Response) => {
+  const result = await CustomAuthServices.disconnectFacebook(
+    req.user as JwtPayload,
+  )
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  })
+})
+
+const disconnectInstagram = catchAsync(async (req: Request, res: Response) => {
+  const result = await CustomAuthServices.disconnectInstagram(
+    req.user as JwtPayload,
+  )
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  })
+})
+
 export const CustomAuthController = {
   forgetPassword,
   resetPassword,
@@ -199,4 +223,6 @@ export const CustomAuthController = {
   logout,
   connectFacebookWithToken,
   connectInstagramWithToken,
+  disconnectFacebook,
+  disconnectInstagram,
 }

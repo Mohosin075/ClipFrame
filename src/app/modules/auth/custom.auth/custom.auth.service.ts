@@ -24,6 +24,7 @@ import {
   upsertFacebookPages,
   upsertInstagramAccounts,
 } from '../../socialintegration/socialintegration.service'
+import { Socialintegration } from '../../socialintegration/socialintegration.model'
 
 const createUser = async (payload: IUser) => {
   payload.email = payload.email?.toLowerCase().trim()
@@ -703,6 +704,42 @@ const connectInstagramWithToken = async (user: JwtPayload, token: string) => {
   return { message: 'Instagram connected successfully' }
 }
 
+const disconnectFacebook = async (user: JwtPayload) => {
+  const isUserExist = await User.findById(user.authId)
+  if (!isUserExist) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  }
+
+  const result = await Socialintegration.findOneAndDelete({
+    user: user.authId,
+    platform: 'facebook',
+  })
+
+  if (!result) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Facebook account is not connected')
+  }
+
+  return { message: 'Facebook disconnected successfully' }
+}
+
+const disconnectInstagram = async (user: JwtPayload) => {
+  const isUserExist = await User.findById(user.authId)
+  if (!isUserExist) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  }
+
+  const result = await Socialintegration.findOneAndDelete({
+    user: user.authId,
+    platform: 'instagram',
+  })
+
+  if (!result) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Instagram account is not connected')
+  }
+
+  return { message: 'Instagram disconnected successfully' }
+}
+
 export const CustomAuthServices = {
   adminLogin,
   forgetPassword,
@@ -718,4 +755,6 @@ export const CustomAuthServices = {
   createUser,
   connectFacebookWithToken,
   connectInstagramWithToken,
+  disconnectFacebook,
+  disconnectInstagram,
 }

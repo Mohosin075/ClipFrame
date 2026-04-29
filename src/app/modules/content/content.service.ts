@@ -266,6 +266,9 @@ export const createContent = async (
     )
   }
 
+  console.log(payload, 'payload');
+  
+
   const platforms = payload.platform || []
   const facebook = platforms.includes('facebook')
   const instagram = platforms.includes('instagram')

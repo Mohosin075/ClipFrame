@@ -16,6 +16,13 @@ router
     ContenttemplateController.getRecentTemplates,
   )
 
+router
+  .route('/for-you')
+  .get(
+    auth(USER_ROLES.ADMIN, USER_ROLES.CREATOR, USER_ROLES.USER),
+    ContenttemplateController.getForYouTemplates,
+  )
+
 // Base route: '/'
 router
   .route('/')

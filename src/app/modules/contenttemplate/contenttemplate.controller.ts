@@ -130,6 +130,25 @@ const getRecentTemplates = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const getForYouTemplates = catchAsync(async (req: Request, res: Response) => {
+  const filterables = pick(req.query, contenttemplateFilterables)
+
+  const pagination = pick(req.query, paginationFields)
+
+  const result = await ContenttemplateServices.getForYouTemplates(
+    req.user!,
+    filterables,
+    pagination,
+  )
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'For you templates retrieved successfully',
+    data: result,
+  })
+})
+
 export const ContenttemplateController = {
   createContenttemplate,
   updateContenttemplate,
@@ -138,4 +157,5 @@ export const ContenttemplateController = {
   deleteContenttemplate,
   toggleTemplateLove,
   getRecentTemplates,
+  getForYouTemplates,
 }

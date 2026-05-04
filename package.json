@@ -41,6 +41,8 @@
     "form-data": "^4.0.4",
     "get-video-duration": "^4.1.0",
     "http-status-codes": "^2.3.0",
+    "i18next": "^26.0.8",
+    "i18next-http-middleware": "^3.9.6",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.22",
     "mongoose": "^8.9.4",

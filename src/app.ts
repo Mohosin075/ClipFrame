@@ -7,6 +7,8 @@ import path from 'path'
 import session from 'express-session'
 import cookieParser from 'cookie-parser'
 import passport from './app/modules/auth/passport.auth/config/passport'
+import swaggerUi from 'swagger-ui-express'
+import swaggerDocument from '../swagger.json'
 
 import router from './routes'
 import { Morgan } from './shared/morgan'
@@ -133,6 +135,9 @@ app.get('/tiktok/callback', async (req, res) => {
 // -------------------- API Routes --------------------
 
 app.use('/api/v1', router)
+
+// -------------------- Swagger Documentation --------------------
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 // -------------------- Privacy Policy --------------------
 app.get('/privacy-policy', (req, res) => {

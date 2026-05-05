@@ -60,7 +60,7 @@ async function main() {
 
   } catch (error) {
     errorLogger.error(colors.red('🤢 Failed to connect Database'))
-    config.node_env === 'development' && console.log(error)
+    config.node_env === 'development' && errorLogger.error(error)
   }
 
   //handle unhandleRejection
@@ -82,7 +82,7 @@ main()
 process.on('SIGTERM', async () => {
   // await notificationWorker.close();
   // await emailWorker.close();
-  logger.info('SIGTERM IS RECEIVE')
+  logger.info('SIGTERM RECEIVED')
   if (server) {
     server.close()
   }

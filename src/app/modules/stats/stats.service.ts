@@ -1,5 +1,6 @@
 import { JwtPayload } from 'jsonwebtoken'
 import { Content } from '../content/content.model'
+import { logger } from '../../../shared/logger'
 import { CONTENT_STATUS } from '../content/content.constants'
 import { Types } from 'mongoose'
 import { Stats } from './stats.model'
@@ -26,7 +27,7 @@ const getAllPlatformStats = async (user: JwtPayload) => {
   const isAdminExist = await User.findOne({
     _id: user.authId,
     role: USER_ROLES.ADMIN,
-  })
+  }).lean()
 
   if (!isAdminExist) {
     throw new ApiError(
@@ -35,7 +36,7 @@ const getAllPlatformStats = async (user: JwtPayload) => {
     )
   }
 
-  const allStats = await Stats.find({})
+  const allStats = await Stats.find({}).lean()
   return allStats
 }
 
@@ -43,7 +44,7 @@ const getAdminDashboardStats = async (user: JwtPayload) => {
   const isAdminExist = await User.findOne({
     _id: user.authId,
     role: USER_ROLES.ADMIN,
-  })
+  }).lean()
 
   if (!isAdminExist) {
     throw new ApiError(
@@ -184,7 +185,7 @@ const getAdminUserStats = async (user: JwtPayload) => {
   const isAdminExist = await User.findOne({
     _id: user.authId,
     role: USER_ROLES.ADMIN,
-  })
+  }).lean()
 
   if (!isAdminExist) {
     throw new ApiError(
@@ -328,7 +329,7 @@ export const updateFacebookContentStats = async () => {
   if (isRunning) return console.log('⏳ Previous job still running...')
   isRunning = true
 
-  console.log('🕐 Running Facebook content stats update...')
+  logger.info('🕐 Running Facebook content stats update...')
 
   try {
     // Fetch all published Facebook contents
@@ -395,15 +396,15 @@ export const updateFacebookContentStats = async () => {
           { upsert: true, new: true },
         )
 
-        console.log(`✅ Updated stats for content: ${item._id}`)
+        logger.info(`✅ Updated stats for content: ${item._id}`)
       } catch (err) {
-        console.error(`❌ Error fetching FB data for ${item._id}:`, err)
+        logger.error(`❌ Error fetching FB data for ${item._id}: ${err}`)
       }
     }
 
-    console.log('✨ Facebook stats update completed.')
+    logger.info('✨ Facebook stats update completed.')
   } catch (err) {
-    console.error('❌ Error updating Facebook stats:', err)
+    logger.error(`❌ Error updating Facebook stats: ${err}`)
   } finally {
     isRunning = false
   }

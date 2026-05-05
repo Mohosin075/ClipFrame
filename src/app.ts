@@ -1,5 +1,7 @@
 import cors from 'cors'
 import express, { Request, Response } from 'express'
+import helmet from 'helmet'
+import { rateLimit } from 'express-rate-limit'
 import { StatusCodes } from 'http-status-codes'
 import path from 'path'
 import session from 'express-session'
@@ -12,6 +14,7 @@ import globalErrorHandler from './app/middleware/globalErrorHandler'
 import './task/scheduler'
 import { WebhookController } from './app/modules/subscription/webhook.controller'
 import config from './config'
+import { logger } from './shared/logger'
 import { Socialintegration } from './app/modules/socialintegration/socialintegration.model'
 import axios from 'axios'
 import { User } from './app/modules/user/user.model'
@@ -19,6 +22,17 @@ import { upsertTikTokAccounts } from './app/modules/socialintegration/socialinte
 import { getTiktokToken } from './helpers/tiktokAPIHelper'
 
 const app = express()
+
+// -------------------- Security Middleware --------------------
+app.use(helmet())
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+})
+app.use('/api', limiter)
 
 // -------------------- Stripe Webhook --------------------
 app.use(
@@ -82,36 +96,36 @@ app.get(
   '/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: '/auth/fail' }),
   (req, res) => {
-    console.log('✅ OAuth successful, user:', req.user)
+    logger.info(`✅ OAuth successful, user: ${JSON.stringify(req.user)}`)
     // send them back to frontend with a token or success msg
-    res.redirect(`https://mohosin5001.binarybards.online/privacy-policy`)
+    res.redirect(`${config.frontend_url}/privacy-policy`)
   },
 )
 
 //
 
 app.get('/tiktok/callback', async (req, res) => {
-  console.log('🎯 TikTok callback hit')
+  logger.info('🎯 TikTok callback hit')
 
   const { code, state } = req.query
   const userId = state
 
   // Define success and failure redirect URLs
-  const successUrl = `https://mohosin5001.binarybards.online/privacy-policy?connected=true`
-  const failureUrl = `https://mohosin5001.binarybards.online/privacy-policy?connected=false`
+  const successUrl = `${config.frontend_url}/privacy-policy?connected=true`
+  const failureUrl = `${config.frontend_url}/privacy-policy?connected=false`
 
   try {
     if (!code || !userId) {
-      console.error('Missing code or userId')
+      logger.error('Missing code or userId')
       return res.redirect(failureUrl)
     }
 
     await upsertTikTokAccounts(code as string, userId as string)
 
-    console.log('✅ TikTok account linked successfully')
+    logger.info('✅ TikTok account linked successfully')
     return res.redirect(successUrl)
   } catch (error) {
-    console.error('❌ TikTok account linking failed:', error)
+    logger.error(`❌ TikTok account linking failed: ${error}`)
     return res.redirect(failureUrl)
   }
 })
